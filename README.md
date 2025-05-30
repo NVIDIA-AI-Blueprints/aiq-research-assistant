@@ -71,6 +71,7 @@ Ubuntu 22.04
 ### Deploy Options 
 
 [Docker Compose](/docs/get-started/get-started-docker-compose.md)  
+[Kubernetes with Helm](/docs/get-started/get-started-helm.md)
 
 ### Drivers
 
@@ -105,9 +106,9 @@ This blueprint can be run entirely with hosted NVIDIA NIM Microservices, see [ht
 
 ## Next Steps
 
-- Use the [Get Started Notebook](/notebooks/get_started_nvidia_api.ipynb) to deploy the blueprint with Docker and interact with the sample web application  
-- Deploy with [Docker Compose](/docs/get-started/get-started-docker-compose.md)  
-- Customize the research assistant starting with the [Local Development Guide](/docs/get-started/local-development.md)  
+- Use the [Get Started Notebook](/get_started.ipynb)  to deploy the blueprint with Docker and interact with the sample web application
+- Deploy with [Docker Compose](/docs/get-started/get-started-docker-compose.md)
+- Customize the research assistant starting with the [Local Development Guide](/docs/get-started/local-development.md)
 
 ## License
 
