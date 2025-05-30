@@ -1,0 +1,33 @@
+{{- if .Values.loadFiles.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: load-files-nv-ingest
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+      - name: {{ .Values.ngcImagePullSecretName }}
+      containers:
+      - name: load-files-nv-ingest
+        image: {{ .Values.loadFiles.image.repository }}:{{ .Values.loadFiles.image.tag }}
+        imagePullPolicy: {{ .Values.loadFiles.image.pullPolicy }}
+        env:
+        - name: MILVUS_HOST
+          value: {{ .Values.config.milvus_host | quote }}
+        - name: MILVUS_PORT
+          value: {{ .Values.config.milvus_port | quote }}
+        - name: RAG_INGEST_URL
+          value: {{ .Values.config.rag_ingest_url | quote }}
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        volumeMounts:
+        - name: tempdata
+          mountPath: /tmp-data
+      volumes:
+      - name: tempdata
+        emptyDir: {}
+
+      restartPolicy: OnFailure 
+{{- end }}

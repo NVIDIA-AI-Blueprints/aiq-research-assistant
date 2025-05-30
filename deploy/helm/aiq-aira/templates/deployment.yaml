@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-aira-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: aira-backend
+  template:
+    metadata:
+      labels:
+        app: aira-backend
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.ngcImagePullSecretName }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "aiq-aira.fullname" . }}-config
+      containers:
+        - name: aira-backend
+          command:
+            - /bin/bash
+            - -c
+            - {{ .Values.command }} --config_file /etc/config/config.yml
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: TAVILY_API_KEY
+              value: {{ .Values.config.tavily_api_key | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP

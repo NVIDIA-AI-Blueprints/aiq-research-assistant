@@ -1,0 +1,247 @@
+
+# ------------------------------------------------------------
+# The following values are for the AIQ AIRA backend service.
+# ------------------------------------------------------------
+
+replicaCount: 1
+
+# The name of the image pull secret to use for the AIQ container images.
+# Either create the secret manually and update the name here
+# or update the imagePullSecret.password with your NGC API key
+ngcImagePullSecretName: "pull-secret"
+
+imagePullSecret:
+  create: true
+  name: "pull-secret"
+  registry: "nvcr.io"
+  username: "$oauthtoken"
+  password: "" #UPDATE THIS
+
+# The image repository and tag for the AIQ AIRA backend service.
+image:  
+  repository: nvcr.io/nvidia/blueprint/aira-backend
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+
+# The service type and port for the main AIQ AIRA backend service
+service:
+  port: 3838
+
+# Update each value according to your desired configuration.
+config:
+  # The instruct_ settings are for the general purpose Q&A LLM
+  instruct_model_name: "meta/llama-3.3-70b-instruct"
+  instruct_temperature: "0.0"
+  instruct_api_key: "" #UPDATE THIS
+  instruct_base_url: "https://integrate.api.nvidia.com/v1"
+  # The nemotron_ settings are for the reasoning LLM
+  nemotron_api_key: "not-needed" # not needed as we use the nemotron service from the RAG deployment which does not require an API key
+  nemotron_model_name: "nvidia/llama-3.3-nemotron-super-49b-v1"
+  nemotron_temperature: "0.5"
+  nemotron_base_url: "http://nim-llm.rag.svc.cluster.local:8000/v1" # provided by the RAG deployment 
+  nemotron_max_tokens: "5000"
+  nemotron_stream: "true"
+  # Enter your Tavily API key here to enable web search
+  tavily_api_key: "" #UPDATE THIS
+  # Enter the IP address of the RAG services
+  rag_ingest_url: "http://ingestor-server.rag.svc.cluster.local:8082" # provided by the RAG deployment 
+  rag_url: "http://rag-server.rag.svc.cluster.local:8081" # provided by the RAG deployment 
+  rag_api_key: "" #Typically not required
+  milvus_host: "milvus.rag.svc.cluster.local" # provided by the RAG deployment 
+  milvus_port: "19530"
+
+# Do not update this command. It is the default command to launch the AI-Q backend service.
+command: "entrypoint.sh"
+
+# ------------------------------------------------------------
+# The following values are for the nginx proxy that enables the AIQ frontend
+# to interact with both the AIQ AIRA backend service and the RAG service
+# 
+# You may need to update the RAG service IP address if you have not deployed RAG via helm on the same cluster
+# ------------------------------------------------------------
+
+nginx:
+  
+  nginxImage:
+    ngcImageRegistry: "" 
+    ngcImageRegistryPath: ""
+    name: "nginx"
+    tag: "1.27.0"
+    pullPolicy: Always
+
+  service:
+    port: 8051
+
+  nginx_config: 
+    conf: |-
+      worker_processes auto;
+
+      events {
+          worker_connections 1024;
+      }
+
+      http {
+          proxy_ssl_server_name on;
+
+          proxy_cache_path /server_cache_llm levels=1:2 keys_zone=llm_cache:10m max_size=20g inactive=14d use_temp_path=off;
+
+          proxy_cache_path /server_cache_intel levels=1:2 keys_zone=intel_cache:10m max_size=20g inactive=14d use_temp_path=off;
+
+          error_log /dev/stdout info;
+
+          log_format upstream_time '$remote_addr - $remote_user [$time_local] '
+                                  '"$request" $status $body_bytes_sent '
+                                  '"$http_referer" "$http_user_agent"'
+                                  'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time" urt="$upstream_response_time"';
+
+          log_format cache_log '[$time_local] ($upstream_cache_status) "$request" $status - $body_bytes_sent bytes {$remote_addr} "$http_user_agent" $request_time - $connection_requests. Auth: $http_authorization';
+
+          log_format no_cache_log '[$time_local] (BYPASSED) "$request" $status - $body_bytes_sent bytes {$remote_addr} "$http_user_agent" $request_time - $connection_requests. Auth: $http_authorization';
+
+          log_format mirror_log '[$time_local] (MIRROR) "$request" $status - $body_bytes_sent bytes {$remote_addr} "$http_user_agent" $request_time - $connection_requests. Auth: $http_authorization';
+
+          log_format nvai_cache_log '[$time_local] ($upstream_cache_status) "$request" $status - $body_bytes_sent bytes {$remote_addr} "$http_user_agent" $request_time - $connection_requests. Auth: $http_authorization. $upstream_addr';
+
+          map $http_cache_control $cache_bypass {
+              no-cache   1;
+          }
+
+          # Log to stdout and a file for searchability
+          access_log /dev/stdout cache_log;
+          access_log /var/log/nginx/access.log cache_log;
+
+          error_log /dev/stdout info;
+          error_log /var/log/nginx/error.log info;
+
+          server {
+            listen 8051;
+            server_name _;
+
+            # Common proxy settings
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_pass_request_headers on;
+
+            # Common buffer settings
+            large_client_header_buffers 4 32k;
+            client_header_buffer_size 4k;
+
+            # Common timeout settings
+            client_body_timeout 900s;
+            client_header_timeout 900s;
+
+            # Common settings for document-related endpoints
+            proxy_read_timeout 600s;
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 600s;
+            client_max_body_size 100M;
+            proxy_max_temp_file_size 0;
+            proxy_buffering on;
+            proxy_buffer_size 1M;
+            proxy_buffers 100 1M;
+            proxy_busy_buffers_size 2M;
+
+            # Original routes
+            location ~ ^/v1/(status|documents|collections) {
+                proxy_pass http://ingestor-server.rag.svc.cluster.local:8082/$1$is_args$args;
+                proxy_set_header Host http://ingestor-server.rag.svc.cluster.local:8082;
+            }
+
+            # Protected routes
+            location ~ ^/v2/protected/aiq/v1/(status|documents|collections) {
+                proxy_pass http://ingestor-server.rag.svc.cluster.local:8082/$1$is_args$args;
+                proxy_set_header Host http://ingestor-server.rag.svc.cluster.local:8082;
+            }
+
+            # Special case for files route
+            location /v2/protected/aiq/v1/files {
+                proxy_pass http://ingestor-server.rag.svc.cluster.local:8082/v1/documents;
+                proxy_set_header Host http://ingestor-server.rag.svc.cluster.local:8082;
+            }
+
+            # Protected routes AIRA v1 
+            location ~ ^/v2/protected/aiq/v1/((generate_query|generate_summary|artifact_qa|default_collections)(/stream)?)$ {
+                proxy_pass http://aira-aira-backend.aira.svc.cluster.local:3838/$1$is_args$args;
+                proxy_set_header Host http://aira-aira-backend.aira.svc.cluster.local:3838;
+            }
+
+            # Health routes
+            location /v2/protected/aiq/keepalive {
+                default_type text/plain;
+                return 200 "OK";         
+            }
+
+            location /v2/protected/aiq/health {
+                default_type text/plain;
+                return 200 "OK";         
+            }
+            
+            location = /health {
+                default_type text/plain;
+                return 200 "OK";
+            }
+
+            location = /keepalive {
+                default_type text/plain;
+                return 200 "OK";
+            }
+
+
+            # Catch-all for other protected routes
+            location /v2/protected/aiq/ {
+                rewrite ^/v2/protected/aiq/(.*) /$1 break;
+                proxy_pass http://aira-aira-backend.aira.svc.cluster.local:3838;
+                proxy_set_header Host $host;
+            }
+
+            # Default location for all other routes
+            location / {
+                proxy_pass http://aira-aira-backend.aira.svc.cluster.local:3838;
+                proxy_set_header Host $host;
+            }
+
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+                root /usr/share/nginx/html;
+            }
+        }
+
+
+      }
+
+# ------------------------------------------------------------
+# The following values are for the AIQ AIRA frontend service.
+# ------------------------------------------------------------
+
+# The frontend application is a React web app. We recommend a NodePort so the frontend will be accessible at <your-node-ip>:3001
+frontend:
+  enabled: true
+  # Update the value below to the IP address and port of the nginx service
+  proxyUrl: http://aira-nginx.aira.svc.cluster.local:8051
+  service:
+    port: 3001
+    targetPort: 3001
+
+  image:
+    repository: nvcr.io/nvidia/blueprint/aira-frontend
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+# ------------------------------------------------------------
+# The following values are optional utility services
+# ------------------------------------------------------------
+
+# Creates two default milvus collections with sample PDFs
+# This job, if enabled, can take ~60 minutes to complete after helm inst
+# During this time manual uploads from the frontend may not work
+loadFiles:
+  enabled: true
+  image:
+    repository: nvcr.io/nvidia/blueprint/aira-load-files
+    tag: v1.0.0
+    pullPolicy: IfNotPresent
+
+

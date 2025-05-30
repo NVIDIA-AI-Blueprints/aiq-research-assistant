@@ -1,0 +1,9 @@
+apiVersion: v2
+dependencies:
+  - name: nginx
+    repository: file://charts/nginx
+    version: 0.1.0
+description: A Helm chart for NVIDIA AI Research Assistant Blueprint
+name: aiq-aira
+type: application
+version: v1.0.0
