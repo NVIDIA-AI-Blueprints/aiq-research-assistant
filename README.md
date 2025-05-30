@@ -38,6 +38,7 @@ The AI-Q NVIDIA Research Assistant blueprint allows you to create a deep researc
 The AI-Q Research Assistant blueprint provides these components:
 
 - **Demo Frontend**: A docker container with a fully functional demo web application is provided. This web application is deployed by default if you follow the getting started guides and is the easiest way to quickly experiment with deep research using internal data sources via the NVIDA RAG blueprint. The source code for this demo web application is not distributed. 
+- **Customizable Frontend**: A Python streamlit web application is provided as a starting point for teams that wish to customize a deep research frontend. The source code is provided in the `/frontend` directory along with instructions for how to deploy. The custom frontend is not deployed by default in the getting started guides.
 - **Backend Service via RESTful API**: The main AI-Q Research Assistant code is distributed as the `aiq-aira` Python package located in the `/aira` directory. These backend functions are available directly or via a RESTful API.
 - **Middleware Proxy**: An nginx proxy is deployed as part of the getting started guides. This proxy enables frontend web applications to interact with a single backend service. In turn, the proxy routes requests between the NVIDIA RAG blueprint services and the AI-Q Research Assistant service.
 
@@ -105,9 +106,9 @@ This blueprint can be run entirely with hosted NVIDIA NIM Microservices, see [ht
 
 ## Next Steps
 
-- Use the [Get Started Notebook](/notebooks/get_started_nvidia_api.ipynb) to deploy the blueprint with Docker and interact with the sample web application  
-- Deploy with [Docker Compose](/docs/get-started/get-started-docker-compose.md)  
-- Customize the research assistant starting with the [Local Development Guide](/docs/get-started/local-development.md)  
+- Use the [Get Started Notebook](/get_started.ipynb)  to deploy the blueprint with Docker and interact with the sample web application
+- Deploy with [Docker Compose](/docs/get-started/get-started-docker-compose.md)
+- Customize the research assistant starting with the [Local Development Guide](/docs/get-started/local-development.md)
 
 ## License
 

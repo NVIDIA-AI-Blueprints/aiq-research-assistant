@@ -85,6 +85,26 @@ services:
       INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
     profiles: ["aira"]
 
+# Uncomment this section to deploy the customizable frontend
+# aira-frontend-custom:
+#   container_name: aira-frontend-custom
+#   build:
+#     context: ../../frontend
+#     dockerfile: Dockerfile
+#   ports:
+#     - "3003:3003"
+#   expose:
+#     - "3003"
+#   environment:
+#     # If you are deploying RAG separately,
+#     # update to match the URL for the Ingestor Server in your RAG deployment
+#     - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082}
+#     - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
+#   profiles: ["aira"]
+#   networks:
+#     - nvidia-rag
+
+
 # Use the nvidia-rag network created by the 
 # RAG docker compose deployment
 # If you are deploying RAG separately

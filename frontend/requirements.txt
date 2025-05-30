@@ -1,0 +1,5 @@
+streamlit>=1.30.0 # Use the latest stable version
+requests>=2.31.0
+python-dotenv>=1.0.0
+streamlit_extras>=0.2.0
+streamlit-code-editor>=0.1.0
