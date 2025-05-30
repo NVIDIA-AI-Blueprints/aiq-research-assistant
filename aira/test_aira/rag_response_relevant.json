@@ -1,0 +1,203 @@
+[
+    {
+        "id": "7482e787-8d25-4251-8d0f-1a5cdf2e70ca",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "N"
+                },
+                "delta": {
+                    "role": "null",
+                    "content": "N",
+                    "finish_reason": "null"
+                }
+            }
+        ],
+        "model": "nvdev/meta/llama-3.1-70b-instruct",
+        "object": "chat.completion.chunk",
+        "created": 1742237514,
+        "usage": {
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0
+        },
+        "citations": {
+            "total_results": 7,
+            "results": [
+                {
+                    "document_id": "",
+                    "content": "Nvidia (NVDA... ",
+                    "document_name": "Q4FY25-CFO-Commentary.pdf",
+                    "document_type": "text",
+                    "score": 0.0,
+                    "metadata": {
+                        "language": "",
+                        "date_created": "",
+                        "last_modified": "",
+                        "page_number": 0,
+                        "description": "Nvidia (NVDA... "
+                    }
+                },
+                {
+                    "document_id": "",
+                    "content": "",
+                    "document_name": "Q4FY25-CFO-Commentary.pdf",
+                    "document_type": "table",
+                    "score": 0.0,
+                    "metadata": {
+                        "language": "",
+                        "date_created": "",
+                        "last_modified": "",
+                        "page_number": 5,
+                        "description": "| NVIDIA COR... "
+                    }
+                },
+                {
+                    "document_id": "",
+                    "content": "financial pe... ",
+                    "document_name": "Q4FY25-CFO-Commentary.pdf",
+                    "document_type": "text",
+                    "score": 0.0,
+                    "metadata": {
+                        "language": "",
+                        "date_created": "",
+                        "last_modified": "",
+                        "page_number": 0,
+                        "description": "financial pe... "
+                    }
+                },
+                {
+                    "document_id": "",
+                    "content": "\r\nin fiscal 2... ",
+                    "document_name": "Q4FY25-CFO-Commentary.pdf",
+                    "document_type": "text",
+                    "score": 0.0,
+                    "metadata": {
+                        "language": "",
+                        "date_created": "",
+                        "last_modified": "",
+                        "page_number": 0,
+                        "description": "\r\nin fiscal 2... "
+                    }
+                },
+                {
+                    "document_id": "",
+                    "content": "73.5 % 75.0... ",
+                    "document_name": "Q4FY25-CFO-Commentary.pdf",
+                    "document_type": "text",
+                    "score": 0.0,
+                    "metadata": {
+                        "language": "",
+                        "date_created": "",
+                        "last_modified": "",
+                        "page_number": 0,
+                        "description": "73.5 % 75.0... "
+                    }
+                },
+                {
+                    "document_id": "",
+                    "content": "",
+                    "document_name": "Q4FY25-CFO-Commentary.pdf",
+                    "document_type": "table",
+                    "score": 0.0,
+                    "metadata": {
+                        "language": "",
+                        "date_created": "",
+                        "last_modified": "",
+                        "page_number": 1,
+                        "description": "| Non-GAAP |... "
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "id": "7482e787-8d25-4251-8d0f-1a5cdf2e70ca",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "VIDIA"
+                },
+                "delta": {
+                    "role": "null",
+                    "content": "VIDIA",
+                    "finish_reason": "null"
+                }
+            }
+        ],
+        "model": "nvdev/meta/llama-3.1-70b-instruct",
+        "object": "chat.completion.chunk",
+        "created": 1742237514,
+        "usage": {
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0
+        },
+        "citations": {
+            "total_results": 0,
+            "results": []
+        }
+    },
+    {
+        "id": "7482e787-8d25-4251-8d0f-1a5cdf2e70ca",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": " year"
+                },
+                "delta": {
+                    "role": "null",
+                    "content": " year",
+                    "finish_reason": "null"
+                }
+            }
+        ],
+        "model": "nvdev/meta/llama-3.1-70b-instruct",
+        "object": "chat.completion.chunk",
+        "created": 1742237515,
+        "usage": {
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0
+        },
+        "citations": {
+            "total_results": 0,
+            "results": []
+        }
+    },
+    {
+        "id": "7482e787-8d25-4251-8d0f-1a5cdf2e70ca",
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": " 2025 were up to 80 trillion dollars, their best year ever."
+                },
+                "delta": {
+                    "role": "null",
+                    "content": " 2025 were up to 80 trillion dollars, their best year ever.",
+                    "finish_reason": "stop"
+                }
+            }
+        ],
+        "model": "nvdev/meta/llama-3.1-70b-instruct",
+        "object": "chat.completion.chunk",
+        "created": 1742237516,
+        "usage": {
+            "total_tokens": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0
+        },
+        "citations": {
+            "total_results": 0,
+            "results": []
+        }
+    }
+]

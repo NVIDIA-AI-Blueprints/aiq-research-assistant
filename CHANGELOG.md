@@ -1,13 +1,8 @@
-# ___PROJECT___ 0.0.0 (DD Mon YYYY)
+# Change Log
 
-## New Features
+Release v1.0.0
 
-- ...
-
-## Improvements
-
-- ...
-
-## Bug Fixes
-
-- ...
+Initial release of the NVIDIA AI-Q Research Assistant Blueprint featuring:
+- Multi-modal PDF document upload and processing, compatible with the NVIDIA RAG 2.1 blueprint release
+- Demo web application
+- Deep research report writing including human-in-the-loop feedback
