@@ -56,7 +56,7 @@ To identify errors with Q&A, follow the steps below.
 
 Ensure you have appropriately configured the `rag_url` settings in the AI-Q Research Assistant configuration file, or provided appropriate values in the helm values.yaml file.
 
-If you are using one of the default report topics and prompts, ensure you have [loaded the default collections](./get-started-docker-compose.md#add-default-collections).
+If you are using one of the default report topics and prompts, ensure you have [loaded the default collections](./get-started/get-started-docker-compose.md#add-default-collections).
 
 ## Errors with web search during report generation
 

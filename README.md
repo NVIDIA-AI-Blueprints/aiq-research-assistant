@@ -56,7 +56,7 @@ Additionally, the blueprint uses these components:
 
 ## Technical Diagram 
 
-![Architecture Diagram](/docs/images/aira_reference_architecture.jpg)
+![Architecture Diagram](https://assets.ngc.nvidia.com/products/api-catalog/aiq/diagram.jpg)
 
 ## Minimum System Requirements 
 
@@ -107,7 +107,7 @@ This blueprint can be run entirely with hosted NVIDIA NIM Microservices, see [ht
 
 - Use the [Get Started Notebook](/notebooks/get_started_nvidia_api.ipynb) to deploy the blueprint with Docker and interact with the sample web application  
 - Deploy with [Docker Compose](/docs/get-started/get-started-docker-compose.md)  
-- Customize the research assistant starting with the [Local Development Guide](/docs/get-started/local-development.md)  
+- Customize the research assistant starting with the [Local Development Guide](/docs/local-development.md)  
 
 ## License
 

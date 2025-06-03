@@ -40,7 +40,7 @@ This section demonstrates how to deploy AI-Q Research Assistant.
 
 ### Git clone
 
-Clone the ai-research-assistant and set it as the working directory:
+Clone the aiq-research-assistant and set it as the working directory:
 
 ```bash
 git clone https://github.com/NVIDIA-AI-Blueprints/aiq-research-assistant.git
