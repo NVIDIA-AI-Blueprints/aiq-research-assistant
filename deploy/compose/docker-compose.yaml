@@ -17,8 +17,8 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              # RAG uses 0,1,2,3 so we assign 4,5 to the LLM
-              device_ids: ['${AIRA_LLM_MS_GPU_ID:-4,5}']
+              # RAG uses 0,1 so we assign 2,3 to the LLM
+              device_ids: ['${AIRA_LLM_MS_GPU_ID:-2,3}']
               capabilities: [gpu] 
     healthcheck:
       test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/v1/health/ready')"]

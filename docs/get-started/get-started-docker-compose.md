@@ -19,7 +19,7 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ### Hardware Requirements
 
 *For a self-contained local deployment*
-- 6 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each
+- 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each
 
 *For a deployment using hosted NVIDIA NIM microservices*
 No GPUs are required
@@ -44,7 +44,7 @@ Clone the ai-research-assistant and set it as the working directory:
 
 ```bash
 git clone https://github.com/NVIDIA-AI-Blueprints/aiq-research-assistant.git
-cd ai-research-assistant
+cd aiq-research-assistant
 ```
 
 ### Setup Environment Variables
