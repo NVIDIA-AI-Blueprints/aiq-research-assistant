@@ -1,29 +1,31 @@
-
 import aiohttp
 import asyncio
 import json
-from urllib.parse import urljoin
-from aiq_aira.constants import ASYNC_TIMEOUT, RAG_API_KEY, TAVILY_INCLUDE_DOMAINS
-from langgraph.types import StreamWriter
-from aiq_aira.utils import get_domain
-from langchain_community.tools import TavilySearchResults
-from urllib.parse import urljoin
 import logging
+import os
+from urllib.parse import urljoin
+from langchain_community.tools import TavilySearchResults
+from langgraph.types import StreamWriter
+from aiq.cli.register_workflow import register_function
+from pydantic import BaseModel, Field
+from aiq.builder.builder import Builder
+from aiq.builder.function_info import FunctionInfo
+from aiq.data_models.function import FunctionBaseConfig
+from aiq_aira.utils import format_citation, format_warning
+from aiq_aira.constants import RAG_API_KEY, ASYNC_TIMEOUT
 
-logger = logging.getLogger(__name__)
 
 async def search_rag(
     session: aiohttp.ClientSession,
     url: str,
     prompt: str,
-    writer: StreamWriter,
     collection: str
 ):
     """
     Calls a RAG endpoint at `url`, passing `prompt` and referencing `collection`.
-    Returns a tuple (content, citations).
+    Returns a citation with query, answer and pdf name
     """ 
-    writer({"rag_answer": "\n Performing RAG search \n"})
+    logger = logging.getLogger(__name__)
     logger.info("RAG SEARCH")
     headers = {
         "accept": "application/json",
@@ -65,103 +67,110 @@ async def search_rag(
                                     for c in citations_raw
                                 ]
                                 citations += ",".join(cited_docs)
-                citations = f"""
----
-QUERY: 
-{prompt}
+                
+                citations = format_citation(prompt, content, citations)
 
-ANSWER: 
-{content}
-
-CITATION:
-{citations}
-
-"""                
-                return (content, citations)
+                return citations
     except asyncio.TimeoutError:
-        writer({"rag_answer": f"""
--------------
-Timeout getting RAG answer for question {prompt} 
-"""
-                })
-        return (f"Timeout fetching {req_url}:", "")        
+        logger.info(format_warning(f"Timeout getting RAG answer for question {prompt} "))
+        return format_citation(prompt, f"Timeout fetching {req_url}", "")
     except Exception as e:
-        writer({"rag_answer": f"""
--------------
-Error getting RAG answer for question {prompt} 
-"""
-                })
-        return (f"Error fetching {req_url}: {e}", "")
-    
+        logger.info(format_warning(f"Error getting RAG answer for question {prompt} "))
+        return format_citation(prompt, f"Error finding answer in RAG: {e}","")
 
 
-async def search_tavily(prompt: str, writer: StreamWriter):
+class RagSearchTool(FunctionBaseConfig, name="rag_search"):
+    rag_url: str
+
+@register_function(config_type=RagSearchTool)
+async def rag_search(config: RagSearchTool, builder: Builder):
     """
-    Example of a fallback web search using Tavily Search Tool
+    Calls a RAG endpoint at `url`, passing `prompt` and referencing `collection`.
     """
+
+    async def _response_fn(prompt: str, collection: str) -> str:
+        session = aiohttp.ClientSession()
+        return await search_rag(
+            session=session, 
+            url=config.rag_url, 
+            prompt=prompt, 
+            collection=collection
+        )
+
+    yield FunctionInfo.from_fn(
+        _response_fn,
+        description="Search a RAG endpoint for answers to the prompt with information from the internal knowledge base.",
+    )
+
+async def search_tavily(
+        prompt: str, 
+        max_results: int,
+        exclude_domains: list[str] | None = Field(default=None),
+        include_domains: list[str] | None = Field(default=None)
+):
+    """
+    Example of a web search using Tavily Search Tool
+    Returns a citation with query, answer and url
+    """
+    logger = logging.getLogger(__name__)
     logger.info("TAVILY SEARCH")
-    writer({"web_answer": "\n Performing web search \n"})
     try: 
-        all_results = []
+        all_results = []  
+        
+        tool = TavilySearchResults(
+            max_results=max_results,  # optimization try more than one search result
+            search_depth="advanced",
+            include_answer=True,
+            include_raw_content=False,
+            include_images=False,
+            exclude_domains=exclude_domains if exclude_domains else [],
+            include_domains=include_domains if include_domains else []
+        )
+        try:
+            async with asyncio.timeout(ASYNC_TIMEOUT):
+                chunk_results = await tool.ainvoke({"query": prompt})
+                all_results.extend(chunk_results)
+        except asyncio.TimeoutError:
+            logger.info(format_warning(f"The Tavily request for {prompt} timed out"))
 
-        # explicitly query sets of domains
-        if len(TAVILY_INCLUDE_DOMAINS) > 0:
-            domain_chunks = [TAVILY_INCLUDE_DOMAINS[i:i+5] for i in range(0, len(TAVILY_INCLUDE_DOMAINS), 5)]
-            for domain_chunk in domain_chunks:
-                tool = TavilySearchResults(
-                    max_results=2,  # optimization try more than one search result
-                    search_depth="advanced",
-                    include_answer=True,
-                    include_raw_content=False,
-                    include_images=False,
-                    include_domains=domain_chunk,
-                    # exclude_domains=[...], 
-                )
-                try:
-                    async with asyncio.timeout(ASYNC_TIMEOUT):
-                        chunk_results = await tool.ainvoke({"query": prompt})
-                        all_results.extend(chunk_results)
-                except asyncio.TimeoutError:
-                    writer({"web_answer": f"""
-    --------
-    The Tavily request for {prompt} to domains {domain_chunk} timed out
-    --------                                
-                    """
-                    })
-        
-        # query at least a few different domains        
-        if len(TAVILY_INCLUDE_DOMAINS) == 0:
-            seen_domains = []
-            for i in range(2):
-                tool = TavilySearchResults(
-                    max_results=2,  # optimization try more than one search result
-                    search_depth="advanced",
-                    include_answer=True,
-                    include_raw_content=False,
-                    include_images=False,
-                    exclude_domains=seen_domains, 
-                    )
-                try:
-                    async with asyncio.timeout(ASYNC_TIMEOUT):
-                        chunk_results = await tool.ainvoke({"query": prompt})
-                        all_results.extend(chunk_results)
-                        seen_domains.extend([get_domain(r["url"]) for r in chunk_results])
-                except asyncio.TimeoutError:
-                    writer({"web_answer": f"""
-        --------
-        The Tavily request for {prompt} to domains {domain_chunk} timed out
-        --------                                
-                    """
-                    })
-        
-        return all_results
+        web_answers = [ 
+            res['content'] if 'score' in res and float(res['score']) > 0.6 else "" 
+            for res in all_results
+        ]
+
+        web_citations = [ 
+            format_citation(prompt, res['content'], res['url'])
+            if 'score' in res and float(res['score']) > 0.6 else "" 
+            for res in all_results
+        ]
+
+        return "\n".join(web_citations)
     
     except Exception as e:
-        writer({"web_answer": f"""
---------
-Error searching web for {prompt} using Tavily with {TAVILY_INCLUDE_DOMAINS}
---------                                
-                """
-                })
         logger.warning(f"TAVILY SEARCH FAILED {e}")
-        return [{"url": "", "content": ""}]
+        return format_citation(prompt, f"Error finding answer in web search: {e}", "")
+
+
+class TavilySearchTool(FunctionBaseConfig, name="tavily_search"):
+    max_results: int
+    exclude_domains: list[str] | None = Field(default=None)
+    include_domains: list[str] | None = Field(default=None)
+
+@register_function(config_type=TavilySearchTool)
+async def tavily_search(config: TavilySearchTool, builder: Builder):
+    """
+    Calls a Tavily Search endpoint at `url`, passing `prompt`
+    """
+
+    async def _response_fn(prompt: str) -> str:
+        return await search_tavily(
+            prompt=prompt,
+            max_results=config.max_results,
+            exclude_domains=config.exclude_domains,
+            include_domains=config.include_domains
+        )
+
+    yield FunctionInfo.from_fn(
+        _response_fn,
+        description="Perform a web search. Returns answers to the prompt with information from the web.",
+    )

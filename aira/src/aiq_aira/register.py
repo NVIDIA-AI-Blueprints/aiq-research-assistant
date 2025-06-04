@@ -30,7 +30,8 @@ from aiq.data_models.api_server import AIQChatResponseChunk
 from aiq_aira.functions import generate_summary, generate_queries, artifact_qa
 from aiq.builder.framework_enum import LLMFrameworkEnum
 from aiq.plugins.langchain import register
-
+from aiq_aira.tools import tavily_search, rag_search
+from aiq_aira.search_agent.register import search_agent_workflow
 logger = logging.getLogger(__name__)
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "ollama")  # needed if you are using OLLAMA

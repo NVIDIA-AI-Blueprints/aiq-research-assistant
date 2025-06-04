@@ -29,7 +29,7 @@ llms:
   # The default configuration below is assuming a docker compose deployment of AIRA 
   # that uses local NVIDIA NIM microservices.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
-  instruct_llm:
+  instruct:
     _type: openai
     model_name: meta/llama-3.3-70b-instruct
     temperature: 0.0
@@ -50,20 +50,41 @@ llms:
   
 
 functions:
+
+  rag_search:
+    _type: rag_search
+    rag_url: http://rag-server:8081/v1
+
+  tavily_search:
+    _type: tavily_search
+    max_results: 3
+
   generate_query:
     _type: generate_queries
 
+  search_agent:
+    _type: search_agent
+    llm_name: instruct
+    verbose: true
+    tool_names:
+      - rag_search
+      - tavily_search
+
   generate_summary:
     _type: generate_summaries
-    # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1 
+    tool_names:
+      - search_agent
+      
 
-  artifact_qa:
+  # artifact_qa:  
+  artifact_qa:  
     _type: artifact_qa
-    llm_name: instruct_llm
-    # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1
-  
+    llm_name: instruct
+    max_tool_calls: 3
+    tool_names:
+      - rag_search
+      - tavily_search
+
   health_check:
     _type: health_check
 

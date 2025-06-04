@@ -11,7 +11,7 @@ from aiq.builder.function_info import FunctionInfo
 from aiq.builder.framework_enum import LLMFrameworkEnum
 import json
 
-from aiq_aira.nodes import web_research, summarize_sources, reflect_on_summary, finalize_summary
+from aiq_aira.nodes import web_research, summarize_sources, reflect_on_summary, finalize_summary, check_final_summary
 from aiq_aira.schema import (
     ConfigSchema,
     GenerateSummaryStateInput,
@@ -38,7 +38,8 @@ class AIRAGenerateSummaryConfig(FunctionBaseConfig, name="generate_summaries"):
     Configuration for the generate_summary function/endpoint
     """
     rag_url: str = ""
-
+    max_tool_calls: int = 3
+    tool_names: list[str] = []
 def serialize_pydantic(obj):
     if isinstance(obj, list):
         return [serialize_pydantic(item) for item in obj]
@@ -68,14 +69,18 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
     builder.add_node("reflect_on_summary", reflect_on_summary)
 
 
-    # The chain is: START -> web_research -> summarize_sources -> finalize_summary -> END
     builder.add_edge(START, "web_research")
     builder.add_edge("web_research", "summarize_sources")
-    builder.add_edge("summarize_sources", "reflect_on_summary")
-    builder.add_edge("reflect_on_summary", "finalize_summary")
+    builder.add_conditional_edges("summarize_sources", check_final_summary, {
+        "finalize_summary": "finalize_summary",
+        "reflect_on_summary": "reflect_on_summary"
+    })
+    builder.add_edge("reflect_on_summary", "web_research")
     builder.add_edge("finalize_summary", END)
 
     graph = builder.compile()
+
+    
 
     # ------------------------------------------------------------------
     # SINGLE-OUTPUT
@@ -84,22 +89,23 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         Runs the entire pipeline to produce a final summarized report
         """
-        # Acquire the LLM from the builder
+        writer_llm = await aiq_builder.get_llm(llm_name="instruct", wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        search_agent = aiq_builder.get_tool(fn_name="search_agent", wrapper_type=LLMFrameworkEnum.LANGCHAIN)
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-
         response: AIRAState = await graph.ainvoke(
-            input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
+            input={"queries": message.queries, "research_results": [], "current_report": ""},
             config={
                 "llm": llm,
+                "writer_llm": writer_llm,
+                "search_agent": search_agent,
+                "max_tool_calls": config.max_tool_calls,
                 "report_organization": message.report_organization,
-                "rag_url": config.rag_url,
                 "collection": message.rag_collection,
-                "search_web": message.search_web,
                 "num_reflections": message.reflection_count, 
                 "topic": message.topic,
             }
         )
-        return GenerateSummaryStateOutput(final_report=response["final_report"], citations=response["citations"])
+        return GenerateSummaryStateOutput(final_report=response["final_report"], citations="")
 
     # ------------------------------------------------------------------
     # STREAMING VERSION
@@ -112,18 +118,22 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-
+        writer_llm = await aiq_builder.get_llm(llm_name="instruct", wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        search_agent = aiq_builder.get_tool(fn_name="search_agent", wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+       
         async for _t, val in graph.astream(
-                input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
+                input={"queries": message.queries, "research_results": [], "current_report": ""},
                 stream_mode=['custom', 'values'],
                 config={
                     "llm": llm,
                     "report_organization": message.report_organization,
-                    "rag_url": config.rag_url,
+                    "max_tool_calls": config.max_tool_calls,
+                    "writer_llm": writer_llm,
+                    "search_agent": search_agent,
                     "collection": message.rag_collection,
                     "topic": message.topic,
-                    "search_web": message.search_web,
                     "num_reflections": message.reflection_count, 
+                    "recursion_limit": 250
                 }
         ):
 
@@ -131,7 +141,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
                 if "final_report" not in val:
                     yield GenerateSummaryStateOutput(intermediate_step=json.dumps(serialize_pydantic(val)))
                 else:
-                    yield GenerateSummaryStateOutput(final_report=val["final_report"], citations=val["citations"])
+                    yield GenerateSummaryStateOutput(final_report=val["final_report"], citations="")
             else:
                 yield GenerateSummaryStateOutput(intermediate_step=json.dumps(serialize_pydantic(val)))
 
@@ -140,5 +150,6 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
     yield FunctionInfo.create(
         single_fn=_generate_summary_single,
         stream_fn=_generate_summary_stream,
-        description="Generates a full report (Stage 2) by doing web research, summarizing, reflecting, and finalizing the report (supports streaming)."
+        description="Generates a full summary by doing research, summarizing, reflecting, and finalizing the report (supports streaming)."
     )
+
