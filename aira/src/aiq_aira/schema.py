@@ -20,13 +20,14 @@ from enum import Enum
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated, TypedDict
 from langchain_openai import ChatOpenAI
-from typing import Dict
+from typing import Dict, List
 from dataclasses import dataclass
+from typing import Optional
 
 class GeneratedQuery(BaseModel):
     query: str = Field(..., description="The actual text of the search query")
-    report_section: str = Field(..., description="Section of the report this query addresses")
-    rationale: str = Field(..., description="Why this query is relevant")
+    report_section: Optional[str] = Field(..., description="Section of the report this query addresses")
+    rationale: Optional[str] = Field(..., description="Why this query is relevant")
 
 
 ##
@@ -86,18 +87,30 @@ class ArtifactQAOutput(BaseModel):
     assistant_reply: str = Field(..., description="The agent's answer or response to the question")
     updated_artifact: str | None = Field(None, description="The updated artifact after a rewrite operation")
 
-###
-# Main State for the AIRA lang graph
-###
+class Section(BaseModel):
+    name: str = Field(
+        description="Name for this section of the report.",
+    )
+    description: str = Field(
+        description="Brief overview of the main topics and concepts to be covered in this section.",
+    )
+    research: bool = Field(
+        description="Whether to perform web research for this section of the report."
+    )
+    content: str = Field(
+        description="The content of the section."
+    ) 
+
 @dataclass(kw_only=True)
 class AIRAState:
     queries: list[Dict] | None = None    
-    web_research_results: list[str] | None = None
-    citations: str | None = None
-    running_summary: str | None = field(default=None) 
+    research_results: list[str] | None = None
+    current_report: str | None = field(default=None) 
     final_report: str | None = field(default=None)
-
-
+    sections: list[Section] | None= field(default_factory=list)
+    filled_sections: list[str] | None = field(default_factory=list)
+    citations: str | None = None
+    source_counter: int = field(default=1)
 ##
 # Graph config typed-dict that we attach to each step
 ##
@@ -110,3 +123,8 @@ class ConfigSchema(TypedDict):
     num_reflections: int
     search_web: bool
     topic: str
+
+class Sections(BaseModel):
+    sections: List[Section] = Field(
+        description="Sections of the report.",
+    )

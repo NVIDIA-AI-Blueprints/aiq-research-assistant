@@ -65,6 +65,7 @@ async def search_rag(
                                     for c in citations_raw
                                 ]
                                 citations += ",".join(cited_docs)
+
                 citations = f"""
 ---
 QUERY: 
@@ -73,10 +74,10 @@ QUERY:
 ANSWER: 
 {content}
 
-CITATION:
+CITATIONS:
 {citations}
 
-"""                
+""" 
                 return (content, citations)
     except asyncio.TimeoutError:
         writer({"rag_answer": f"""
@@ -92,8 +93,6 @@ Error getting RAG answer for question {prompt}
 """
                 })
         return (f"Error fetching {req_url}: {e}", "")
-    
-
 
 async def search_tavily(prompt: str, writer: StreamWriter):
     """

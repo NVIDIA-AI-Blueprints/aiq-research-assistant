@@ -37,16 +37,14 @@ async def dummy():
     return None
 
 def format_sources(sources: str) -> str:
-    """
-    Format the sources into nicer looking markdown.
-    """
     try:
         # Split sources into individual entries
-        source_entries = re.split(r'(?=---\nQUERY:)', sources)
+        source_entries = re.split(r'(?=---\nSOURCE \d+ QUERY:)', sources)
         formatted_sources = []
-        src_count = 1
+     
         
         for idx, entry in enumerate(source_entries):
+            source_num = 0
             if not entry.strip():
                 continue
                 
@@ -55,34 +53,29 @@ def format_sources(sources: str) -> str:
             # but only if they're not preceded by a pipe (|) character (markdown table)
             src_parts = re.split(r'(?<!\|)\n(?=QUERY:|ANSWER:|CITATION(?:S)?:)', entry.strip())
             
-            if len(src_parts) >= 4:
-                source_num = src_count
-                # Remove the prefix from each part
-                query = re.sub(r'^QUERY:', '', src_parts[1]).strip()
-                answer = re.sub(r'^ANSWER:', '', src_parts[2]).strip()
+            entry_parts = []
+            for part in src_parts:
+                if re.match(r'^---\nSOURCE \d+ QUERY:*', part):
+                    source_num = re.search(r'^---\nSOURCE (\d+)', part).group(1)
+                    part = f"**Query:** {re.sub(r'^---\nSOURCE \d+ QUERY:*', '', part).strip()}"
                 
-                # Handle multiple citations
-                citations = ''.join(src_parts[3:]) 
+                if re.match(r'ANSWER:*', part):
+                    part = f"**Answer:** {re.sub(r'^ANSWER:*', '', part).strip()}"
+
+                if re.match(r'^CITATION(?:S)?:*', part):
+                    part = f"**Citations:** {re.sub(r'^CITATION(?:S)?:*', '', part).strip()}"
+
+                entry_parts.append(part)
+
 
                 formatted_entry = f"""
 ---
-**Source** {source_num}
-
-**Query:** {query}
-
-**Answer:**
-{answer}
-
-{citations}
+**Source** {source_num} \n \n 
+{'\n \n'.join(entry_parts)}
 """
-                formatted_sources.append(formatted_entry)
-                src_count += 1
-            else:
-                logger.info(f"Failed to clean up {entry} because it failed to parse")
-                formatted_sources.append(entry)
-                src_count += 1
-                
-        # Combine main content with formatted sources
+
+            formatted_sources.append(formatted_entry)
+        
         return "\n".join(formatted_sources)
     except Exception as e:
         logger.warning(f"Error formatting sources: {e}")

@@ -22,19 +22,18 @@ query_writer_instructions="""Generate {number_of_queries} search queries that wi
 {report_organization}
 
 # Instructions
-1. Create queries to help answer questions for all sections in report organization.
-2. Format your response as a JSON object with the following keys:
+1. Create queries to help answer questions sections in report organization.
+2. Do not create queries for introduction or conclusion sections.
+3. Format your response as a JSON object with the following keys:
 - "query": The actual search query string
-- "report_section": The section of report organization the query is generated for
-- "rationale": Brief explanation of why this query is relevant to report organization
 
 **Output example**
 ```json
 [
     {{
-        "query": "What is a transformer?",
-        "report_section": "Introduction",
-        "rationale": "Introduces the user to transformer"
+        "query": "tradeoffs between transformer models",
+        "report_section": "tradeoffs",
+        "rationale": "Helps examine pros and cons"
     }},
     {{
         "query": "machine learning transformer architecture explained",
@@ -80,31 +79,30 @@ report_extender = """Add to the existing report additional sources preserving th
 """
 
 
-reflection_instructions = """Using report organization as a guide identify knowledge gaps and/or areas that have not been addressed comprehensively in the report.
-
+reflection_instructions = """
 # Report topic
 {topic}
 
 # Report organization
 {report_organization}
 
-# Draft Report
-{report}
+# Current Report
+{current_report}
 
 # Instructions
 1. Focus on details that are necessary to understanding the key concepts as a whole that have not been fully covered
 2. Ensure the follow-up question is self-contained and includes necessary context for web search.
-3. Format your response as a JSON object with the following keys:
+3. The follow up question should add a new section to the report.
+4. Format your response as a JSON object with the following keys:
 - query: Write a specific follow up question to address this gap
-- report_section: The section of report the query is for
+- report_section: The new section of the report the query will be used to add
 - rationale: Describe what information is missing or needs clarification
 
 **Output example**
 ```json
 {{
-    "query": "What are typical performance benchmarks and metrics used to evaluate [specific technology]?"
-    "report_section": "Deep dive",
-    "rationale": "The report lacks information about performance metrics and benchmarks"
+    "query": "What are typical performance benchmarks and metrics used to evaluate [specific technology]?",
+    "report_section": "technical architecture",
 }}
 ```"""
 
@@ -129,13 +127,11 @@ relevancy_checker = """Determine if the Context contains proper information to a
 
 finalize_report = """
 
-Given the report draft below, format a final report according to the report structure.
-
-Do not add a sources section, sources are added in post processing. 
+Given the report draft below, format a final report according to the report structure. Return only the final report without any other commentary or justification.
 
 You should use proper markdown syntax when appropriate, as the text you generate will be rendered in markdown. Do NOT wrap the report in markdown blocks (e.g triple backticks).
 
-Return only the final report without any other commentary or justification.
+Do not include any source citations, as these will be added to the report in post processing.
 
 <REPORT DRAFT>
 {report}
@@ -144,4 +140,50 @@ Return only the final report without any other commentary or justification.
 <REPORT STRUCTURE>
 {report_organization}
 </REPORT STRUCTURE>
+"""
+
+intro_writer = """
+
+Given the report below, write an executive summary that will be added as the first section of the report.
+
+You should use proper markdown syntax when appropriate, as the text you generate will be rendered in markdown. Do NOT wrap the report in markdown blocks (e.g triple backticks).
+
+Return only the executive summary, do not include any other commentary or justification.
+
+<REPORT DRAFT>
+{report}
+</REPORT DRAFT>
+"""
+
+section_writer_instructions = """You are an expert technical writer crafting one section at a time of a technical report.
+
+
+Use the following context
+{context}
+
+Topic for this section:
+{section_topic}
+
+Guidelines for writing:
+
+1. Technical Accuracy:
+- Use only information from the context
+
+2. Structure:
+- Include a section title
+- Use ## for section title (Markdown format)
+
+3. Quality Checks:
+- One specific example / case study
+- Starts with bold insight
+
+4. Source Identification:
+- For every fact, figure, or claim that you make, include an in-line citation number that supports the claim.
+- Format as (#) where # is the SOURCE # QUERY from the context that supports the claim 
+- Do not include a reference list or notes, just the parenthetical citation number.
+- The citation number must be in this list: 
+<possible_citation_numbers>
+{possible_citation_numbers}
+</possible_citation_numbers>
+
 """

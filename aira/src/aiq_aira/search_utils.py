@@ -96,13 +96,19 @@ def deduplicate_and_format_sources(
         query_elem = ET.SubElement(source_elem, "query")
         query_elem.text = q_json.query
         answer_elem = ET.SubElement(source_elem, "answer")
+        section_elem = ET.SubElement(source_elem, "section")
+        section_elem.text = q_json.report_section
 
         # If the RAG doc was relevant, use gen_ans; else fallback to 'fallback_ans'
         if relevant_info["score"] == "yes" or fallback_ans is None:
             answer_elem.text = gen_ans
         else:
             answer_elem.text = fallback_ans
+        
+        citation_elem = ET.SubElement(source_elem, "citation")
+        citation_elem.text = src
 
+        
     return ET.tostring(root, encoding="unicode")
 
 
@@ -129,8 +135,8 @@ async def process_single_query(
     rag_url = config["configurable"].get("rag_url")
     # Process RAG search
     rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
-    
-    writer({"rag_answer": rag_citation}) # citation includes the answer
+    # For a single query, we take the first result.
+    writer({"rag_answer": rag_citation})
 
     # Check relevancy for this query's answer.
     relevancy = await check_relevancy(llm, query, rag_answer, writer)
@@ -152,24 +158,27 @@ async def process_single_query(
 
             web_citations = [
                 f"""
----
-QUERY: 
-{query}
-
 ANSWER: 
 {res['content']}
 
-CITATION:
-{res['url'].strip()}
-
+CITATION: 
+{res['url']}
 """
                 if 'score' in res and float(res['score']) > 0.6 else "" 
                 for res in result
             ]
 
-            web_answer = "\n".join(web_answers)
-            web_citation = "\n".join(web_citations)
 
+            web_answer = "\n".join(web_answers)
+            web_answers_citations = "\n".join(web_citations)
+
+            web_citation = f"""
+---
+QUERY: 
+{query}
+"""
+            web_citation = web_citation + web_answers_citations
+            
             # guard against the case where no relevant answers are found
             if bool(re.fullmatch(r"\n*", web_answer)):
                 web_answer = "No relevant result found in web search"
@@ -179,9 +188,7 @@ CITATION:
             web_answer = "Web not searched since RAG provided relevant answer for query"
             web_citation = ""
 
-        # citation includes the answer
-        web_result_to_stream = web_citation if web_citation != "" else f"--- \n {web_answer} \n "
-        
+        web_result_to_stream = web_citation if web_citation != "" else f"--- \n {web_answer} \n ---"
         writer({"web_answer": web_result_to_stream})
 
     return rag_answer, rag_citation, relevancy, web_answer, web_citation
