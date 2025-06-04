@@ -314,4 +314,4 @@ docker compose -f deploy/compose/docker-compose.yaml --profile aira up -d
 
 ## Optional: Tracing Using Phoenix
 
-For detailed instructions on setting up Phoenix dashboard for OpenTelemetry tracing, please refer to [Phoenix Tracing Configuration](phoenix-tracing.md).
+For detailed instructions on setting up Phoenix dashboard for OpenTelemetry tracing, please refer to [Phoenix Tracing Configuration](../phoenix-tracing.md).
