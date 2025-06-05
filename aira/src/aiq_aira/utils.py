@@ -87,3 +87,18 @@ def format_sources(sources: str) -> str:
     except Exception as e:
         logger.warning(f"Error formatting sources: {e}")
         return sources
+    
+def _escape_markdown(text: str) -> str:
+    """
+    Escapes Markdown to be rendered verbatim in the frontend in some scenarios
+    Changes '* item' to '\* item', '1. item' to '\1. item', etc.
+    """
+    if not text:
+        return ""
+    # Escape unordered list items like * item, + item, - item
+    text = re.sub(r"^(\s*)([*+-])(\s+)", r"\1\\\2\3", text, flags=re.MULTILINE)
+    # Escape ordered list items like 1. item
+    text = re.sub(r"^(\s*)(\d+\.)(\s+)", r"\1\\\2\3", text, flags=re.MULTILINE)
+    text = text.replace("|", "\\|")
+    text = text.replace("\n", "\\n")
+    return text

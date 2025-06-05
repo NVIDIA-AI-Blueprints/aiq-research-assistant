@@ -12,7 +12,8 @@ from langchain_core.utils.json import parse_json_markdown
 from aiq_aira.schema import GeneratedQuery
 from aiq_aira.prompts import relevancy_checker
 from aiq_aira.tools import search_rag, search_tavily
-from aiq_aira.utils import dummy
+from aiq_aira.utils import dummy, _escape_markdown
+import html
 
 logger = logging.getLogger(__name__)
 
@@ -24,18 +25,19 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
     """
     logger.info("CHECK RELEVANCY")    
     writer({"relevancy_checker": "\n Starting relevancy check \n"})
+    processed_answer_for_display = html.escape(_escape_markdown(answer))
+
     try:
         async with asyncio.timeout(ASYNC_TIMEOUT):
             response = await llm.ainvoke(
                 relevancy_checker.format(document=answer, query=query)
             )
             score = parse_json_markdown(response.content)
-            writer({"relevancy_checker": f""" 
-    ----------                
-    Relevancy score: {score}  
+            writer({"relevancy_checker": f""" =
+    ---
+    Relevancy score: {score.get("score")}  
     Query: {query}
-    Answer: {answer}
-    ----------
+    Answer: {processed_answer_for_display}
     """})
 
             return score
@@ -43,13 +45,13 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
     except asyncio.TimeoutError as e:
              writer({"relevancy_checker": f""" 
 ----------                
-LLM time out evaluating relevancy. Query: {query} \n \n Answer: {answer} 
+LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ----------
 """})   
     except Exception as e:
         writer({"relevancy_checker": f"""
 ---------
-Error checking relevancy. Query: {query} \n \n Answer: {answer} 
+Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ---------
 """})
         logger.debug(f"Error parsing relevancy JSON: {e}")
