@@ -56,7 +56,7 @@ Additionally, the blueprint uses these components:
 
 ## Technical Diagram  
 
-![Architecture Diagram](https://assets.ngc.nvidia.com/products/api-catalog/aiq/diagram.jpg)
+![Architecture Diagram](https://assets.ngc.nvidia.com/products/api-catalog/aiq/diagram.jpg?)
 
 ## Minimum System Requirements 
 
