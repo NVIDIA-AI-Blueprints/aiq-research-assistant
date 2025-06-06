@@ -54,7 +54,7 @@ Additionally, the blueprint uses these components:
 - [**Web search powered by Tavily**](https://tavily.com/)
   Supplements on-premise sources with real-time web search.
 
-## Technical Diagram 
+## Technical Diagram  
 
 ![Architecture Diagram](https://assets.ngc.nvidia.com/products/api-catalog/aiq/diagram.jpg)
 
