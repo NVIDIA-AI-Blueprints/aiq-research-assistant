@@ -23,10 +23,10 @@ spec:
           command:
             - /bin/bash
             - -c
-            - {{ .Values.command }} --config_file /etc/config/config.yml
+            - {{ .Values.command }}
           volumeMounts:
             - name: config-volume
-              mountPath: /etc/config
+              mountPath: /app/configs
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
