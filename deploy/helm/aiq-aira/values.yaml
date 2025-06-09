@@ -51,7 +51,7 @@ config:
   milvus_port: "19530"
 
 # Do not update this command. It is the default command to launch the AI-Q backend service.
-command: "entrypoint.sh"
+command: "/entrypoint.sh"
 
 # ------------------------------------------------------------
 # The following values are for the nginx proxy that enables the AIQ frontend
