@@ -6,6 +6,14 @@ data:
   config.yml: |+
     general:
       use_uvloop: true
+      {{- if .Values.phoenix.enabled }}
+      telemetry:
+        tracing:
+          phoenix:
+            _type: phoenix
+            endpoint: http://{{ .Release.Name }}-phoenix.{{ .Release.Namespace }}.svc.cluster.local:6006/v1/traces
+            project: ai_researcher
+      {{- end }}
       front_end:
         _type: fastapi
         cors:

@@ -244,4 +244,17 @@ loadFiles:
     tag: v1.0.0
     pullPolicy: IfNotPresent
 
-
+# Enables the Phoenix tracing service
+phoenix:
+  enabled: true
+  image:
+    repository: arizephoenix/phoenix
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
