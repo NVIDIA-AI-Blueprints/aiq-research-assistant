@@ -1,0 +1,55 @@
+{{- if .Values.phoenix.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-phoenix
+  labels:
+    app: phoenix
+    {{- include "aiq-aira.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phoenix
+      {{- include "aiq-aira.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: phoenix
+        {{- include "aiq-aira.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: phoenix
+          image: "{{ .Values.phoenix.image.repository }}:{{ .Values.phoenix.image.tag }}"
+          imagePullPolicy: {{ .Values.phoenix.image.pullPolicy }}
+          ports:
+            - name: ui-otlp-http
+              containerPort: 6006
+              protocol: TCP
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.phoenix.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-phoenix
+  labels:
+    {{- include "aiq-aira.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6006
+      targetPort: ui-otlp-http
+      protocol: TCP
+      name: ui-otlp-http
+    - port: 4317
+      targetPort: otlp-grpc
+      protocol: TCP
+      name: otlp-grpc
+  selector:
+    app: phoenix
+    {{- include "aiq-aira.selectorLabels" . | nindent 4 }}
+{{- end }} 
