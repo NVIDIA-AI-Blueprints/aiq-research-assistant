@@ -71,6 +71,7 @@ Ubuntu 22.04
 ### Deploy Options 
 
 [Docker Compose](/docs/get-started/get-started-docker-compose.md)  
+[Kubernetes with Helm](/docs/get-started/get-started-helm.md)
 
 ### Drivers
 

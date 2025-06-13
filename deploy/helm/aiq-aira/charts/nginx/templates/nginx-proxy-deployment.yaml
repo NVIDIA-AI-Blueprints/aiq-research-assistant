@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "nginx.fullname" . }}
+  labels:
+    {{- include "nginx.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "nginx.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "nginx.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.global.ngcImagePullSecretName | default .Values.imagePullSecret.name }}
+      containers:
+      - name: {{ .Chart.Name }}
+        {{- if and .Values.nginxImage.ngcImageRegistry .Values.nginxImage.ngcImageRegistryPath }}
+        image: "{{ .Values.nginxImage.ngcImageRegistry }}/{{ .Values.nginxImage.ngcImageRegistryPath }}/{{ .Values.nginxImage.name }}:{{ .Values.nginxImage.tag }}"
+        {{- else }}
+        image: "{{ .Values.nginxImage.name }}:{{ .Values.nginxImage.tag }}"
+        {{- end }}
+        imagePullPolicy: {{ .Values.nginxImage.imagePullPolicy }}
+        ports:
+          - name: inference
+            containerPort: {{ .Values.service.port }}
+            protocol: TCP
+        {{- with .Values.volumeMounts }}
+        volumeMounts:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+        
