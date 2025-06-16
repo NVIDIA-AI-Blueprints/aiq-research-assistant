@@ -7,16 +7,6 @@ build/
 ./build
 .Dockerfile
 blog-posts/new_post.md
-
-# Ignore sphinx build intermediate files
-docs/source/_modules
-
-# Ignore autoapi intermediate files
-docs/source/api
-
-# Ignore public folder for artifact (required path for Gitlab Pages)
-public/
-
 # Ignore specific hidden folders
 .benchmarks/
 .tmp/
@@ -26,7 +16,6 @@ public/
 *.sqlite
 *.sqlite3
 *.db
-
 # Explicitly ignore .vscode/. Shared settings should go in .code-workspace
 # and user settings will go in .vscode/
 .vscode/
@@ -212,7 +201,8 @@ tags
 
 # Vector db files
 deploy/compose/volumes
-examples/simple_rag/deploy/volumes
+examples/rag_demo/deploy/volumes
+examples/rag_demo/ingestion/data
 examples/rag/compose/volumes
 
 # Mac Metadata
@@ -220,3 +210,30 @@ examples/rag/compose/volumes
 
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
 /.idea
+
+**/uv.lock
+
+# Helm
+deploy/helm/**/*.tgz
+
+# Ignore generated or temporary files managed by the Workbench
+.project/*
+!.project/spec.yaml
+!.project/configpacks
+
+# General ignores
+.DS_Store
+
+# Temp directories, notebooks created by jupyterlab
+.Trash-*/
+.jupyter/
+.local/
+
+# Python distribution / packaging
+share/python-wheels/
+
+.nox/
+*.py,cover
+cover/
+
+# Workbench Project Layout

@@ -1,0 +1,95 @@
+specVersion: v2
+specMinorVersion: 2
+meta:
+    name: ai-research-assistant
+    image: project-ai-research-assistant
+    description: ""
+    labels: []
+    createdOn: "2024-12-06T19:19:11Z"
+    defaultBranch: main
+layout: []
+environment:
+    base:
+        registry: nvcr.io
+        image: nvidia/ai-workbench/python-basic:1.0.2
+        build_timestamp: "20241001182612"
+        name: Python Basic
+        supported_architectures: []
+        cuda_version: ""
+        description: A Python Base with Jupyterlab
+        entrypoint_script: ""
+        labels:
+            - ubuntu
+            - python3
+            - jupyterlab
+        apps:
+            - name: jupyterlab
+              type: jupyterlab
+              class: webapp
+              start_command: jupyter lab --allow-root --port 8888 --ip 0.0.0.0 --no-browser --NotebookApp.base_url=\$PROXY_PREFIX --NotebookApp.default_url=/lab --NotebookApp.allow_origin='*'
+              health_check_command: '[ \$(echo url=\$(jupyter lab list | head -n 2 | tail -n 1 | cut -f1 -d'' '' | grep -v ''Currently'' | sed "s@/?@/lab?@g") | curl -o /dev/null -s -w ''%{http_code}'' --config -) == ''200'' ]'
+              stop_command: jupyter lab stop 8888
+              user_msg: ""
+              logfile_path: ""
+              timeout_seconds: 60
+              icon_url: ""
+              webapp_options:
+                autolaunch: true
+                port: "8888"
+                proxy:
+                    trim_prefix: false
+                url_command: jupyter lab list | head -n 2 | tail -n 1 | cut -f1 -d' ' | grep -v 'Currently'
+        programming_languages:
+            - python3
+        icon_url: https://workbench.download.nvidia.com/static/img/ai-workbench-icon-rectangle.jpg
+        image_version: 1.0.5
+        os: linux
+        os_distro: ubuntu
+        os_distro_release: "22.04"
+        schema_version: v2
+        user_info:
+            uid: ""
+            gid: ""
+            username: ""
+        package_managers:
+            - name: apt
+              binary_path: /usr/bin/apt
+              installed_packages:
+                - curl
+                - git
+                - git-lfs
+                - python3
+                - gcc
+                - python3-dev
+                - python3-pip
+                - vim
+            - name: pip
+              binary_path: /usr/bin/pip
+              installed_packages:
+                - jupyterlab==4.2.4
+        package_manager_environment:
+            name: ""
+            target: ""
+    compose_file_path: deploy/workbench/docker-compose.yaml
+execution:
+    apps: []
+    resources:
+        gpu:
+            requested: 0
+        sharedMemoryMB: 0
+    secrets:
+        - variable: TAVILY_API_KEY
+          description: ""
+        - variable: NVIDIA_API_KEY
+          description: NVIDIA API Key from build.nvidia.com or NGC (starts with "nvapi-")
+        - variable: RAG_INGEST_URL
+          description: Location of your RAG Blueprint, eg. 10.123.45.678
+    mounts:
+        - type: project
+          target: /project/
+          description: Project directory
+          options: rw
+        - type: volume
+          target: /nvwb-shared-volume/
+          description: ""
+          options: volumeName=nvwb-shared-volume

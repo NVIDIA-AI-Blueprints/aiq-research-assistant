@@ -1,0 +1,301 @@
+configs:
+  backend_config_no_gpu:
+    content: |
+        general:
+          use_uvloop: true
+          front_end:
+            _type: fastapi
+            endpoints:
+              - path: /generate_query
+                method: POST
+                description: Creates the query
+                function_name: generate_query
+              - path: /generate_summary
+                method: POST
+                description: Generates the summary
+                function_name: generate_summary
+              - path: /artifact_qa
+                method: POST
+                description: Q/A or chat about a previously generated artifact
+                function_name: artifact_qa
+              - path: /aiqhealth
+                method: GET
+                description: Health check for the AIQ AIRA service
+                function_name: health_check
+              - path: /default_collections
+                method: GET
+                description: Get the default collections
+                function_name: default_collections
+        
+        llms:
+          # The inst_llm is used for Q&A and report writing and should be an instruct model.
+          # The default configuration below is assuming a docker compose deployment of AIRA 
+          # that uses local NVIDIA NIM microservices.
+          # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
+          instruct_llm:
+            _type: openai
+            model_name: meta/llama-3.3-70b-instruct
+            temperature: 0.0
+            base_url: https://integrate.api.nvidia.com/v1
+            
+          # The reasoning llm is used for report planning and reflection and should be a reasoning model
+          # that supports thinking tokens. The default configuration below is used assuming a docker compose
+          # deployment of AIRA and RAG with a local NVIDIA NIM microservice for the nemotron model.
+          # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
+          nemotron:
+            _type: openai
+            model_name : nvidia/llama-3.3-nemotron-super-49b-v1
+            temperature: 0.5
+            base_url: https://integrate.api.nvidia.com/v1
+            max_tokens: 5000
+            stream: true
+          
+        
+        functions:
+          generate_query:
+            _type: generate_queries
+        
+          generate_summary:
+            _type: generate_summaries
+            # update to the IP address of the RAG server if you are not deploying RAG with docker compose
+            rag_url: http://${RAG_INGEST_URL}:8081/v1 
+        
+          artifact_qa:
+            _type: artifact_qa
+            llm_name: instruct_llm
+            # update to the IP address of the RAG server if you are not deploying RAG with docker compose
+            rag_url: http://${RAG_INGEST_URL}:8081/v1 
+          
+          health_check:
+            _type: health_check
+        
+          default_collections:
+            _type: default_collections
+            collections:
+              - name: "Biomedical_Dataset"
+                topic: "Biomedical"
+                report_organization: "You are a medical researcher who specializes in cystic fibrosis. Create a report analyzing how CFTR modulators can be used to restore CFTR protein functions. Include a 150-200 word abstract and a methods, results, and discussion section. Format your answer in paragraphs. Consider all (and only) relevant data. Give a factual report with cited sources."
+              - name: "Financial_Dataset"
+                topic: "Financial"
+                report_organization: "You are a financial analyst who specializes in financial statement analysis. Write a financial report analyzing the 2023 financial performance of Amazon. Identify trends in revenue growth, net income, and total assets. Discuss how these trends affected Amazon's yearly financial performance for 2023. Your output should be organized into a brief introduction, as many sections as necessary to create a comprehensive report, and a conclusion. Format your answer in paragraphs. Use factual sources such as Amazon's quarterly meeting releases for 2023. Cross analyze the sources to draw original and sound conclusions and explain your reasoning for arriving at conclusions. Do not make any false or unverifiable claims. I want a factual report with cited sources."
+        
+        
+        workflow:
+          _type: ai_researcher
+
+  backend_config_gpu:
+    content: |
+        general:
+          use_uvloop: true
+          front_end:
+            _type: fastapi
+            endpoints:
+              - path: /generate_query
+                method: POST
+                description: Creates the query
+                function_name: generate_query
+              - path: /generate_summary
+                method: POST
+                description: Generates the summary
+                function_name: generate_summary
+              - path: /artifact_qa
+                method: POST
+                description: Q/A or chat about a previously generated artifact
+                function_name: artifact_qa
+              - path: /aiqhealth
+                method: GET
+                description: Health check for the AIQ AIRA service
+                function_name: health_check
+              - path: /default_collections
+                method: GET
+                description: Get the default collections
+                function_name: default_collections
+        
+        llms:
+          # The inst_llm is used for Q&A and report writing and should be an instruct model.
+          # The default configuration below is assuming a docker compose deployment of AIRA 
+          # that uses local NVIDIA NIM microservices.
+          # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
+          instruct_llm:
+            _type: openai
+            model_name: meta/llama-3.3-70b-instruct
+            temperature: 0.0
+            base_url: http://aira-instruct-llm:8000/v1
+            api_key: not-needed
+          # The reasoning llm is used for report planning and reflection and should be a reasoning model
+          # that supports thinking tokens. The default configuration below is used assuming a docker compose
+          # deployment of AIRA and RAG with a local NVIDIA NIM microservice for the nemotron model.
+          # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
+          nemotron:
+            _type: openai
+            model_name : nvidia/llama-3.3-nemotron-super-49b-v1
+            temperature: 0.5
+            base_url: http://${RAG_INGEST_URL}:8999/v1 
+            max_tokens: 5000
+            stream: true
+            api_key: not-needed
+          
+        
+        functions:
+          generate_query:
+            _type: generate_queries
+        
+          generate_summary:
+            _type: generate_summaries
+            # update to the IP address of the RAG server if you are not deploying RAG with docker compose
+            rag_url: http://${RAG_INGEST_URL}:8081/v1 
+        
+          artifact_qa:
+            _type: artifact_qa
+            llm_name: instruct_llm
+            # update to the IP address of the RAG server if you are not deploying RAG with docker compose
+            rag_url: http://${RAG_INGEST_URL}:8081/v1 
+          
+          health_check:
+            _type: health_check
+        
+          default_collections:
+            _type: default_collections
+            collections:
+              - name: "Biomedical_Dataset"
+                topic: "Biomedical"
+                report_organization: "You are a medical researcher who specializes in cystic fibrosis. Create a report analyzing how CFTR modulators can be used to restore CFTR protein functions. Include a 150-200 word abstract and a methods, results, and discussion section. Format your answer in paragraphs. Consider all (and only) relevant data. Give a factual report with cited sources."
+              - name: "Financial_Dataset"
+                topic: "Financial"
+                report_organization: "You are a financial analyst who specializes in financial statement analysis. Write a financial report analyzing the 2023 financial performance of Amazon. Identify trends in revenue growth, net income, and total assets. Discuss how these trends affected Amazon's yearly financial performance for 2023. Your output should be organized into a brief introduction, as many sections as necessary to create a comprehensive report, and a conclusion. Format your answer in paragraphs. Use factual sources such as Amazon's quarterly meeting releases for 2023. Cross analyze the sources to draw original and sound conclusions and explain your reasoning for arriving at conclusions. Do not make any false or unverifiable claims. I want a factual report with cited sources."
+        
+        
+        workflow:
+          _type: ai_researcher
+
+services:
+  aira-instruct-llm:
+    container_name: aira-instruct-llm
+    image: nvcr.io/nim/meta/llama-3.3-70b-instruct:latest
+    volumes:
+    - ${MODEL_DIRECTORY:-/tmp}:/opt/nim/.cache
+    user: "${USERID}"
+    ports:
+    - "8050:8000"
+    expose:
+    - "8050"
+    environment:
+      NGC_API_KEY: ${NVIDIA_API_KEY}
+    shm_size: 20gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              # RAG uses 0,1 so we assign 2,3 to the LLM
+              device_ids: ['${AIRA_LLM_MS_GPU_ID_0:-2}', '${AIRA_LLM_MS_GPU_ID_1:-3}']
+              capabilities: [gpu] 
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/v1/health/ready')"]
+      interval: 30s
+      timeout: 20s
+      retries: 100
+    networks:
+      - nvidia-rag
+    profiles: ["aira-gpu"]
+
+  aira-backend-no-gpu: &aira-backend-no-gpu
+    hostname: aira-backend
+    container_name: aira-backend
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.0.0
+    build:
+      context: ../../
+      dockerfile: aira/Dockerfile
+    configs:
+      - source: backend_config_no_gpu
+        target: /app/configs/hosted-config.yml
+    entrypoint: "/entrypoint.sh"
+    ports:
+      - "3838:3838"
+    expose:
+      - "3838"
+    environment:
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-this-is-a-test-key}
+      AIRA_APPLY_GUARDRAIL: "false"
+      OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
+      AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-true}
+    volumes:
+      - ../../aira/configs:/app/configs
+    networks:
+      - nvidia-rag
+    profiles: ["aira-no-gpu"]
+
+  aira-backend-gpu: 
+    <<: *aira-backend-no-gpu
+    environment:
+      AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
+    configs:
+      - source: backend_config_gpu
+        target: /app/configs/config.yml
+    profiles: ["aira-gpu"]
+
+  aira-nginx-no-gpu: &aira-nginx-no-gpu
+    hostname: aira-nginx
+    image: nginx:latest
+    container_name: aira-nginx
+    ports:
+      - "8051:8051"
+    expose:
+      - "8051"
+    environment:
+      # If you are deploying RAG separately,
+      # update to match the URL for the Ingestor Server in your RAG deployment
+      - RAG_INGEST_URL=http://${RAG_INGEST_URL:-ingestor-server}:8082
+      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
+    depends_on:
+      - aira-backend-no-gpu
+    networks:
+      - nvidia-rag
+    profiles: ["aira-no-gpu"]
+
+  aira-nginx-gpu: 
+    <<: *aira-nginx-no-gpu
+    depends_on:
+      - aira-backend-gpu
+    profiles: ["aira-gpu"]
+    
+  aira-frontend-no-gpu: &aira-frontend-no-gpu
+    hostname: aira-frontend
+    container_name: aira-frontend
+    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.0.0
+    ports:
+      - "3001:3001"
+    expose:
+      - "3001"
+    networks:
+      - nvidia-rag
+    environment:
+      NVWB_TRIM_PREFIX: true
+      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
+    profiles: ["aira-no-gpu"]
+
+  aira-frontend-gpu: 
+    <<: *aira-frontend-no-gpu
+    profiles: ["aira-gpu"]
+
+  aira-load-files:
+    image: nvcr.io/nvidia/blueprint/aira-load-files:v1.0.0
+    environment:
+      - RAG_INGEST_URL=http://${RAG_INGEST_URL:-ingestor-server}:8082/v1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - /tmp:/tmp-data
+    networks:
+      - nvidia-rag
+    profiles: ["load-default-files"]
+
+# Use the nvidia-rag network created by the 
+# RAG docker compose deployment
+# If you are deploying RAG separately
+# set external to false
+networks:
+  nvidia-rag:
+    external: true
+    name: nvidia-rag
