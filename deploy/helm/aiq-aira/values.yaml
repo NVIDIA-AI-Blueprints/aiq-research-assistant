@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------
 # The following values are for the AIQ AIRA backend service.
 # ------------------------------------------------------------
@@ -32,8 +31,8 @@ config:
   # The instruct_ settings are for the general purpose Q&A LLM
   instruct_model_name: "meta/llama-3.3-70b-instruct"
   instruct_temperature: "0.0"
-  instruct_api_key: "" #UPDATE THIS
-  instruct_base_url: "https://integrate.api.nvidia.com/v1"
+  instruct_api_key: "not-needed" 
+  instruct_base_url: "http://aira-instruct-llm.aira.svc.cluster.local:8000/v1"
   # The nemotron_ settings are for the reasoning LLM
   nemotron_api_key: "not-needed" # not needed as we use the nemotron service from the RAG deployment which does not require an API key
   nemotron_model_name: "nvidia/llama-3.3-nemotron-super-49b-v1"
@@ -52,6 +51,30 @@ config:
 
 # Do not update this command. It is the default command to launch the AI-Q backend service.
 command: "/entrypoint.sh"
+
+
+# ------------------------------------------------------------
+# The following values are for the instruct LLM service
+# The nemotron llm is assumed to be deployed via the RAG helm chart
+# ------------------------------------------------------------
+
+instruct-llm:
+  enabled: true
+  service:
+    name: "aira-instruct-llm"
+  image:
+      repository: nvcr.io/nim/meta/llama-3.3-70b-instruct:1.8.5
+      pullPolicy: IfNotPresent
+      tag: "1.8.5"
+  resources:
+    limits:
+      nvidia.com/gpu: 2
+    requests:
+      nvidia.com/gpu: 2
+  model:
+    ngcAPIKey: "" # UPDATE THIS
+    name: "meta/llama-3.3-70b-instruct"
+
 
 # ------------------------------------------------------------
 # The following values are for the nginx proxy that enables the AIQ frontend

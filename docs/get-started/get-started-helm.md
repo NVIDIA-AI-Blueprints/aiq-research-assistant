@@ -15,9 +15,7 @@ The system includes the following components:
 ## Prerequisites
 
 - A NGC API key that is able to access the AI-Q blueprint images.  
-- Deploy the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart). This blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA. For a full on-premise deployment, 8xH100 or 8xA100 GPUs are required.  
-- Access to a Llama 3.3 Nemotron Super 49B with an associated API key, or a RAG deployment that includes a local Nemotron Super 49B NIM.
-- Access to a Llama 3.3 Instruct 70B model with an associated API key. **Note, by default a helm RAG deployment will use all 8 GPUs, and so it is not possible to run the instruct model on the same server. You MUST either deploy the instruct model on a separate server or use a hosted NVIDIA NIM endpoint. In either case, be sure to follow the instructions below to update the AIRA configuration with the appropriate base URL for the instruct model**.  
+- Deploy the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart). **In order to deploy the NVIDIA RAG blueprint and the AI-Q research assistant blueprint on one 8 GPU system you MUST deploy RAG following the [MIG deployment guide](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md).**
 - Kubernetes and Helm with [NVIDIA GPU Operator installed](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html#operator-install-guide)
 - [Optional] A Tavily API key to support web search.
 
@@ -26,27 +24,27 @@ The system includes the following components:
 
 ### Deploy RAG
 
-Follow the [NVIDIA RAG blueprint deployment guide](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) to deploy the RAG blueprint. **The configuration of the AI-Q Research Assistant assumes you have deployed RAG with the default settings into the `rag` namespace.**
+Follow the [NVIDIA RAG blueprint MIG deployment guide](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) to deploy the RAG blueprint. 
 
-### Configure your `my-values.yaml`
+**The configuration of the AI-Q Research Assistant assumes you have deployed RAG following the MIG deployment guide into the `rag` namespace. The RAG deployment will include a deployment of a service named nim-llm which provides a Llama Nemotron Super 49B reasoning model. This model is re-used by the AI-Q research assistant**
 
-The `values.yaml` file is located at `deploy/helm/aiq-aira/values.yaml`. Create a copy of this file called `my-values.yaml` and update the configuration sections according to your environment. 
+### Optional: Configure your `my-values.yaml`
 
-- Update the `imagePullSecret.password` with your NGC API key
-- Update `tavily_api_key` with your Tavily API key if you want to enable web search
+The `values.yaml` file is located at `deploy/helm/aiq-aira/values.yaml`. Create a copy of this file called `my-values.yaml` and update any configuration sections according to your environment. 
 
-**Using a build endpoint**
+**Optional: Using a build endpoint**
 
-If you want to use a NVIDIA build endpoint for the Llama 3.3 70B Instruct model:
+If you want to use a NVIDIA build endpoint for the Llama 3.3 70B instruct model:
 
-- Update the value `instruct_api_key` with your NVIDIA API key 
+- Update the value `config.instruct_api_key` with your NVIDIA API key 
+- Update the value `config.instruct_base_url` to be `https://integrate.api.nvidia.com/v1`
 
-**Using a separate NIM**
+**Optional: Using NIM LLMs on separate nodes**
 
-If you want to locally host the Llama 3.3 70B Instruct model:
+If you want to deploy the Llama 3.3 70B instruct model separately from the AI-Q research assistant deployment:
 
 - Deploy the model on a *separate server* following the [NIM deployment guides](https://docs.nvidia.com/nim/large-language-models/latest/deployment-guide.html)
-- Update the value `instruct_base_url` to the base url for your deployed NIM
+- Update the value `config.instruct_base_url` to the base url for your deployed NIM
 
 
 **Other options**
@@ -54,14 +52,14 @@ If you want to locally host the Llama 3.3 70B Instruct model:
 The following configuration values have appropriate defaults, but may require updates depending on your Kubernetes provider or desired deployment.
 
 - In the section `config`, update:
-  - [ ] `instruct_model_name`: the model to use for general purpose Q&A, default is meta/llama-3.3-70b-instruct
+  - [ ] `instruct_model_name`: the model to use for general purpose Q&A, default is `meta/llama-3.3-70b-instruct`
   - [ ] `nemotron_model_name`: the model to use for reasoning, default is `nvidia/llama-3.3-nemotron-super-49b-v1` 
   - [ ] `nemotron_base_url`: the base url for the nemotron model, default is to use a RAG deployment local NIM
   - [ ] `nemotron_api_key`: the api key for the nemotron model, not needed if using a local NIM
   - [ ] `rag_ingest_url`: the full address to the RAG ingest-server, default is to use the RAG local service address 
   - [ ] `rag_url`: the full address to the rag-server,  default is to use the RAG local service address 
 
-- In the nginx configuration section, the following values are used to direct traffic to the AI research assistant backend and RAG backend.
+- In the nginx configuration section, the following values are used to direct traffic to the AI-Q research assistant backend and RAG backend.
 
   ```
     ... 
@@ -128,7 +126,10 @@ kubectl create namespace aira
 Deploy the chart:
 
 ```bash
-helm install aira -n aira deploy/helm/aiq-aira -f deploy/helm/aiq-aira/my-values.yaml
+helm upgrade --install aira -n aira deploy/helm/aiq-aira \
+  --set imagePullSecret.password=$NGC_API_KEY \
+  --set instruct-llm.model.ngcAPIKey=$NGC_API_KEY \
+  --set config.tavily_api_key=$TAVILY_API_KEY
 ```
 
 To make the frontend available you will want to add a node port, for example: 
