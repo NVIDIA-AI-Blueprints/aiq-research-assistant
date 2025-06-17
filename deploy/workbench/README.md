@@ -15,7 +15,6 @@ The AI-Q NVIDIA Research Assistant Blueprint allows you to create a deep researc
 
 The main research agent is written in LangGraph and managed using NVIDIA NeMo Agent Toolkit. The research agent provides a unique deep research capability with these features:
 
-
 - **Deep Research**: Given a report topic and desired report structure, an agent will do the following:
   1. Create a report plan
   2. Search data sources for answers
