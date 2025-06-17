@@ -7,11 +7,11 @@ replicaCount: 1
 # The name of the image pull secret to use for the AIQ container images.
 # Either create the secret manually and update the name here
 # or update the imagePullSecret.password with your NGC API key
-ngcImagePullSecretName: "pull-secret"
+ngcImagePullSecretName: "ngc-secret"
 
 imagePullSecret:
   create: true
-  name: "pull-secret"
+  name: "ngc-secret"
   registry: "nvcr.io"
   username: "$oauthtoken"
   password: "" #UPDATE THIS
@@ -32,7 +32,7 @@ config:
   instruct_model_name: "meta/llama-3.3-70b-instruct"
   instruct_temperature: "0.0"
   instruct_api_key: "not-needed" 
-  instruct_base_url: "http://aira-instruct-llm.aira.svc.cluster.local:8000/v1"
+  instruct_base_url: "http://nim-llm.aira.svc.cluster.local:8000/v1"
   # The nemotron_ settings are for the reasoning LLM
   nemotron_api_key: "not-needed" # not needed as we use the nemotron service from the RAG deployment which does not require an API key
   nemotron_model_name: "nvidia/llama-3.3-nemotron-super-49b-v1"
@@ -58,12 +58,17 @@ command: "/entrypoint.sh"
 # The nemotron llm is assumed to be deployed via the RAG helm chart
 # ------------------------------------------------------------
 
-instruct-llm:
+ngcApiSecret:
+  name: "ngc-api"
+  password: "" # UPDATE THIS
+  create: true
+
+nim-llm:
   enabled: true
   service:
-    name: "aira-instruct-llm"
+    name: "nim-llm"
   image:
-      repository: nvcr.io/nim/meta/llama-3.3-70b-instruct:1.8.5
+      repository: nvcr.io/nim/meta/llama-3.3-70b-instruct
       pullPolicy: IfNotPresent
       tag: "1.8.5"
   resources:
@@ -72,7 +77,6 @@ instruct-llm:
     requests:
       nvidia.com/gpu: 2
   model:
-    ngcAPIKey: "" # UPDATE THIS
     name: "meta/llama-3.3-70b-instruct"
 
 

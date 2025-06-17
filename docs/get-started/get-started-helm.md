@@ -128,7 +128,7 @@ Deploy the chart:
 ```bash
 helm upgrade --install aira -n aira deploy/helm/aiq-aira \
   --set imagePullSecret.password=$NGC_API_KEY \
-  --set instruct-llm.model.ngcAPIKey=$NGC_API_KEY \
+  --set ngcApiSecret.password=$NGC_API_KEY \
   --set config.tavily_api_key=$TAVILY_API_KEY
 ```
 
