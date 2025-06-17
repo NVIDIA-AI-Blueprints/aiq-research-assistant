@@ -117,10 +117,25 @@ phoenix:
 
 ### Deploy 
 
+Set environment variables:
+
+```bash
+export NGC_API_KEY=nvapi-xxx # your API key
+export TAVILY_API_KEY=yyy # your Tavily API key, optional for web search
+```
+
 Create a namespace:
 
 ```bash
 kubectl create namespace aira
+```
+
+Update the chart dependencies:
+
+```bash
+helm repo add nvidia-nim https://helm.ngc.nvidia.com/nim/nvidia/ --username='$oauthtoken' --password=$NGC_API_KEY
+helm repo add nim https://helm.ngc.nvidia.com/nim/ --username='$oauthtoken' --password=$NGC_API_KEY
+helm dependency update deploy/helm/aiq-aira
 ```
 
 Deploy the chart:
