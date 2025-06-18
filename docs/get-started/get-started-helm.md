@@ -115,12 +115,11 @@ The default `values.yaml` file is located at `deploy/helm/aiq-aira/values.yaml`.
 
 Ensure the NVIDIA RAG blueprint has been deployed using hosted endpoints. Then:
 
-If you want to use a NVIDIA build endpoint for the Llama 3.3 70B instruct model:
-
 - Update the value `config.instruct_api_key` with your NVIDIA API key 
 - Update the value `config.nemotron_api_key` with your NVIDIA API key 
 - Update the value `config.instruct_base_url` to be `https://integrate.api.nvidia.com/v1`
 - Update the value `config.nemotron_base_url` to be `https://integrate.api.nvidia.com/v1`
+- Set the value `nim-llm.enabled` to `false`
 
 ### Other options
 
@@ -128,7 +127,7 @@ The following configuration values have appropriate defaults, but may require up
 
 - In the section `config`, update:
   - [ ] `instruct_model_name`: the model to use for general purpose Q&A, default is `meta/llama-3.3-70b-instruct`
-  - [ ] `instruct_base_url`: the model to use for general purpose Q&A, default is a local NIM deployed as part of the AIRA helm chart
+  - [ ] `instruct_base_url`: the model to use for general purpose Q&A, default is a local NIM deployed as part of the AIRA helm chart. If you want to deploy this LLM separately, update this value AND set `nim-llm.enabled` to `false`
   - [ ] `instruct_api_key`: the api key for the instruct model, not needed if using a local NIM
   - [ ] `nemotron_model_name`: the model to use for reasoning, default is `nvidia/llama-3.3-nemotron-super-49b-v1` 
   - [ ] `nemotron_base_url`: the base URL for the nemotron model, default is to use a local NIM deployed as part of the RAG helm chart
