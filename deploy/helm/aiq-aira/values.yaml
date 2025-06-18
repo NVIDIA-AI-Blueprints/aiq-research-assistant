@@ -19,7 +19,7 @@ imagePullSecret:
 # The image repository and tag for the AIQ AIRA backend service.
 image:  
   repository: nvcr.io/nvidia/blueprint/aira-backend
-  tag: v1.0.0
+  tag: v1.1.0
   pullPolicy: IfNotPresent
 
 # The service type and port for the main AIQ AIRA backend service
@@ -252,7 +252,7 @@ frontend:
 
   image:
     repository: nvcr.io/nvidia/blueprint/aira-frontend
-    tag: v1.0.0
+    tag: v1.1.0
     pullPolicy: IfNotPresent
 
   replicaCount: 1
@@ -268,7 +268,7 @@ loadFiles:
   enabled: true
   image:
     repository: nvcr.io/nvidia/blueprint/aira-load-files
-    tag: v1.0.0
+    tag: v1.1.0
     pullPolicy: IfNotPresent
 
 # Enables the Phoenix tracing service

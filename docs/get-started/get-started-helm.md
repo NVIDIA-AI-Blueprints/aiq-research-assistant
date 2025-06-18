@@ -140,7 +140,7 @@ loadFiles:
   enabled: true
   image:
     repository: nvcr.io/nvstaging/blueprint/aira-load-files
-    tag: v1.0.0
+    tag: v1.1.0
     pullPolicy: IfNotPresent
 ```
 
