@@ -48,6 +48,31 @@ Create a namespace:
 kubectl create namespace aira
 ```
 
+### Deploy the chart:
+
+```bash
+helm upgrade --install aira -n aira https://helm.ngc.nvidia.com/nvidia/blueprint/charts/aiq-aira-v1.1.0.tgz \
+  --username='$oauthtoken'  \
+  --password=$NGC_API_KEY \
+  --set imagePullSecret.password=$NGC_API_KEY \
+  --set ngcApiSecret.password=$NGC_API_KEY \
+  --set config.tavily_api_key=$TAVILY_API_KEY
+```
+
+To make the frontend available, you will want to add a node port, for example: 
+
+```bash
+kubectl patch svc aira-aira-frontend -n aira -p '{"spec": {"type": "NodePort", "ports": [{"name": "http", "port": 3001, "nodePort": 30001}]}}'
+```
+
+If you have enabled phoenix tracing, add a node port for the phoenix service as well:
+
+```bash
+kubectl patch svc aira-phoenix -n aira -p '{"spec": {"type": "NodePort", "ports": [{"port": 6006, "nodePort": 30006}]}}'
+```
+
+#### Deploy from source
+
 Update the chart dependencies:
 
 ```bash
@@ -55,6 +80,7 @@ helm repo add nvidia-nim https://helm.ngc.nvidia.com/nim/nvidia/ --username='$oa
 helm repo add nim https://helm.ngc.nvidia.com/nim/ --username='$oauthtoken' --password=$NGC_API_KEY
 helm dependency update deploy/helm/aiq-aira
 ```
+
 
 Deploy the chart:
 
@@ -172,12 +198,12 @@ To stop all services, run the following commands:
 
 1. Delete the AIRA deployment:
 ```bash
-helm uninstall aira -n aira
+helm delete aira -n aira
 ```
 
 2. Delete the RAG deployment:
 ```bash
-helm uninstall rag -n rag
+helm delete rag -n rag
 ```
 
 3. Delete the namespaces:
