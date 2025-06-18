@@ -48,7 +48,7 @@ Create a namespace:
 kubectl create namespace aira
 ```
 
-### Deploy the chart:
+#### Deploy the chart:
 
 ```bash
 helm upgrade --install aira -n aira https://helm.ngc.nvidia.com/nvidia/blueprint/charts/aiq-aira-v1.1.0.tgz \
