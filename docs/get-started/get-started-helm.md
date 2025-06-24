@@ -18,19 +18,20 @@ The system includes the following components:
 - Kubernetes and Helm with [NVIDIA GPU Operator installed](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html#operator-install-guide)
 - [Optional] A Tavily API key to support web search.
 
+### Hardware Prerequisites for Helm Deployment
+
+The AI-Q Research Assistant blueprint requires the deployment of the NVIDIA RAG blueprint. To deploy both blueprints using Helm requires the following hardware configurations:
+
+| Option | RAG Deployment | AIRA Deployment | Total Hardware Requirement |
+|--------|----------------|-----------------|---------------------------|
+| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 3xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>5xH100 80GB total |
+| Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>10xH100 80GB total |
+
 ## Deployment
 
 ### Deploy RAG
 
-The [NVIDIA RAG blueprint Helm deployment guide](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) provides a few options for deploying the RAG blueprint. *How you deploy the RAG blueprint will impact how you deploy the AI-Q research assistant blueprint*. 
-
-The following table provides the main alternatives:
-
-Hardware | RAG Deployment | AIRA Deployment
---- | --- | ---
-1 GPU | [Use Hosted NIM Microservices](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-nvidia-hosted-models) | [Configure for Hosted NIM Microservices](#deploying-with-nvidia-hosted-build-endpoints)
-8x GPU | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) 
-Multi-node 8x GPU system (total of at least 10 GPUs) | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) | [Default Deployment](#deploy-the-ai-q-research-assistant)
+Follow the [NVIDIA RAG blueprint Helm deployment guide](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart).
 
 
 ### Deploy the AI-Q research assistant
@@ -157,19 +158,52 @@ The following configuration values have appropriate defaults, but may require up
 
 ## Create default collections
 
-The AI research assistant demo web application requires two default collections. One collection supports a biomedical research prompt and contains reports on Cystic Fibrosis. The second supports a financial research prompt and contains public financial documents from Alphabet, Meta, and Amazon. To include these default collections in your deployment, include this section in your custom values file:
+The AI research assistant demo web application requires two default collections. One collection supports a biomedical research prompt and contains reports on Cystic Fibrosis. The second supports a financial research prompt and contains public financial documents from Alphabet, Meta, and Amazon.
 
+To load these default collections, apply the standalone Kubernetes job:
 
-```
-loadFiles:
-  enabled: true
-  image:
-    repository: nvcr.io/nvstaging/blueprint/aira-load-files
-    tag: v1.1.0
-    pullPolicy: IfNotPresent
+```bash
+kubectl apply -f deploy/helm/load-files.yaml
 ```
 
-**When this job is enabled, it will begin a file upload process during deployment that could take upwards of 60 minutes. During this period, manual file uploads through the AIRA frontend may not work.**
+### Monitoring the job
+
+You can monitor the job's progress by checking its status:
+
+```bash
+kubectl get jobs -n aira
+```
+
+To view the job's logs (which is helpful for troubleshooting):
+
+```bash
+# Get the pod name first
+kubectl get pods -n aira -l job-name=load-files-nv-ingest
+
+# Then view the logs (replace <pod-name> with the actual pod name)
+kubectl logs -n aira <pod-name> -f
+```
+
+### Retrying the job
+
+The file loading process can take upwards of 60 minutes and may fail due to transient issues. If the job fails, you can easily retry it:
+
+1. Delete the failed job:
+```bash
+kubectl delete job load-files-nv-ingest -n aira
+```
+
+2. Reapply the job:
+```bash
+kubectl apply -f deploy/helm/load-files.yaml
+```
+
+3. Monitor the logs again to ensure it's progressing:
+```bash
+kubectl logs -n aira -l job-name=load-files-nv-ingest -f
+```
+
+**Note**: During the file loading process, manual file uploads through the AIRA frontend may not work properly. Wait for the job to complete before attempting manual uploads.
 
 ## Enable phoenix tracing
 

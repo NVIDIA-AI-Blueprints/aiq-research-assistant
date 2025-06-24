@@ -261,16 +261,6 @@ frontend:
 # The following values are optional utility services
 # ------------------------------------------------------------
 
-# Creates two default milvus collections with sample PDFs
-# This job, if enabled, can take ~60 minutes to complete after helm inst
-# During this time manual uploads from the frontend may not work
-loadFiles:
-  enabled: true
-  image:
-    repository: nvcr.io/nvidia/blueprint/aira-load-files
-    tag: v1.1.0
-    pullPolicy: IfNotPresent
-
 # Enables the Phoenix tracing service
 phoenix:
   enabled: true
