@@ -1,7 +1,0 @@
-apiVersion: v1
-data:
-  nginx.conf: |-
-    {{ .Values.nginx_config.conf | nindent 4 }}
-kind: ConfigMap
-metadata:
-  name: {{ .Values.nginx_config.name }}
