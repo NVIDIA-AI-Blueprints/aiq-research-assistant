@@ -39,7 +39,7 @@ To identify errors with collections or document upload, follow the steps below.
 
 To identify errors with Rreport planning generation, follow the steps below.
 
-1. Attempt to connect to the AI-Q Research Assistant backend API. In a browser, navigate to http://aira-backend:3838/docs, replacing aira-backend with the *PUBLIC* IP address of the AI-Q Research Assistant service or `localhost`. Use the API docs to run the `/generate_query`. If the docs do not load, check the AI-Q Research Assistant services logs `docker logs aira-backend -f`. 
+1. Attempt to connect to the AI-Q Research Assistant backend API. In a browser, navigate to http://aira-backend:3838/docs, replacing `<aira-backend>` with the *PUBLIC* IP address of the AI-Q Research Assistant service or `localhost`. Use the API docs to run the `/generate_query`. If the docs do not load, check the AI-Q Research Assistant services logs `docker logs aira-backend -f`. 
 
 2. If the docs load, but the example API request fails or the UI stalls after saying "Generating queries", the issue will likely be with the `nemotron` model configuration in the AI-Q Research Assistant configuration file. Verify this model configuration is correct, and attempt to make a sample request directly to the LLM. Example requests are provided on `build.nvidia.com`.
 
@@ -48,16 +48,16 @@ To identify errors with Rreport planning generation, follow the steps below.
 
 To identify errors with Q&A, follow the steps below.
 
-1. Attempt to connect to the AI-Q Research Assistant backend API. In a browser, navigate to http://aira-backend:3838/docs, replacing aira-backend with the *PUBLIC* IP address of the AI-Q Research Assistant service or `localhost`. Use the API docs to run the `/artifact_qa` call. If the docs do not load, check the AI-Q Research Assistant services logs `docker logs aira-backend -f`. 
+1. Attempt to connect to the AI-Q Research Assistant backend API. In a browser, navigate to http://aira-backend:3838/docs, replacing `<aira-backend>` with the *PUBLIC* IP address of the AI-Q Research Assistant service or `localhost`. Use the API docs to run the `/artifact_qa` call. If the docs do not load, check the AI-Q Research Assistant services logs `docker logs aira-backend -f`. 
 
-2. If the docs load, but the example API request fails or the UI stalls after showing "AIQ Thinking", the most likely issue is with the `instruct_llm` model configuration in the AI-Q Research Assistant configuration file. Verify this model configuration is correct, and attempt to make a sample request directly to the LLM. Example requests are provided on `build.nvidia.com`.
+2. If the docs load, but the example API request fails or the UI stalls after showing "AIQ Thinking", the issue is likely with the `instruct_llm` model configuration in the AI-Q Research Assistant configuration file. Verify this model configuration is correct, and attempt to make a sample request directly to the LLM. Example requests are provided on https://build.nvidia.com.
 
-## Errors with RAG search during report generation
+## Errors with RAG Search During Report Generation
 
-Ensure you have appropriately configured the `rag_url` settings in the AI-Q Research Assistant configuration file, or provided appropriate values in the helm values.yaml file.
+Ensure you have appropriately configured the `rag_url` settings in the AI-Q Research Assistant configuration file, or provided appropriate values in the helm `values.yaml` file.
 
 If you are using one of the default report topics and prompts, ensure you have [loaded the default collections](./get-started/get-started-docker-compose.md#add-default-collections).
 
-## Errors with web search during report generation
+## Errors with Web Search During Report Generation
 
-Ensure you have provided a valid TAVILY API KEY, and have set the `TAVILY_API_KEY` environment variable.
+Ensure you have provided a valid Taviliy API key, and have set the `TAVILY_API_KEY` environment variable.

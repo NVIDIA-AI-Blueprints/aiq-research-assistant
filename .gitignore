@@ -213,6 +213,8 @@ tags
 # Vector db files
 deploy/compose/volumes
 examples/simple_rag/deploy/volumes
+examples/rag_demo/deploy/volumes
+examples/rag_demo/ingestion/data
 examples/rag/compose/volumes
 
 # Mac Metadata
@@ -220,3 +222,30 @@ examples/rag/compose/volumes
 
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
 /.idea
+
+**/uv.lock
+
+# Helm
+deploy/helm/**/*.tgz
+
+# Ignore generated or temporary files managed by the Workbench
+.project/*
+!.project/spec.yaml
+!.project/configpacks
+
+# General ignores
+.DS_Store
+
+# Temp directories, notebooks created by jupyterlab
+.Trash-*/
+.jupyter/
+.local/
+
+# Python distribution / packaging
+share/python-wheels/
+
+.nox/
+*.py,cover
+cover/
+
+# Workbench Project Layout

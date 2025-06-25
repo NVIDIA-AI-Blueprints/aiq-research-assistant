@@ -1,0 +1,15 @@
+apiVersion: v2
+dependencies:
+  - name: nginx
+    repository: file://charts/nginx
+    version: 0.1.0
+
+  - condition: nim-llm.enabled
+    name: nim-llm
+    repository: https://helm.ngc.nvidia.com/nim
+    version: 1.7.0
+
+description: A Helm chart for NVIDIA AI-Q Research Assistant Blueprint
+name: aiq-aira
+type: application
+version: v1.1.0

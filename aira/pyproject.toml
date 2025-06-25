@@ -84,6 +84,9 @@ dev = [
 [tool.uv.sources]
 aiq = { path = "../ai-query-engine", editable = true }
 
+[tool.uv]
+managed = true
+
 [project.entry-points.'aiq.plugins']
 aiq_aira = "aiq_aira.register"
 

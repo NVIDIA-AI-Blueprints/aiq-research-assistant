@@ -1,5 +1,9 @@
 # Change Log
 
+Release v1.1.0 
+- Adds support for Helm
+- Adds support for NVIDIA Workbench
+
 Release v1.0.0
 
 Initial release of the NVIDIA AI-Q Research Assistant Blueprint featuring:

@@ -21,7 +21,7 @@ docker run \
   -e PYTHONUNBUFFERED=1 \
   -v /tmp:/tmp-data \
   --network nvidia-rag \
-  nvcr.io/nvidia/blueprint/aira-load-files:v1.0.0
+  nvcr.io/nvidia/blueprint/aira-load-files:v1.1.0
 ```
 
 ## Bulk Upload via Python 

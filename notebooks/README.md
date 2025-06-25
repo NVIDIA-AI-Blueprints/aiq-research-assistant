@@ -4,7 +4,7 @@
 This repository contains a Jupyter notebook demonstrating the usage of NVIDIA Agent Intelligence Research Assistant (AI-Q Research Assistant) Blueprint APIs.
 
 ### Notebook:
-- **`get_started_nvidia_api.ipynb`**: Demonstrates how to deploy AI-Q Research Assistant, explore backend APIS, and create reports.
+- **`get_started_nvidia_api.ipynb`**: Demonstrates how to deploy AI-Q Research Assistant, explore backend APIs, and create reports.
 
 
 ## Setting Up the Environment
@@ -24,7 +24,7 @@ uv pip install ipykernel jupyter
 ```
 
 ### 2. Start JupyterLab
-Run the following command to start JupyterLab, allowing access from any IP:
+Start JupyterLab and access from any IP:
 ```bash
 uv run jupyter lab --allow-root --ip=0.0.0.0 --NotebookApp.token='' --port=8889 --no-browser
 ```

@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiq-aira.fullname" . }}-config
+data:
+  config.yml: |+
+    general:
+      use_uvloop: true
+      {{- if .Values.phoenix.enabled }}
+      telemetry:
+        tracing:
+          phoenix:
+            _type: phoenix
+            endpoint: http://{{ .Release.Name }}-phoenix.{{ .Release.Namespace }}.svc.cluster.local:6006/v1/traces
+            project: ai_researcher
+      {{- end }}
+      front_end:
+        _type: fastapi
+        cors:
+          allow_origins: ['*']
+        endpoints:
+          - path: /generate_query
+            method: POST
+            description: Creates the query
+            function_name: generate_query
+          - path: /generate_summary
+            method: POST
+            description: Generates the summary
+            function_name: generate_summary
+          - path: /artifact_qa
+            method: POST
+            description: Q/A or chat about a previously generated artifact
+            function_name: artifact_qa
+          - path: /aiqhealth
+            method: GET
+            description: Health check for the AIQ AIRA service
+            function_name: health_check
+          - path: /default_collections
+            method: GET
+            description: Get the default collections
+            function_name: default_collections
+    llms:
+      instruct_llm:
+        _type: openai
+        model_name: {{ .Values.config.instruct_model_name }}
+        temperature: {{ .Values.config.instruct_temperature }}
+        api_key: {{ .Values.config.instruct_api_key }}
+        base_url: {{ .Values.config.instruct_base_url }}
+      nemotron:
+        _type: openai
+        model_name: {{ .Values.config.nemotron_model_name }}
+        temperature: {{ .Values.config.nemotron_temperature }}
+        base_url: {{ .Values.config.nemotron_base_url }}
+        max_tokens: {{ .Values.config.nemotron_max_tokens }}
+        stream: {{ .Values.config.nemotron_stream }}
+        api_key: {{ .Values.config.nemotron_api_key }}
+    functions:
+      generate_query:
+        _type: generate_queries
+      generate_summary:
+        _type: generate_summaries
+        rag_url: {{ .Values.config.rag_url }}
+      artifact_qa:
+        _type: artifact_qa
+        llm_name: instruct_llm
+        rag_url: {{ .Values.config.rag_url }}
+      health_check:
+        _type: health_check
+      default_collections:
+        _type: default_collections
+        collections:
+          - name: "Biomedical_Dataset"
+            topic: "Biomedical"
+            report_organization: "You are a medical researcher who specializes in cystic fibrosis. Create a report analyzing how CFTR modulators can be used to restore CFTR protein functions. Include a 150-200 word abstract and a methods, results, and discussion section. Format your answer in paragraphs. Consider all (and only) relevant data. Give a factual report with cited sources."
+          - name: "Financial_Dataset"
+            topic: "Financial"
+            report_organization: "You are a financial analyst who specializes in financial statement analysis. Write a financial report analyzing the 2023 financial performance of Amazon. Identify trends in revenue growth, net income, and total assets. Discuss how these trends affected Amazon's yearly financial performance for 2023. Your output should be organized into a brief introduction, as many sections as necessary to create a comprehensive report, and a conclusion. Format your answer in paragraphs. Use factual sources such as Amazon's quarterly meeting releases for 2023. Cross analyze the sources to draw original and sound conclusions and explain your reasoning for arriving at conclusions. Do not make any false or unverifiable claims. I want a factual report with cited sources."
+    workflow:
+      _type: ai_researcher
+      

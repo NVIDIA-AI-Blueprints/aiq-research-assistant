@@ -2,16 +2,15 @@ services:
   aira-instruct-llm:
     container_name: aira-instruct-llm
     image: nvcr.io/nim/meta/llama-3.3-70b-instruct:latest
-    runtime: nvidia
     volumes:
-    - ${MODEL_DIRECTORY:-./}:/opt/nim/.cache
+    - ${MODEL_DIRECTORY:-/tmp}:/opt/nim/.cache
     user: "${USERID}"
     ports:
     - "8050:8000"
     expose:
     - "8050"
     environment:
-      NGC_API_KEY: ${NGC_API_KEY}
+      NGC_API_KEY: ${NVIDIA_API_KEY}
     shm_size: 20gb
     deploy:
       resources:
@@ -19,7 +18,7 @@ services:
           devices:
             - driver: nvidia
               # RAG uses 0,1 so we assign 2,3 to the LLM
-              device_ids: ['${AIRA_LLM_MS_GPU_ID:-2,3}']
+              device_ids: ['${AIRA_LLM_MS_GPU_ID_0:-2}', '${AIRA_LLM_MS_GPU_ID_1:-3}']
               capabilities: [gpu] 
     healthcheck:
       test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/v1/health/ready')"]
@@ -28,12 +27,12 @@ services:
       retries: 100
     networks:
       - nvidia-rag
-    profiles: ["aira-instruct-llm"]
+    profiles: ["aira-gpu"]
 
-  aira-backend:
+  aira-backend-no-gpu: &aira-backend-no-gpu
+    hostname: aira-backend
     container_name: aira-backend
-    image: nvcr.io/nvidia/blueprint/aira-backend:v1.1.0
-    runtime: nvidia
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.0.0
     build:
       context: ../../
       dockerfile: aira/Dockerfile
@@ -46,12 +45,18 @@ services:
       TAVILY_API_KEY: ${TAVILY_API_KEY:-this-is-a-test-key}
       AIRA_APPLY_GUARDRAIL: "false"
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
-      AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
+      AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-true}
     volumes:
       - ../../aira/configs:/app/configs
     networks:
       - nvidia-rag
-    profiles: ["aira"]
+    profiles: ["aira-no-gpu"]
+
+  aira-backend-gpu: 
+    <<: *aira-backend-no-gpu
+    environment:
+      AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
+    profiles: ["aira-gpu"]
 
   aira-nginx:
     image: nginx:latest
@@ -67,25 +72,36 @@ services:
       - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
-    depends_on:
-      - aira-backend
     networks:
       - nvidia-rag
-    profiles: ["aira"]
+    profiles: ["aira-no-gpu", "aira-gpu"]
     
   aira-frontend:
     container_name: aira-frontend
-    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.1.0
+    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.0.0
     ports:
       - "3001:3001"
     expose:
       - "3001"
     networks:
       - nvidia-rag
+    depends_on:
+      - aira-nginx
     environment:
       NVWB_TRIM_PREFIX: true
       INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
-    profiles: ["aira"]
+    profiles: ["aira-no-gpu", "aira-gpu"]
+
+  aira-load-files:
+    image: nvcr.io/nvidia/blueprint/aira-load-files:v1.0.0
+    environment:
+      - RAG_INGEST_URL=http://${RAG_INGEST_URL:-ingestor-server}:8082/v1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - /tmp:/tmp-data
+    networks:
+      - nvidia-rag
+    profiles: ["load-default-files"]
 
 # Use the nvidia-rag network created by the 
 # RAG docker compose deployment

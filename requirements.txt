@@ -1,0 +1,3 @@
+# ==== For NVIDIA AI WORKBENCH Users Only! ====
+# See pyproject.toml for blueprint dependencies
+jupyterlab>3.0

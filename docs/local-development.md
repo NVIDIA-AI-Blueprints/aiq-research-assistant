@@ -47,7 +47,7 @@ docker run \
 ```bash
 docker run \
   -e INFERENCE_ORIGIN=http://localhost:8051 \
-  nvcr.io/nvidia/blueprint/aira-frontend:v1.0.0
+  nvcr.io/nvidia/blueprint/aira-frontend:v1.1.0
 ```
 
 ## Unit Tests
