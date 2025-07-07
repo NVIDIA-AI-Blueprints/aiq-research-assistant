@@ -148,26 +148,15 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
     # Unpack results.
     generated_answers = [result[0] for result in results]
     citations = [result[1] if result[1] is not None else "" for result in results]
-    relevancy_list = [result[2] for result in results]
-    web_results = [result[3] for result in results]
-    citations_web = [result[4] if result[4] is not None else "" for result in results]
 
     # Format the sources (producing a combined XML <sources> structure).
-    search_str = deduplicate_and_format_sources(citations,
-                                                generated_answers,
-                                                relevancy_list,
-                                                web_results,
-                                                state_queries)
+    search_str = deduplicate_and_format_sources(
+        citations, generated_answers, state_queries
+    )
 
-    all_citations = []
-    for idx, citation in enumerate(citations):
-        if relevancy_list[idx]["score"] == "yes":
-            all_citations.append(citation)
-        if relevancy_list[idx]["score"] != "yes" and citations_web[idx] not in ["N/A", ""]:
-            all_citations.append(citations_web[idx])
 
-    all_citations = set(all_citations)  # remove duplicates
-    citation_str = "\n".join(all_citations)
+    unique_citations = set(citations) # remove duplicates
+    citation_str = "\n".join(unique_citations)
     return {"citations": citation_str, "web_research_results": [search_str]}
 
 
@@ -262,7 +251,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             gen_query = GeneratedQuery(query=reflection_obj, report_section="All", rationale="Reflection-based query")
 
 
-        rag_answer, rag_citation, relevancy, web_answer, web_citation = await process_single_query(
+        rag_answer, rag_citation, web_citation = await process_single_query(
             query=gen_query.query,
             config=config,
             writer=writer,
@@ -271,16 +260,13 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             search_web=search_web
         )
 
-        search_str = deduplicate_and_format_sources([rag_citation], [rag_answer], [relevancy], [web_answer],
-                                                    [gen_query])
+
+        search_str = deduplicate_and_format_sources(
+            [rag_citation], [rag_answer], [gen_query]
+        )
 
         state.web_research_results.append(search_str)
-
-        if relevancy['score'] == "yes" and rag_citation is not None:
-            state.citations = "\n".join([state.citations, rag_citation])
-
-        if relevancy['score'] != "yes" and web_citation not in ["N/A", ""] and web_citation is not None:
-            state.citations = "\n".join([state.citations, web_citation])
+        state.citations = "\n".join([state.citations, rag_citation])
 
         # Most recent web research
         existing_summary = state.running_summary
