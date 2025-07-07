@@ -1,0 +1,6 @@
+appdirs
+click
+dotenv
+httpx
+pydantic
+pyjwt
