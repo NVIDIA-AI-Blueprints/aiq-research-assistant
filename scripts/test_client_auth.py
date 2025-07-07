@@ -442,9 +442,9 @@ async def eci_request(eci_endpoint: str, query: str):
             payload = {
                 "query": query,
                 "pageSize": 10,
-                "requestOptions": {
-                    "datasourcesFilter": ["NVBUGS"]
-                },
+                # "requestOptions": {
+                #     "datasourcesFilter": ["NVBUGS"]
+                # },
             }
 
             if (cursor is not None):
