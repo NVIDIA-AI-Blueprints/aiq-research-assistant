@@ -130,7 +130,7 @@ def custom_raise_for_status(response: httpx.Response):
     raise HTTPStatusError(message, request=response.request, response=response)
 
 
-async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
+async def starfleet_login_flow(*, client: httpx.AsyncClient, prod: bool = False) -> SavedCredentials:
 
     client_id = os.getenv("AIQ_STARFLEET_CLIENT_ID")
 
@@ -148,7 +148,7 @@ async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
         "scope": ["openid", "email", "profile"],
     }
 
-    response = await client.post("https://stg.login.nvidia.com/device/authorize", headers=headers, data=params)
+    response = await client.post(f"https://{'stg.' if not prod else ''}login.nvidia.com/device/authorize", headers=headers, data=params)
 
     custom_raise_for_status(response)
 
@@ -170,7 +170,7 @@ async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
             "client_id": client_id,
         }
 
-        response = await client.post("https://stg.login.nvidia.com/token", headers=headers, data=params)
+        response = await client.post(f"https://{'stg.' if not prod else ''}login.nvidia.com/token", headers=headers, data=params)
 
         if (response.status_code == 400):
             if (response.json().get("error") == "authorization_pending"):
@@ -192,7 +192,7 @@ async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
         "Authorization": f"Bearer {token_response.access_token}",
     }
 
-    response = await client.get("https://stg.login.nvidia.com/client_token", headers=headers)
+    response = await client.get(f"https://{'stg.' if not prod else ''}login.nvidia.com/client_token", headers=headers)
 
     custom_raise_for_status(response)
 
@@ -210,7 +210,7 @@ async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
     return saved_credentials
 
 
-async def starfleet_refresh_flow(client: httpx.AsyncClient, saved_credentials: SavedCredentials) -> SavedCredentials:
+async def starfleet_refresh_flow(*, client: httpx.AsyncClient, saved_credentials: SavedCredentials, prod: bool = False) -> SavedCredentials:
     # Decode the id_token to get the sub
     decoded_id_token = jwt.decode(saved_credentials.id_token, options={"verify_signature": False})
 
@@ -231,7 +231,7 @@ async def starfleet_refresh_flow(client: httpx.AsyncClient, saved_credentials: S
         "sub": decoded_id_token["sub"],
     }
 
-    response = await client.post("https://stg.login.nvidia.com/token", headers=headers, data=params)
+    response = await client.post(f"https://{'stg.' if not prod else ''}login.nvidia.com/token", headers=headers, data=params)
 
     custom_raise_for_status(response)
 
@@ -247,11 +247,11 @@ async def starfleet_refresh_flow(client: httpx.AsyncClient, saved_credentials: S
     return saved_credentials
 
 
-async def starfleet_login(force_login: bool = False, force_refresh: bool = False):
+async def starfleet_login(*, prod: bool = False, force_login: bool = False, force_refresh: bool = False):
 
     # First, check if we have saved credentials
     app_data_dir = appdirs.user_cache_dir(appauthor="NVIDIA", appname="nvidia-aiq-util")
-    credentials_file = os.path.join(app_data_dir, "starfleet-credentials.json")
+    credentials_file = os.path.join(app_data_dir, f"starfleet-credentials{'-stg' if not prod else '-prod'}.json")
 
     saved_credentials: SavedCredentials | None = None
 
@@ -273,7 +273,7 @@ async def starfleet_login(force_login: bool = False, force_refresh: bool = False
                     print(
                         f"{YELLOW}Existing Starfleet Credentials found but ID token has expired. Refreshing...{RESET}")
 
-                    saved_credentials = await starfleet_refresh_flow(client, saved_credentials)
+                    saved_credentials = await starfleet_refresh_flow(client=client, saved_credentials=saved_credentials, prod=prod)
 
                 else:
                     # Both tokens have expired, so we need to refresh them
@@ -291,7 +291,7 @@ async def starfleet_login(force_login: bool = False, force_refresh: bool = False
             saved_credentials = None
 
         if (not saved_credentials):
-            saved_credentials = await starfleet_login_flow(client)
+            saved_credentials = await starfleet_login_flow(client=client, prod=prod)
 
         # Save both the token and the client token to a file on the machine in the default appdata directory
         os.makedirs(app_data_dir, exist_ok=True)
@@ -306,7 +306,7 @@ async def starfleet_login(force_login: bool = False, force_refresh: bool = False
     return saved_credentials
 
 
-async def ssa_login_flow(client: httpx.AsyncClient, eci_endpoint: str) -> SSASavedCredentials:
+async def ssa_login_flow(*, client: httpx.AsyncClient, prod: bool = False) -> SSASavedCredentials:
 
     client_id = os.getenv("AIQ_SSA_CLIENT_ID")
     client_secret = os.getenv("AIQ_SSA_CLIENT_SECRET")
@@ -317,7 +317,7 @@ async def ssa_login_flow(client: httpx.AsyncClient, eci_endpoint: str) -> SSASav
     if (not client_secret):
         raise Exception("AIQ_SSA_CLIENT_SECRET environment variable not set")
 
-    response = await client.get(f"{eci_endpoint}/.well-known/oauth-authorization-server")
+    response = await client.get(f"https://enterprise-content-intelligence{'-stg' if not prod else ''}.nvidia.com/.well-known/oauth-authorization-server")
 
     custom_raise_for_status(response)
 
@@ -359,10 +359,10 @@ async def ssa_login_flow(client: httpx.AsyncClient, eci_endpoint: str) -> SSASav
     return ssa_saved_credentials
 
 
-async def ssa_login(force_login: bool, eci_endpoint: str):
+async def ssa_login(*, prod: bool = False, force_login: bool = False):
 
     app_data_dir = appdirs.user_cache_dir(appauthor="NVIDIA", appname="nvidia-aiq-util")
-    credentials_file = os.path.join(app_data_dir, "ssa-credentials.json")
+    credentials_file = os.path.join(app_data_dir, f"ssa-credentials{'-stg' if not prod else '-prod'}.json")
 
     saved_credentials: SSASavedCredentials | None = None
 
@@ -394,7 +394,7 @@ async def ssa_login(force_login: bool, eci_endpoint: str):
             saved_credentials = None
 
         if (not saved_credentials):
-            saved_credentials = await ssa_login_flow(client, eci_endpoint)
+            saved_credentials = await ssa_login_flow(client=client, prod=prod)
 
         # Save both the token and the client token to a file on the machine in the default appdata directory
         os.makedirs(app_data_dir, exist_ok=True)
@@ -409,37 +409,37 @@ async def ssa_login(force_login: bool, eci_endpoint: str):
     return saved_credentials
 
 
-async def get_starfleet_token() -> str:
+async def get_starfleet_token(*, prod: bool = False) -> str:
 
     token = os.getenv("AIQ_STARFLEET_TOKEN", None)
 
     if (token is None):
-        starfleet_saved_credentials = await starfleet_login()
+        starfleet_saved_credentials = await starfleet_login(prod=prod, force_login=False)
 
         token = starfleet_saved_credentials.id_token
 
     return token
 
 
-async def get_ssa_token(eci_endpoint: str) -> str:
+async def get_ssa_token(*, prod: bool = False) -> str:
 
     token = os.getenv("AIQ_SSA_TOKEN", None)
 
     if (token is None):
-        ssa_saved_credentials = await ssa_login(force_login=False, eci_endpoint=eci_endpoint)
+        ssa_saved_credentials = await ssa_login(prod=prod, force_login=False)
 
         token = ssa_saved_credentials.access_token
 
     return token
 
 
-async def eci_request(eci_endpoint: str, query: str):
+async def eci_request(*, prod: bool = False, query: str):
 
     async with httpx.AsyncClient() as client:
 
         # First, get the saved credentials
-        starfleet_token = await get_starfleet_token()
-        ssa_token = await get_ssa_token(eci_endpoint=eci_endpoint)
+        starfleet_token = await get_starfleet_token(prod=prod)
+        ssa_token = await get_ssa_token(prod=prod)
 
         # Now, make the request
         headers = {
@@ -462,13 +462,13 @@ async def eci_request(eci_endpoint: str, query: str):
             if (cursor is not None):
                 payload["cursor"] = cursor
 
-            response = await client.post(f"{eci_endpoint}/v1/content/search", headers=headers, json=payload)
+            response = await client.post(f"https://enterprise-content-intelligence{'-stg' if not prod else ''}.nvidia.com/v1/content/search", headers=headers, json=payload)
 
             custom_raise_for_status(response)
 
             response_json = response.json()
 
-            print(f"{GREEN}Successfully made ECIrequest.{RESET}")
+            print(f"{GREEN}Successfully made ECI request.{RESET}")
             print(json.dumps(response_json, indent=2))
 
             if ("cursor" in response_json and response_json["cursor"]):
@@ -481,36 +481,36 @@ async def eci_request(eci_endpoint: str, query: str):
 
 
 @click.group(name="aiq", invoke_without_command=True, no_args_is_help=True)
-def cli():
+@click.option("--prod", is_flag=True, help="Use production ECI endpoint")
+@click.pass_context
+def cli(ctx: click.Context, prod: bool = False):
 
     dotenv.load_dotenv()
+
+    ctx.ensure_object(dict)
+    ctx.obj["prod"] = prod
 
 
 @cli.command()
 @click.option("--force-login", is_flag=True, help="Force login to Starfleet")
 @click.option("--force-refresh", is_flag=True, help="Force refresh of Starfleet credentials")
-def starfleet(force_login: bool, force_refresh: bool):
-    asyncio.run(starfleet_login(force_login=force_login, force_refresh=force_refresh))
+@click.pass_context
+def starfleet(ctx: click.Context, force_login: bool, force_refresh: bool):
+    asyncio.run(starfleet_login(prod=ctx.obj["prod"], force_login=force_login, force_refresh=force_refresh))
 
 
 @cli.command()
 @click.option("--force-login", is_flag=True, help="Force login to SSA")
-@click.option("--eci-endpoint",
-              type=str,
-              default="https://enterprise-content-intelligence-stg.nvidia.com",
-              help="The endpoint to make the request to")
-def ssa(force_login: bool, eci_endpoint: str):
-    asyncio.run(ssa_login(force_login=force_login, eci_endpoint=eci_endpoint))
+@click.pass_context
+def ssa(ctx: click.Context, force_login: bool):
+    asyncio.run(ssa_login(prod=ctx.obj["prod"], force_login=force_login))
 
 
 @cli.command()
-@click.option("--eci-endpoint",
-              type=str,
-              default="https://enterprise-content-intelligence-stg.nvidia.com",
-              help="The endpoint to make the request to")
 @click.option("--query", type=str, help="The query to make to the ECI")
-def eci(query: str, eci_endpoint: str):
-    asyncio.run(eci_request(eci_endpoint=eci_endpoint, query=query))
+@click.pass_context
+def eci(ctx: click.Context, query: str):
+    asyncio.run(eci_request(prod=ctx.obj["prod"], query=query))
 
 
 if __name__ == "__main__":
