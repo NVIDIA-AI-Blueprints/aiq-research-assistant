@@ -131,12 +131,18 @@ def custom_raise_for_status(response: httpx.Response):
 
 
 async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
+
+    client_id = os.getenv("AIQ_STARFLEET_CLIENT_ID")
+
+    if (not client_id):
+        raise Exception("AIQ_STARFLEET_CLIENT_ID environment variable not set")
+
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
     params = {
-        "client_id": "hcp8mQYPXzgxbZ9fvlSOZeAUf-Y4S_JAt_pzG0PPjTs",
+        "client_id": client_id,
         "device_id": get_mac_address(),
         "display_name": socket.gethostname(),
         "scope": ["openid", "email", "profile"],
@@ -161,7 +167,7 @@ async def starfleet_login_flow(client: httpx.AsyncClient) -> SavedCredentials:
         params = {
             "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
             "device_code": device_auth_response.device_code,
-            "client_id": "hcp8mQYPXzgxbZ9fvlSOZeAUf-Y4S_JAt_pzG0PPjTs",
+            "client_id": client_id,
         }
 
         response = await client.post("https://stg.login.nvidia.com/token", headers=headers, data=params)
@@ -212,9 +218,15 @@ async def starfleet_refresh_flow(client: httpx.AsyncClient, saved_credentials: S
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
+    client_id = os.getenv("AIQ_STARFLEET_CLIENT_ID")
+
+    if (not client_id):
+        raise Exception("AIQ_STARFLEET_CLIENT_ID environment variable not set")
+
+
     params = {
         "grant_type": "urn:ietf:params:oauth:grant-type:client_token",
-        "client_id": "hcp8mQYPXzgxbZ9fvlSOZeAUf-Y4S_JAt_pzG0PPjTs",
+        "client_id": client_id,
         "client_token": saved_credentials.client_token,
         "sub": decoded_id_token["sub"],
     }
