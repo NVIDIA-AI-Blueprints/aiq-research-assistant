@@ -150,7 +150,7 @@ async def process_single_query(
     rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
     
     writer({"rag_answer": rag_citation}) # citation includes the answer
-
+    logger.info(f"RAG ANSWER: {rag_citation}")
     
     rag_relevancy = await check_relevancy(llm, query, rag_answer, writer)
 
@@ -158,7 +158,7 @@ async def process_single_query(
         logger.info("RAG NOT RELEVANT, SEARCHING ECI")
         eci_answer, eci_citation = await search_eci(query, writer)
         writer({"eci_answer": eci_citation})
-
+        logger.info(f"ECI ANSWER: {eci_citation}")
         eci_relevancy = await check_relevancy(llm, query, eci_answer, writer)
 
 
@@ -166,6 +166,7 @@ async def process_single_query(
             logger.info("ECI NOT RELEVANT, SEARCHING WEB")
             web_answer, web_citation = await search_tavily(query, writer)
             writer({"web_answer": web_citation})
+            logger.info(f"WEB ANSWER: {eci_citation}")
 
     if rag_relevancy["score"] == "yes":
         return rag_answer, rag_citation

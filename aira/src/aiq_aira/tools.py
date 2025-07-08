@@ -30,6 +30,8 @@ from aiq_aira.utils import get_domain
 from langchain_community.tools import TavilySearchResults
 from urllib.parse import urljoin
 import logging
+import re
+from aiq_aira.eci_tool import eci_request
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +230,7 @@ async def search_eci(prompt: str, writer: StreamWriter):
     try:
         # todo call eci search tool 
         print("calling ECI")
-        response = call_eci(prompt)
+        response = await eci_request("https://enterprise-content-intelligence-stg.nvidia.com", prompt)
         return documents_from_glean_response(prompt, response)
 
     except Exception as e:
@@ -241,7 +243,7 @@ Failed ECI search for: {prompt}
         })
 
     
-    return ("ECI answer", "ECI citation")
+    return ("", "")
 
 
 def documents_from_glean_response(query, response):
@@ -259,7 +261,7 @@ def documents_from_glean_response(query, response):
         document_contents.append(snippet_text)
         document_urls.append(document["document"]["url"])
     
-    return format_citation(query, "\n".join(document_contents), " ".join(document_urls))
+    return "\n".join(document_contents), format_citation(query, "\n".join(document_contents), " ".join(document_urls))
 
 
 def format_citation(query, answer, urls):

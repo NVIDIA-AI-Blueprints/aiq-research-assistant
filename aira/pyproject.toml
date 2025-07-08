@@ -10,6 +10,7 @@ root = ".."
 name = "aiq_aira"
 dynamic = ["version"]
 dependencies = [
+  "jwt",
   "agentiq>=1.1.0a1",
   "agentiq-langchain>=1.1.0a1",
   "aiohappyeyeballs==2.4.4",
