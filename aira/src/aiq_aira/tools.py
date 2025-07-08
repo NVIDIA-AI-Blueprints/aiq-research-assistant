@@ -228,7 +228,8 @@ async def search_eci(prompt: str, writer: StreamWriter):
     try:
         # todo call eci search tool 
         print("calling ECI")
-        
+        response = call_eci(prompt)
+        return documents_from_glean_response(prompt, response)
 
     except Exception as e:
         logger.error(f"ECI SEARCH FAILED {e}")
@@ -241,3 +242,37 @@ Failed ECI search for: {prompt}
 
     
     return ("ECI answer", "ECI citation")
+
+
+def documents_from_glean_response(query, response):
+    """
+    Create a formatted string of documents from a Glean response
+    """
+    document_contents = []
+    document_urls = []
+    for document in response["results"]:
+        snippet_text = ""  # Initialize as empty string instead of None
+        for snippet in document["snippets"]:
+            if "text" in snippet:
+                snippet_text = snippet_text + "\n" + snippet["text"]
+    
+        document_contents.append(snippet_text)
+        document_urls.append(document["document"]["url"])
+    
+    return format_citation(query, "\n".join(document_contents), " ".join(document_urls))
+
+
+def format_citation(query, answer, urls):
+    """ Combine query, answer, and tools into a formatted source string """
+    return f"""
+---
+QUERY: 
+{query}
+
+ANSWER: 
+{answer}
+
+CITATION:
+{urls}
+
+"""

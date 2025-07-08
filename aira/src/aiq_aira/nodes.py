@@ -251,7 +251,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             gen_query = GeneratedQuery(query=reflection_obj, report_section="All", rationale="Reflection-based query")
 
 
-        rag_answer, rag_citation, web_citation = await process_single_query(
+        rag_answer, rag_citation = await process_single_query(
             query=gen_query.query,
             config=config,
             writer=writer,
