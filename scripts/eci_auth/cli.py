@@ -487,7 +487,10 @@ async def get_ssa_token(*, prod: bool = False) -> str:
     return token
 
 
-async def eci_request(*, prod: bool = False, query: str, data_sources: list[str] = None):
+async def eci_request(*,
+                      prod: bool = False,
+                      query: str,
+                      data_sources: list[str] = None):
 
     async with httpx.AsyncClient() as client:
 
@@ -517,9 +520,7 @@ async def eci_request(*, prod: bool = False, query: str, data_sources: list[str]
                 # Convert the data sources to uppercase
                 data_sources = [ds.upper() for ds in data_sources]
 
-                payload["requestOptions"] = {
-                    "datasourcesFilter": data_sources
-                }
+                payload["requestOptions"] = {"datasourcesFilter": data_sources}
 
             response = await client.post(
                 f"https://enterprise-content-intelligence{'-stg' if not prod else ''}.nvidia.com/v1/content/search",
@@ -528,14 +529,15 @@ async def eci_request(*, prod: bool = False, query: str, data_sources: list[str]
 
             custom_raise_for_status(response)
 
-            response_json = response.json()
+            response_json: dict = response.json()
 
             print(f"{GREEN}Successfully made ECI request.{RESET}")
             print(json.dumps(response_json, indent=2))
 
             return response_json
 
-            if ("cursor" in response_json and response_json["cursor"]):
+            if ("cursor" in response_json and response_json["cursor"]
+                    and response_json.get("hasMoreResults", False)):
                 input(
                     "Additional results found. Press Enter to continue or Ctrl-C to exit..."
                 )
