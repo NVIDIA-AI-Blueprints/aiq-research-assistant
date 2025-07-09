@@ -16,6 +16,8 @@ class ECISearchConfig(FunctionBaseConfig, name="eci_search"):
     """
     use_prod: bool = False
     allow_login: bool = False
+    default_query_size: int = 10
+    default_data_sources: list[str] | None = None
 
 
 @register_function(config_type=ECISearchConfig)
@@ -26,11 +28,16 @@ async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
 
     async with httpx.AsyncClient() as client:
 
-        async def _eci_search_single(query: str) -> ContentSearchResponse:
+        async def _eci_search_single(
+                query: str,
+                query_size: int | None = None,
+                data_sources: list[str] | None = None
+        ) -> ContentSearchResponse:
 
             # First, get the saved credentials
-            starfleet_token = await get_starfleet_token(prod=config.use_prod,
-                                                        allow_login=config.allow_login)
+            starfleet_token = await get_starfleet_token(
+                prod=config.use_prod, allow_login=config.allow_login)
+
             ssa_token = await get_ssa_token(client=client,
                                             prod=config.use_prod)
 
@@ -43,11 +50,15 @@ async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
 
             payload = {
                 "query": query,
-                "pageSize": 10,
-                # "requestOptions": {
-                #     "datasourcesFilter": ["NVBUGS"]
-                # },
+                "pageSize": query_size if query_size is not None else config.default_query_size,
             }
+
+            data_sources = data_sources if data_sources is not None else config.default_data_sources
+
+            if (data_sources is not None):
+                payload["requestOptions"] = {
+                    "datasourcesFilter": [ds.upper() for ds in data_sources]
+                }
 
             response = await client.post(
                 f"https://enterprise-content-intelligence{'-stg' if not config.use_prod else ''}.nvidia.com/v1/content/search",
