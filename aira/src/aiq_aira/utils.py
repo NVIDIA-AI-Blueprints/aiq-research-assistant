@@ -1,9 +1,20 @@
 import asyncio
 import re
 import logging
+import time
+import httpx
 from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
+
+# Colors for logging
+BOLD = "\033[1m"
+BLUE = "\033[94m"
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+
 
 async def async_gen(num_loops: int):
     """
@@ -12,6 +23,30 @@ async def async_gen(num_loops: int):
     for i in range(num_loops):
         yield i
         await asyncio.sleep(0.0)
+
+
+def to_local_time_str(timestamp: float):
+    return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
+
+
+def custom_raise_for_status(response: httpx.Response):
+    """
+    Custom raise for status for httpx responses which provide a more detailed error message including any
+    response text.
+    """
+
+    if response.is_success:
+        return
+
+    message = f"HTTP Error. Code: {response.status_code}, Reason: {response.reason_phrase}, URL: {response.url}"
+
+    if response.text:
+        message += f", Text:\n{response.text}"
+
+    raise httpx.HTTPStatusError(message,
+                                request=response.request,
+                                response=response)
+
 
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
@@ -23,6 +58,7 @@ def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
 
     return system_prompt
 
+
 def get_domain(url: str):
     """
     Extract the domain from a URL.
@@ -30,11 +66,13 @@ def get_domain(url: str):
     domain = url.split("/")[2]
     return domain.replace("www.", "") if domain.startswith("www.") else domain
 
+
 async def dummy():
     """
     A do-nothing async function for placeholders.
     """
     return None
+
 
 def format_sources(sources: str) -> str:
     """
@@ -45,24 +83,25 @@ def format_sources(sources: str) -> str:
         source_entries = re.split(r'(?=---\nQUERY:)', sources)
         formatted_sources = []
         src_count = 1
-        
+
         for idx, entry in enumerate(source_entries):
             if not entry.strip():
                 continue
-                
+
             # Split into query, answer, and citations using a more precise pattern
             # This pattern looks for newlines followed by QUERY:, ANSWER:, or CITATION(S):
             # but only if they're not preceded by a pipe (|) character (markdown table)
-            src_parts = re.split(r'(?<!\|)\n(?=QUERY:|ANSWER:|CITATION(?:S)?:)', entry.strip())
-            
+            src_parts = re.split(
+                r'(?<!\|)\n(?=QUERY:|ANSWER:|CITATION(?:S)?:)', entry.strip())
+
             if len(src_parts) >= 4:
                 source_num = src_count
                 # Remove the prefix from each part
                 query = re.sub(r'^QUERY:', '', src_parts[1]).strip()
                 answer = re.sub(r'^ANSWER:', '', src_parts[2]).strip()
-                
+
                 # Handle multiple citations
-                citations = ''.join(src_parts[3:]) 
+                citations = ''.join(src_parts[3:])
 
                 formatted_entry = f"""
 ---
@@ -78,16 +117,18 @@ def format_sources(sources: str) -> str:
                 formatted_sources.append(formatted_entry)
                 src_count += 1
             else:
-                logger.info(f"Failed to clean up {entry} because it failed to parse")
+                logger.info(
+                    f"Failed to clean up {entry} because it failed to parse")
                 formatted_sources.append(entry)
                 src_count += 1
-                
+
         # Combine main content with formatted sources
         return "\n".join(formatted_sources)
     except Exception as e:
         logger.warning(f"Error formatting sources: {e}")
         return sources
-    
+
+
 def _escape_markdown(text: str) -> str:
     """
     Escapes Markdown to be rendered verbatim in the frontend in some scenarios
