@@ -135,6 +135,7 @@ async def process_single_query(
         writer: StreamWriter,
         collection,
         llm,
+        eci_search_tool,
         search_web: bool, 
 ):
     """
@@ -156,7 +157,7 @@ async def process_single_query(
 
     if rag_relevancy["score"] == "no":
         logger.info("RAG NOT RELEVANT, SEARCHING ECI")
-        eci_answer, eci_citation = await search_eci(query, writer)
+        eci_answer, eci_citation = await search_eci(query, writer, eci_search_tool)
         writer({"eci_answer": eci_citation})
         logger.info(f"ECI ANSWER: {eci_citation}")
         eci_relevancy = await check_relevancy(llm, query, eci_answer, writer)
@@ -166,7 +167,7 @@ async def process_single_query(
             logger.info("ECI NOT RELEVANT, SEARCHING WEB")
             web_answer, web_citation = await search_tavily(query, writer)
             writer({"web_answer": web_citation})
-            logger.info(f"WEB ANSWER: {eci_citation}")
+            logger.info(f"WEB ANSWER: {web_citation}")
 
     if rag_relevancy["score"] == "yes":
         return rag_answer, rag_citation

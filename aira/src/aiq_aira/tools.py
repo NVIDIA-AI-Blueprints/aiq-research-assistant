@@ -31,7 +31,8 @@ from langchain_community.tools import TavilySearchResults
 from urllib.parse import urljoin
 import logging
 import re
-from aiq_aira.eci_tool import eci_request
+from aiq_aira.functions.eci.content_search_response import ContentSearchResponse, SearchResult, SearchResultSnippet
+from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
 
 logger = logging.getLogger(__name__)
 
@@ -220,18 +221,17 @@ Error searching web for {prompt} using Tavily with {TAVILY_INCLUDE_DOMAINS}
         return ("", "")
     
 
-async def search_eci(prompt: str, writer: StreamWriter):
+async def search_eci(prompt: str, writer: StreamWriter, eci_search_tool):
     """
     Search using ECI
     """
     
-    logger.info(f"ECI SEARCH {prompt}")
+    logger.info(f"ECI SEARCH: {prompt}")
 
     try:
         # todo call eci search tool 
-        print("calling ECI")
-        response = await eci_request("https://enterprise-content-intelligence-stg.nvidia.com", prompt)
-        return documents_from_glean_response(prompt, response)
+        content_search_response: ContentSearchResponse = await eci_search_tool.acall_invoke({"query": prompt})
+        return documents_from_eci_response(prompt, content_search_response)
 
     except Exception as e:
         logger.error(f"ECI SEARCH FAILED {e}")
@@ -246,22 +246,25 @@ Failed ECI search for: {prompt}
     return ("", "")
 
 
-def documents_from_glean_response(query, response):
+def documents_from_eci_response(query, response: ContentSearchResponse):
     """
     Create a formatted string of documents from a Glean response
     """
-    document_contents = []
-    document_urls = []
-    for document in response["results"]:
-        snippet_text = ""  # Initialize as empty string instead of None
-        for snippet in document["snippets"]:
-            if "text" in snippet:
-                snippet_text = snippet_text + "\n" + snippet["text"]
+    answers = []
+    citations = []
     
-        document_contents.append(snippet_text)
-        document_urls.append(document["document"]["url"])
+    for result in response.results:
+        snippet_text =""
+        for snippet in result.snippets:
+            if snippet.text: 
+                snippet_text = snippet_text + "\n" + snippet.text
+
+        document_answer = result.title + "\n" + snippet_text
+        document_citation = format_citation(query, document_answer, result.url)
+        answers.append(document_answer)
+        citations.append(document_citation)
     
-    return "\n".join(document_contents), format_citation(query, "\n".join(document_contents), " ".join(document_urls))
+    return "\n".join(answers), "\n".join(citations)
 
 
 def format_citation(query, answer, urls):

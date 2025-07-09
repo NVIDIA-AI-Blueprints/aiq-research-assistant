@@ -25,6 +25,7 @@ from pydantic import Field
 from typing_extensions import Annotated
 from typing_extensions import TypedDict
 
+from typing import Any
 
 class GeneratedQuery(BaseModel):
     query: str = Field(..., description="The actual text of the search query")
@@ -117,6 +118,7 @@ class AIRAState:
 ##
 class ConfigSchema(TypedDict):
     llm: ChatOpenAI
+    eci_search_tool: Any
     report_organization: str
     collection: str
     number_of_queries: int

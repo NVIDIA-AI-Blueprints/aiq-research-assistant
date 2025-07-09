@@ -133,6 +133,7 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
 
     logger.info("STARTING WEB RESEARCH")
     llm = config["configurable"].get("llm")
+    eci_search_tool = config["configurable"].get("eci_search_tool")
     search_web = config["configurable"].get("search_web")
     collection = config["configurable"].get("collection")
 
@@ -142,8 +143,10 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
     state_queries = state.queries
 
     # Process each query concurrently.
-    results = await asyncio.gather(
-        *[process_single_query(query, config, writer, collection, llm, search_web) for query in queries])
+    results = await asyncio.gather(*[
+        process_single_query(query, config, writer, collection, llm, eci_search_tool, search_web)
+        for query in queries
+    ])
 
     # Unpack results.
     generated_answers = [result[0] for result in results]
@@ -195,6 +198,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
     """
     logger.info("REFLECTING")
     llm = config["configurable"].get("llm")
+    eci_search_tool = config["configurable"].get("eci_search_tool")
     num_reflections = config["configurable"].get("num_reflections")
     report_organization = config["configurable"].get("report_organization")
     search_web = config["configurable"].get("search_web")
@@ -257,6 +261,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             writer=writer,
             collection=collection,
             llm=llm,
+            eci_search_tool=eci_search_tool,
             search_web=search_web
         )
 

@@ -57,7 +57,7 @@ class AIRAGenerateSummaryConfig(FunctionBaseConfig, name="generate_summaries"):
     Configuration for the generate_summary function/endpoint
     """
     rag_url: str = ""
-
+    eci_search_tool_name: str = ""
 
 def serialize_pydantic(obj):
     if isinstance(obj, list):
@@ -103,19 +103,21 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
-        response: AIRAState = await graph.ainvoke(input={
-            "queries": message.queries, "web_research_results": [], "running_summary": ""
-        },
-                                                  config={
-                                                      "llm": llm,
-                                                      "report_organization": message.report_organization,
-                                                      "rag_url": config.rag_url,
-                                                      "collection": message.rag_collection,
-                                                      "search_web": message.search_web,
-                                                      "num_reflections": message.reflection_count,
-                                                      "topic": message.topic,
-                                                  })
+        response: AIRAState = await graph.ainvoke(
+            input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
+            config={
+                "llm": llm,
+                "eci_search_tool": eci_search_tool,
+                "report_organization": message.report_organization,
+                "rag_url": config.rag_url,
+                "collection": message.rag_collection,
+                "search_web": message.search_web,
+                "num_reflections": message.reflection_count, 
+                "topic": message.topic,
+            }
+        )
         return GenerateSummaryStateOutput(final_report=response["final_report"], citations=response["citations"])
 
     # ------------------------------------------------------------------
@@ -128,12 +130,14 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
         async for _t, val in graph.astream(
                 input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
                 stream_mode=['custom', 'values'],
                 config={
                     "llm": llm,
+                    "eci_search_tool": eci_search_tool,
                     "report_organization": message.report_organization,
                     "rag_url": config.rag_url,
                     "collection": message.rag_collection,

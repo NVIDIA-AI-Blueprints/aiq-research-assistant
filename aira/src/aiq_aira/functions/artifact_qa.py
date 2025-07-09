@@ -42,6 +42,7 @@ class ArtifactQAConfig(FunctionBaseConfig, name="artifact_qa"):
     """
     llm_name: LLMRef = "instruct_llm"
     rag_url: str = ""
+    eci_search_tool_name: str = ""
 
 
 @register_function(config_type=ArtifactQAConfig)
@@ -59,6 +60,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
 
     # Acquire the LLM from the builder
     llm = await aiq_builder.get_llm(llm_name=config.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+    eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
     async def _artifact_qa(query_message: ArtifactQAInput) -> ArtifactQAOutput:
         """
@@ -95,6 +97,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             writer=writer,
             collection=query_message.rag_collection,
             llm=llm,
+            eci_search_tool=eci_search_tool,
             search_web=query_message.use_internet
         )
 
@@ -144,6 +147,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             writer=writer,
             collection=query_message.rag_collection,
             llm=llm,
+            eci_search_tool=eci_search_tool,
             search_web=query_message.use_internet
         )
 

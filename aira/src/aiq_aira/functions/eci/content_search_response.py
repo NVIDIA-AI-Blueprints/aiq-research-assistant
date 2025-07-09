@@ -123,6 +123,7 @@ class Team(BaseModel):
 
 class SearchResultSnippet(BaseModel):
     snippet: str
+    text: str
     mime_type: Optional[str] = Field(None, alias="mimeType")
 
 

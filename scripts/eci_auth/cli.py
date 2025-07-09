@@ -533,6 +533,8 @@ async def eci_request(*, prod: bool = False, query: str, data_sources: list[str]
             print(f"{GREEN}Successfully made ECI request.{RESET}")
             print(json.dumps(response_json, indent=2))
 
+            return response_json
+
             if ("cursor" in response_json and response_json["cursor"]):
                 input(
                     "Additional results found. Press Enter to continue or Ctrl-C to exit..."
@@ -542,7 +544,6 @@ async def eci_request(*, prod: bool = False, query: str, data_sources: list[str]
 
             else:
                 break
-
 
 @click.group(name="aiq", invoke_without_command=True, no_args_is_help=True)
 @click.option("--prod", is_flag=True, help="Use production ECI endpoint")
