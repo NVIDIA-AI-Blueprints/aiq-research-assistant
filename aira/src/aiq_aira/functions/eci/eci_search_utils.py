@@ -1,27 +1,19 @@
 import asyncio
 import base64
-import json
+from io import StringIO
 import os
 import socket
 import time
 import uuid
 import webbrowser
-from io import StringIO
-
-import appdirs
-import click
-import dotenv
+from aiq_aira.utils import BLUE, BOLD, GREEN, RED, RESET, YELLOW, custom_raise_for_status, to_local_time_str
 import httpx
-import jwt
-from httpx._exceptions import HTTPStatusError
 from pydantic import BaseModel
-
-BOLD = "\033[1m"
-BLUE = "\033[94m"
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-RESET = "\033[0m"
+from aiq.builder.context import AIQContext
+import logging
+import appdirs
+import jwt
+logger = logging.getLogger(__name__)
 
 LOGIN_MESSAGE = """
 ! First, copy the following code to your clipboard: {user_code}
@@ -120,23 +112,6 @@ def get_mac_address():
         ['{:02x}'.format((mac >> i) & 0xff) for i in range(0, 48, 8)][::-1])
 
 
-def to_local_time_str(timestamp: float):
-    return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
-
-
-def custom_raise_for_status(response: httpx.Response):
-
-    if response.is_success:
-        return
-
-    message = f"HTTP Error. Code: {response.status_code}, Reason: {response.reason_phrase}, URL: {response.url}"
-
-    if response.text:
-        message += f", Text:\n{response.text}"
-
-    raise HTTPStatusError(message, request=response.request, response=response)
-
-
 async def starfleet_login_flow(
         *,
         client: httpx.AsyncClient,
@@ -163,7 +138,7 @@ async def starfleet_login_flow(
         headers=headers,
         data=params)
 
-    custom_raise_for_status(response)
+    response.raise_for_status()
 
     device_auth_response = DeviceAuthResponse.model_validate(response.json())
 
@@ -382,9 +357,13 @@ async def ssa_login_flow(*,
     }
 
     params = {
-        "grant_type": "client_credentials",
-        "scope": " ".join([
-            "content:search",
+        "grant_type":
+        "client_credentials",
+        "scope":
+        " ".join([
+            "content:classify", "content:summarize", "content:search",
+            "content:retrieve", "content:retrieve_metadata",
+            "account:verify_access"
         ]),
     }
 
@@ -405,7 +384,10 @@ async def ssa_login_flow(*,
     return ssa_saved_credentials
 
 
-async def ssa_login(*, prod: bool = False, force_login: bool = False):
+async def ssa_login(*,
+                    client: httpx.AsyncClient,
+                    prod: bool = False,
+                    force_login: bool = False):
 
     app_data_dir = appdirs.user_cache_dir(appauthor="NVIDIA",
                                           appname="nvidia-aiq-util")
@@ -414,173 +396,96 @@ async def ssa_login(*, prod: bool = False, force_login: bool = False):
 
     saved_credentials: SSASavedCredentials | None = None
 
-    async with httpx.AsyncClient() as client:
-        try:
-            if os.path.exists(credentials_file) and not force_login:
-                with open(credentials_file, "r", encoding="utf-8") as f:
-                    saved_credentials = SSASavedCredentials.model_validate_json(
-                        f.read())
+    try:
+        if os.path.exists(credentials_file) and not force_login:
+            with open(credentials_file, "r", encoding="utf-8") as f:
+                saved_credentials = SSASavedCredentials.model_validate_json(
+                    f.read())
 
-                # Check if the token has expired (within 1 minute)
-                if saved_credentials.expires_at > time.time() - 60:
-                    # Token is still valid, so we can use it. Print the expiration time in a human readable format
-                    print(
-                        f"{GREEN}Existing SSA Credentials found and still valid.{RESET}"
-                    )
-                    print(saved_credentials.print_info())
+            # Check if the token has expired (within 1 minute)
+            if saved_credentials.expires_at > time.time() - 60:
+                # Token is still valid, so we can use it. Print the expiration time in a human readable format
+                print(
+                    f"{GREEN}Existing SSA Credentials found and still valid.{RESET}"
+                )
+                print(saved_credentials.print_info())
 
-                    return saved_credentials
+                return saved_credentials
 
-                else:
-                    # Both tokens have expired, so we need to refresh them
-                    print(
-                        f"{RED}Existing SSA Credentials found but have expired. Logging in again...{RESET}"
-                    )
-                    os.remove(credentials_file)
+            else:
+                # Both tokens have expired, so we need to refresh them
+                print(
+                    f"{RED}Existing SSA Credentials found but have expired. Logging in again...{RESET}"
+                )
+                os.remove(credentials_file)
 
-                    saved_credentials = None
+                saved_credentials = None
 
-        except Exception as e:
-            print(f"{RED}Error trying to load SSA Credentials: {e}{RESET}")
-            print(f"{YELLOW}Running SSA login process...{RESET}")
+    except Exception as e:
+        print(f"{RED}Error trying to load SSA Credentials: {e}{RESET}")
+        print(f"{YELLOW}Running SSA login process...{RESET}")
 
-            saved_credentials = None
+        saved_credentials = None
 
-        if (not saved_credentials):
-            saved_credentials = await ssa_login_flow(client=client, prod=prod)
+    if (not saved_credentials):
+        saved_credentials = await ssa_login_flow(client=client, prod=prod)
 
-        # Save both the token and the client token to a file on the machine in the default appdata directory
-        os.makedirs(app_data_dir, exist_ok=True)
+    # Save both the token and the client token to a file on the machine in the default appdata directory
+    os.makedirs(app_data_dir, exist_ok=True)
 
-        with open(credentials_file, "w", encoding="utf-8") as f:
-            f.write(saved_credentials.model_dump_json())
+    with open(credentials_file, "w", encoding="utf-8") as f:
+        f.write(saved_credentials.model_dump_json())
 
-        print(f"{GREEN}Successfully logged in to SSA!{RESET}")
-        print(saved_credentials.print_info())
-        print(f"SSA Credentials saved to {credentials_file}")
+    print(f"{GREEN}Successfully logged in to SSA!{RESET}")
+    print(saved_credentials.print_info())
+    print(f"SSA Credentials saved to {credentials_file}")
 
     return saved_credentials
 
 
-async def get_starfleet_token(*, prod: bool = False) -> str:
+async def get_starfleet_token(*,
+                              prod: bool = False,
+                              allow_login: bool = False) -> str:
 
+    # First, check if we have the token in the auth header
+    headers = AIQContext.get().metadata.headers
+
+    if (headers is not None):
+        auth_header = headers.get("Authorization", None)
+    else:
+        auth_header = None
+
+    if (auth_header is not None):
+        return auth_header
+
+    # Next, check if we have the token in the environment variable
     token = os.getenv("AIQ_STARFLEET_TOKEN", None)
 
-    if (token is None):
+    if (token is not None):
+        return token
+
+    if (allow_login):
         starfleet_saved_credentials = await starfleet_login(prod=prod,
                                                             force_login=False)
 
-        token = starfleet_saved_credentials.id_token
+        return starfleet_saved_credentials.id_token
 
-    return token
+    raise ValueError(
+        "No Starfleet token found. Set the Starfleet token in the Authorization header or environment variable `AIQ_STARFLEET_TOKEN`"
+    )
 
 
-async def get_ssa_token(*, prod: bool = False) -> str:
+async def get_ssa_token(*,
+                        client: httpx.AsyncClient,
+                        prod: bool = False) -> str:
 
     token = os.getenv("AIQ_SSA_TOKEN", None)
 
     if (token is None):
-        ssa_saved_credentials = await ssa_login(prod=prod, force_login=False)
+        ssa_saved_credentials = await ssa_login(client=client,
+                                                prod=prod,
+                                                force_login=False)
 
         token = ssa_saved_credentials.access_token
 
     return token
-
-
-async def eci_request(*, prod: bool = False, query: str, data_sources: list[str] = None):
-
-    async with httpx.AsyncClient() as client:
-
-        # First, get the saved credentials
-        starfleet_token = await get_starfleet_token(prod=prod)
-        ssa_token = await get_ssa_token(prod=prod)
-
-        # Now, make the request
-        headers = {
-            "Authorization": f"Bearer {ssa_token}",
-            "Nv-Actor-Token": starfleet_token,
-            "Content-Type": "application/json",
-        }
-
-        cursor = None
-
-        while (True):
-            payload = {
-                "query": query,
-                "pageSize": 10,
-            }
-
-            if (cursor is not None):
-                payload["cursor"] = cursor
-
-            if (data_sources is not None):
-                # Convert the data sources to uppercase
-                data_sources = [ds.upper() for ds in data_sources]
-
-                payload["requestOptions"] = {
-                    "datasourcesFilter": data_sources
-                }
-
-            response = await client.post(
-                f"https://enterprise-content-intelligence{'-stg' if not prod else ''}.nvidia.com/v1/content/search",
-                headers=headers,
-                json=payload)
-
-            custom_raise_for_status(response)
-
-            response_json = response.json()
-
-            print(f"{GREEN}Successfully made ECI request.{RESET}")
-            print(json.dumps(response_json, indent=2))
-
-            if ("cursor" in response_json and response_json["cursor"]):
-                input(
-                    "Additional results found. Press Enter to continue or Ctrl-C to exit..."
-                )
-
-                cursor = response_json["cursor"]
-
-            else:
-                break
-
-
-@click.group(name="aiq", invoke_without_command=True, no_args_is_help=True)
-@click.option("--prod", is_flag=True, help="Use production ECI endpoint")
-@click.pass_context
-def cli(ctx: click.Context, prod: bool = False):
-
-    dotenv.load_dotenv()
-
-    ctx.ensure_object(dict)
-    ctx.obj["prod"] = prod
-
-
-@cli.command()
-@click.option("--force-login", is_flag=True, help="Force login to Starfleet")
-@click.option("--force-refresh",
-              is_flag=True,
-              help="Force refresh of Starfleet credentials")
-@click.pass_context
-def starfleet(ctx: click.Context, force_login: bool, force_refresh: bool):
-    asyncio.run(
-        starfleet_login(prod=ctx.obj["prod"],
-                        force_login=force_login,
-                        force_refresh=force_refresh))
-
-
-@cli.command()
-@click.option("--force-login", is_flag=True, help="Force login to SSA")
-@click.pass_context
-def ssa(ctx: click.Context, force_login: bool):
-    asyncio.run(ssa_login(prod=ctx.obj["prod"], force_login=force_login))
-
-
-@cli.command()
-@click.option("--query", type=str, help="The query to make to the ECI")
-@click.pass_context
-def eci(ctx: click.Context, query: str):
-    asyncio.run(eci_request(prod=ctx.obj["prod"], query=query))
-
-
-if __name__ == "__main__":
-    cli(auto_envvar_prefix='AIQ', show_default=True, prog_name="aiq-util")

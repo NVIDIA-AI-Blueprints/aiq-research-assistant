@@ -15,11 +15,20 @@
 
 import asyncio
 import logging
+import time
+import httpx
 import re
-
 from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
+
+# Colors for logging
+BOLD = "\033[1m"
+BLUE = "\033[94m"
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
 
 
 async def async_gen(num_loops: int):
@@ -29,6 +38,29 @@ async def async_gen(num_loops: int):
     for i in range(num_loops):
         yield i
         await asyncio.sleep(0.0)
+
+
+def to_local_time_str(timestamp: float):
+    return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
+
+
+def custom_raise_for_status(response: httpx.Response):
+    """
+    Custom raise for status for httpx responses which provide a more detailed error message including any
+    response text.
+    """
+
+    if response.is_success:
+        return
+
+    message = f"HTTP Error. Code: {response.status_code}, Reason: {response.reason_phrase}, URL: {response.url}"
+
+    if response.text:
+        message += f", Text:\n{response.text}"
+
+    raise httpx.HTTPStatusError(message,
+                                request=response.request,
+                                response=response)
 
 
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
@@ -99,7 +131,8 @@ def format_sources(sources: str) -> str:
                 formatted_sources.append(formatted_entry)
                 src_count += 1
             else:
-                logger.info(f"Failed to clean up {entry} because it failed to parse")
+                logger.info(
+                    f"Failed to clean up {entry} because it failed to parse")
                 formatted_sources.append(entry)
                 src_count += 1
 
