@@ -78,9 +78,14 @@ LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answe
 ---------
 Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ---------
+<<<<<<< HEAD
 """
         })
         logger.debug(f"Error parsing relevancy JSON: {e}")
+=======
+"""})
+        logger.info(f"Error parsing relevancy JSON: {e}")
+>>>>>>> 94c002f (add fallback)
 
     # default if fails
     return {"score": "yes"}
@@ -145,7 +150,7 @@ async def process_single_query(
       - Web search
       - Relevancy checks between each step
     """
-
+    logger.info(f"SEARCHING: {query}")
     rag_url = config["configurable"].get("rag_url")
 
     rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
@@ -175,7 +180,9 @@ async def process_single_query(
     if rag_relevancy["score"] == "no" and eci_relevancy["score"] == "yes":
         return eci_answer, eci_citation
     
-    if rag_relevancy["score"] == "no" and eci_relevancy["score"] == "no" and search_web:
+    if rag_relevancy["score"] == "no" and eci_relevancy["score"] == "no" and search_web and web_citation is not "":
         return web_answer, web_citation
     
-    return "", ""
+    # fall back to rag + eci response
+    logger.info("Warning: no relevant answers found, falling back to RAG and ECI responses")
+    return "\n".join([rag_answer, eci_answer]), "\n".join([rag_citation, eci_citation])
