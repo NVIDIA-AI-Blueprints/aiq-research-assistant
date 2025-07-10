@@ -22,15 +22,6 @@ from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
-# Colors for logging
-BOLD = "\033[1m"
-BLUE = "\033[94m"
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-RESET = "\033[0m"
-
-
 async def async_gen(num_loops: int):
     """
     Utility for retry loops or chunked iterations.
@@ -38,10 +29,6 @@ async def async_gen(num_loops: int):
     for i in range(num_loops):
         yield i
         await asyncio.sleep(0.0)
-
-
-def to_local_time_str(timestamp: float):
-    return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
 
 
 def custom_raise_for_status(response: httpx.Response):
@@ -67,6 +54,9 @@ def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
+
+    if hasattr(llm, "model") and "nemotron" in llm.model:
+        system_prompt = "detailed thinking on"
 
     if hasattr(llm, "model_name") and "nemotron" in llm.model_name:
         system_prompt = "detailed thinking on"

@@ -45,7 +45,7 @@ llms:
   # that uses local NVIDIA NIM microservices.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   instruct_llm:
-    _type: openai
+    _type: nim
     model_name: meta/llama-3.3-70b-instruct
     temperature: 0.0
     base_url: http://10.185.119.221:8050/v1
@@ -55,7 +55,7 @@ llms:
   # deployment of AIRA and RAG with a local NVIDIA NIM microservice for the nemotron model.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   nemotron:
-    _type: openai
+    _type: nim
     model_name : nvidia/llama-3.3-nemotron-super-49b-v1
     temperature: 0.5
     base_url: http://10.185.119.221:8999/v1 # default if deployed using RAG blueprint and docker compose
