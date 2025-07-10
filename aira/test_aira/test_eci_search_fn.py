@@ -38,8 +38,10 @@ async def test_default_data_sources():
 
     async with WorkflowBuilder() as builder:
 
-        fn = await builder.add_function(
-            name="eci_search", config=ECISearchConfig(allow_login=True, default_data_sources=["NVBUGS"]))
+        fn = await builder.add_function(name="eci_search",
+                                        config=ECISearchConfig(
+                                            allow_login=True,
+                                            default_data_sources=["NVBUGS"]))
 
         # Test with default data sources
         result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?")
@@ -48,7 +50,8 @@ async def test_default_data_sources():
         assert result.result_tab_ids == ["nvbugs"]
 
         # Test override data sources
-        result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?", data_sources=["BENEFITS"])
+        result: ContentSearchResponse = await fn.acall_invoke(
+            query="NVIDIA?", data_sources=["BENEFITS"])
 
         assert result.result_tab_ids == ["benefits"]
 
@@ -57,13 +60,16 @@ async def test_default_query_size():
 
     async with WorkflowBuilder() as builder:
 
-        fn = await builder.add_function(
-            name="eci_search", config=ECISearchConfig(allow_login=True, default_query_size=2))
+        fn = await builder.add_function(name="eci_search",
+                                        config=ECISearchConfig(
+                                            allow_login=True,
+                                            default_query_size=2))
 
         result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?")
 
         assert len(result.results) == 2
 
-        result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?", query_size=10)
+        result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?",
+                                                              query_size=10)
 
         assert len(result.results) == 10
