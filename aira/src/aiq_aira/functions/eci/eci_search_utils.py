@@ -13,6 +13,7 @@ from aiq.builder.context import AIQContext
 import logging
 import appdirs
 import jwt
+
 logger = logging.getLogger(__name__)
 
 LOGIN_MESSAGE = """
