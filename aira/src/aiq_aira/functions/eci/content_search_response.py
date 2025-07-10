@@ -1,5 +1,5 @@
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -120,11 +120,23 @@ class Person(BaseModel):
 class Team(BaseModel):
     name: Optional[str] = None
 
+class SearchResultSnippetRange(BaseModel):
+    start_index: int = Field(..., alias="startIndex")
+    end_index: int = Field(..., alias="endIndex")
+    type: str = Field(..., alias="type")
 
 class SearchResultSnippet(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     snippet: str
     text: str
     mime_type: Optional[str] = Field(None, alias="mimeType")
+    text: Optional[str] = None
+    snippet_text_ordering: Optional[int] = Field(None, alias="snippetTextOrdering")
+    ranges: Optional[List[SearchResultSnippetRange]] = None
+    url: Optional[str] = None
+
+
 
 
 class RelatedDocuments(BaseModel):

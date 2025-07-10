@@ -138,7 +138,7 @@ async def starfleet_login_flow(
         headers=headers,
         data=params)
 
-    response.raise_for_status()
+    custom_raise_for_status(response)
 
     device_auth_response = DeviceAuthResponse.model_validate(response.json())
 
@@ -240,7 +240,7 @@ async def starfleet_refresh_flow(
     token_response = TokenResponse.model_validate(response.json())
 
     saved_credentials = StarfleetSavedCredentials(
-        id_token=saved_credentials.id_token,
+        id_token=token_response.id_token,
         access_token=token_response.access_token,
         token_type=token_response.token_type,
         id_token_expires_at=time.time() + token_response.expires_in,
