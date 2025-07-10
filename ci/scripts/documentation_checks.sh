@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,8 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ -z "$AIRA_HOSTED_NIMS" -o "$AIRA_HOSTED_NIMS" = "false" ]; then
-    exec uv run aiq serve --config_file /app/configs/config.yml --host 0.0.0.0 --port 3838
-else
-    exec uv run aiq serve --config_file /app/configs/hosted-config.yml --host 0.0.0.0 --port 3838
-fi
+set +e
+
+# Intentionally excluding CHANGELOG.md as it immutable
+DOC_FILES=$(git ls-files "*.md" "*.rst" | grep -v -E '^(CHANGELOG|LICENSE)\.md$' | grep -v -E '^nv_internal/')
+
+vale ${DOC_FILES}
+RETVAL=$?
+exit $RETVAL

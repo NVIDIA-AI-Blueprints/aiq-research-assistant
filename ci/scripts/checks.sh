@@ -1,5 +1,6 @@
-#!/bin/sh
-# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#!/bin/bash
+
+# SPDX-FileCopyrightText: Copyright (c) 2024-2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +15,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ -z "$AIRA_HOSTED_NIMS" -o "$AIRA_HOSTED_NIMS" = "false" ]; then
-    exec uv run aiq serve --config_file /app/configs/config.yml --host 0.0.0.0 --port 3838
-else
-    exec uv run aiq serve --config_file /app/configs/hosted-config.yml --host 0.0.0.0 --port 3838
+set -e
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+source ${SCRIPT_DIR}/common.sh
+
+set +e
+pre-commit run --all-files --show-diff-on-failure
+PRE_COMMIT_RETVAL=$?
+
+${SCRIPT_DIR}/python_checks.sh
+PY_CHECKS_RETVAL=$?
+
+if [[ ${PRE_COMMIT_RETVAL} -ne 0 || ${PY_CHECKS_RETVAL} -ne 0 ]]; then
+   echo ">>>> FAILED: checks"
+   exit 1
 fi

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-query_writer_instructions="""Generate {number_of_queries} search queries that will help with planning the sections of the final report.
+query_writer_instructions = """Generate {number_of_queries} search queries that will help with planning the sections of the final report.
 
 # Report topic
 {topic}
@@ -44,7 +44,7 @@ query_writer_instructions="""Generate {number_of_queries} search queries that wi
 ]
 ```"""
 
-summarizer_instructions="""Generate a high-quality report from the given sources. 
+summarizer_instructions = """Generate a high-quality report from the given sources. 
 
 # Report organization
 {report_organization}
@@ -63,7 +63,6 @@ summarizer_instructions="""Generate a high-quality report from the given sources
 8. Do not include any source citations, as these will be added to the report in post processing.
 """
 
-
 report_extender = """Add to the existing report additional sources preserving the current report structure (sections, headings etc).
 
 # Draft Report
@@ -78,7 +77,6 @@ report_extender = """Add to the existing report additional sources preserving th
 3. Seamlessly add information from the new sources.
 4. Do not include any source citations, as these will be added to the report in post processing.
 """
-
 
 reflection_instructions = """Using report organization as a guide identify knowledge gaps and/or areas that have not been addressed comprehensively in the report.
 
@@ -107,7 +105,6 @@ reflection_instructions = """Using report organization as a guide identify knowl
     "rationale": "The report lacks information about performance metrics and benchmarks"
 }}
 ```"""
-
 
 relevancy_checker = """Determine if the Context contains proper information to answer the Question.
 

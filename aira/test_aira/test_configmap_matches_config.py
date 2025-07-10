@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-import yaml
-from pathlib import Path
+import re
 import subprocess
 import tempfile
-import re
+from pathlib import Path
+
+import pytest
+import yaml
+
 
 def clean_helm_placeholders(yaml_content):
     """
@@ -26,10 +28,11 @@ def clean_helm_placeholders(yaml_content):
     """
     # Pattern to match Helm template expressions
     pattern = r'\{\{.*?\}\}'
-    
+
     # Replace all matches with 'from values.yaml'
     cleaned_content = re.sub(pattern, 'from values.yaml', yaml_content)
     return cleaned_content
+
 
 def test_configmap_matches_config():
     """
@@ -38,21 +41,21 @@ def test_configmap_matches_config():
     current_dir = Path(__file__).parent
     helm_chart_path = current_dir / ".." / ".." / "deploy" / "helm" / "aiq-aira" / "templates" / "configmap.yaml"
     reference_config_path = current_dir / ".." / "configs" / "config.yml"
-    
+
     # Load the reference config file
     with open(reference_config_path, "r") as f:
         reference_config = yaml.safe_load(f)
-    
+
     # Load the Helm configmap YAML file
     with open(helm_chart_path, "r") as f:
         helm_configmap = f.read()
 
     # Clean the Helm placeholders from the raw YAML string
     cleaned_helm_configmap = clean_helm_placeholders(helm_configmap)
-    
+
     # Parse the cleaned YAML content
     helm_configmap = yaml.safe_load(cleaned_helm_configmap)
-    
+
     # Extract the 'data' section and then the 'config.yml' value, which is the actual yaml data.
     configmap_data_string = helm_configmap['data']['config.yml']
 
@@ -66,18 +69,14 @@ def test_configmap_matches_config():
         Warns if 'eval' key is missing, errors for other missing keys.
         """
         if differences is None:
-            differences = {
-                'missing_keys': [],
-                'extra_keys': [],
-                'missing_eval': False
-            }
+            differences = {'missing_keys': [], 'extra_keys': [], 'missing_eval': False}
 
         assert isinstance(reference, dict) == isinstance(generated, dict), "Types mismatch"
 
         if isinstance(reference, dict):
             ref_keys = set(reference.keys())
             gen_keys = set(generated.keys())
-            
+
             # Pretty print the keys for debugging with path context
             if path:
                 print(f"\nKeys at {path}:")
@@ -85,7 +84,7 @@ def test_configmap_matches_config():
                 print("\nTop level keys:")
             print(f"Reference keys: {sorted(ref_keys)}")
             print(f"Generated keys: {sorted(gen_keys)}")
-            
+
             # Check for missing keys
             missing_keys = ref_keys - gen_keys
             if missing_keys:
@@ -93,16 +92,16 @@ def test_configmap_matches_config():
                 if 'eval' in missing_keys:
                     differences['missing_eval'] = True
                     missing_keys.remove('eval')
-                
+
                 # Collect other missing keys
                 if missing_keys:
                     differences['missing_keys'].append((path, missing_keys))
-            
+
             # Check for extra keys
             extra_keys = gen_keys - ref_keys
             if extra_keys:
                 differences['extra_keys'].append((path, extra_keys))
-            
+
             for key in reference:
                 if key in generated:
                     new_path = f"{path}.{key}" if path else key
@@ -111,30 +110,29 @@ def test_configmap_matches_config():
             assert isinstance(generated, list), "Types mismatch: list vs not list"
             if reference and generated:
                 if isinstance(reference[0], dict):
-                  for i, (ref_item, gen_item) in enumerate(zip(reference, generated)):
-                    new_path = f"{path}[{i}]" if path else f"[{i}]"
-                    check_keys(ref_item, gen_item, new_path, differences)
+                    for i, (ref_item, gen_item) in enumerate(zip(reference, generated)):
+                        new_path = f"{path}[{i}]" if path else f"[{i}]"
+                        check_keys(ref_item, gen_item, new_path, differences)
                 else:
-                  assert len(reference) == len(generated)
+                    assert len(reference) == len(generated)
 
         return differences
 
     # Compare the keys of the reference and generated dictionaries
     print("\nComparing config keys:")
     differences = check_keys(reference_config, configmap_data)
-    
+
     # Report all differences at the end
     if differences['missing_eval']:
         print("\nWARNING: 'eval' key is missing in helm config")
-        
+
     if differences['extra_keys']:
         print("\nWARNING: Extra keys in generated config at:")
         for path, keys in differences['extra_keys']:
             print(f"  - {path}: {sorted(keys)}")
-    
+
     if differences['missing_keys']:
         error_msg = "\nERROR: Missing keys in helm config at:"
         for path, keys in differences['missing_keys']:
             error_msg += f"\n  - {path}: {sorted(keys)}"
         assert False, error_msg
-

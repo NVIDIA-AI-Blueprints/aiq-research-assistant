@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Frequently Asked Questions
 
 This document contains frequently asked questions that aren't covered in the deployment or troubleshooting guides.
@@ -40,11 +57,11 @@ The RAG service in this blueprint is accessed by a REST API call. Compatible ser
 
 ## How many GPUs do I Need? Can I Deploy with Fewer GPUs?
 
-The blueprint hardware requirements for the default Docker compose deployment with local NVIDIA NIM microservices are outlined in the [README](/README.md#hardware-requirements). Fewer GPUs can be used by deploying the NVIDIA RAG blueprint following [these guidelines](https://github.com/NVIDIA-AI-Blueprints/rag?tab=readme-ov-file#hardware-requirements-for-self-hosting-all-nvidia-nim-microservices).
+The blueprint hardware requirements for the default Docker compose deployment with local NVIDIA NIM microservices are outlined in the [README](../README.md#hardware-requirements). Fewer GPUs can be used by deploying the NVIDIA RAG blueprint following [these guidelines](https://github.com/NVIDIA-AI-Blueprints/rag?tab=readme-ov-file#hardware-requirements-for-self-hosting-all-nvidia-nim-microservices).
 
 ## What is the Performance?
 
-Report generation typically takes 5-10 minutes depending on the length of the report plan. Individual Q&A can take 45-90 seconds in order to support web and RAG research for each question. For specific metrics like latency or token throughput, [enable observability](/docs/phoenix-tracing.md).
+Report generation typically takes 5-10 minutes depending on the length of the report plan. Individual Q&A can take 45-90 seconds in order to support web and RAG research for each question. For specific metrics like latency or token throughput, [enable observability](./phoenix-tracing.md).
 
 ## How do I Make the Report Longer?
 
@@ -52,7 +69,7 @@ The main driver of report length is the number of queries in the report plan. Ad
 
 ## Has the Tool Been Evaluated?
 
-The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundness, and context relevance. For more information about evaluations, see the [evaluation page](/docs/evaluation.md).
+The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundness, and context relevance. For more information about evaluations, see the [evaluation page](./evaluation.md).
 
 ## How are the REST Endpoints Served?
 

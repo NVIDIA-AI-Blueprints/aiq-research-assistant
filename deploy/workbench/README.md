@@ -1,3 +1,20 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Get Started with NVIDIA AI Workbench 
 
 The AI-Q NVIDIA Research Assistant Blueprint allows you to create a deep research assistant that can run on-premise, allowing anyone to create detailed research reports using on-premise data and web search. 
@@ -7,7 +24,7 @@ The AI-Q NVIDIA Research Assistant Blueprint allows you to create a deep researc
 
 > You may want to [**fork**](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo#forking-a-repository) this repository into your own account before proceeding. Otherwise you won't be able to fully push any changes you make because this NVIDIA-owned repository is **read-only**.
 
-*Navigating the README*: [Project Overview](#project-overview) | [Get Started](#get-started) | [Customize](#customization) | [License](#license)
+*Navigating the README*: [Project Overview](#project-overview) | [Get Started](#start-using-the-deep-research-agent-with-nvidia-ai-workbench) | [Customize](#customization) | [License](#license)
 
 *Other Resources*: [:arrow_down: Download AI Workbench](https://www.nvidia.com/en-us/deep-learning-ai/solutions/data-science/workbench/) | [:book: User Guide](https://docs.nvidia.com/ai-workbench/) |[:open_file_folder: Other Projects](https://docs.nvidia.com/ai-workbench/user-guide/latest/quickstart/example-projects.html) | [:rotating_light: Developer Forum](https://forums.developer.nvidia.com/t/support-workbench-example-blueprint-ai-q-research-assistant/336538)
 
