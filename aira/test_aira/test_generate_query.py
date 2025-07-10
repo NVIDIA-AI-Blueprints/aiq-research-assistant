@@ -13,26 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from pathlib import Path
-from aiq.builder.workflow_builder import WorkflowBuilder
-from aiq_aira.functions.generate_queries import AIRAGenerateQueriesConfig
-from aiq_aira.schema import GenerateQueryStateInput, GenerateQueryStateOutput, GeneratedQuery
-from aiq.data_models.config import AIQConfig
-import yaml
 import logging
+from pathlib import Path
 
-# for some reason I have to manually import these functions for the workflow builder to run 
-from aiq_aira.functions import artifact_qa, generate_summary, generate_queries
-from aiq_aira import register
-from aiq.llm.openai_llm import openai_llm
+import pytest
+import yaml
+from aiq.builder.workflow_builder import WorkflowBuilder
+from aiq.data_models.config import AIQConfig
 from aiq.front_ends.fastapi.register import register_fastapi_front_end
 from aiq.llm import register  # Import LLM registration module
+from aiq.llm.openai_llm import openai_llm
+
+from aiq_aira import register
+# for some reason I have to manually import these functions for the workflow builder to run
+from aiq_aira.functions import artifact_qa
+from aiq_aira.functions import generate_queries
+from aiq_aira.functions import generate_summary
+from aiq_aira.functions.generate_queries import AIRAGenerateQueriesConfig
+from aiq_aira.schema import GeneratedQuery
+from aiq_aira.schema import GenerateQueryStateInput
+from aiq_aira.schema import GenerateQueryStateOutput
 
 logger = logging.getLogger(__name__)
 
 # Global test configuration
 TEST_RAG_COLLECTION = "Default_Financial"
+
 
 @pytest.fixture
 async def workflow_builder():
@@ -46,21 +52,20 @@ async def workflow_builder():
     async with WorkflowBuilder.from_config(config=config) as builder:
         yield builder
 
+
 @pytest.mark.asyncio
 async def test_generate_query_basic(workflow_builder):
     """Test basic query generation with default settings."""
     async for builder in workflow_builder:
         workflow = builder.build(entry_function="generate_query")
-        
-        input_data = GenerateQueryStateInput(
-            topic="Impact of AI on Healthcare",
-            report_organization="Executive Summary, Key Findings, Future Outlook",
-            num_queries=3,
-            llm_name="nemotron"
-        )
+
+        input_data = GenerateQueryStateInput(topic="Impact of AI on Healthcare",
+                                             report_organization="Executive Summary, Key Findings, Future Outlook",
+                                             num_queries=3,
+                                             llm_name="nemotron")
         # Validate the input
         input_data.model_validate(input_data.model_dump())
-        
+
         async with workflow.run(input_data) as runner:
             result = await runner.result()
             assert isinstance(result, GenerateQueryStateOutput)
@@ -72,21 +77,20 @@ async def test_generate_query_basic(workflow_builder):
                 assert "report_section" in query
                 assert "rationale" in query
 
+
 @pytest.mark.asyncio
 async def test_generate_query_custom_count(workflow_builder):
     """Test query generation with a custom number of queries."""
     async for builder in workflow_builder:
         workflow = builder.build(entry_function="generate_query")
-        
-        input_data = GenerateQueryStateInput(
-            topic="Impact of AI on Healthcare",
-            report_organization="Executive Summary, Key Findings, Future Outlook",
-            num_queries=1,
-            llm_name="nemotron"
-        )
+
+        input_data = GenerateQueryStateInput(topic="Impact of AI on Healthcare",
+                                             report_organization="Executive Summary, Key Findings, Future Outlook",
+                                             num_queries=1,
+                                             llm_name="nemotron")
         # Validate the input
         input_data.model_validate(input_data.model_dump())
-        
+
         async with workflow.run(input_data) as runner:
             result = await runner.result()
             assert isinstance(result, GenerateQueryStateOutput)

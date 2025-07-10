@@ -1,19 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import asyncio
-import aiohttp
+import html
+import logging
 import re
 import xml.etree.ElementTree as ET
 from typing import List
-from langchain_openai import ChatOpenAI
+
+import aiohttp
 from langchain_core.runnables import RunnableConfig
-from aiq_aira.constants import ASYNC_TIMEOUT
-from langgraph.types import StreamWriter
-import logging
 from langchain_core.utils.json import parse_json_markdown
-from aiq_aira.schema import GeneratedQuery
+from langchain_openai import ChatOpenAI
+from langgraph.types import StreamWriter
+
+from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.prompts import relevancy_checker
-from aiq_aira.tools import search_rag, search_tavily
-from aiq_aira.utils import dummy, _escape_markdown
-import html
+from aiq_aira.schema import GeneratedQuery
+from aiq_aira.tools import search_rag
+from aiq_aira.tools import search_tavily
+from aiq_aira.utils import _escape_markdown
+from aiq_aira.utils import dummy
 
 logger = logging.getLogger(__name__)
 
@@ -23,66 +42,65 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
     Checks if an answer is relevant to the query using the 'relevancy_checker' prompt, returning JSON
     like { "score": "yes" } or { "score": "no" }.
     """
-    logger.info("CHECK RELEVANCY")    
+    logger.info("CHECK RELEVANCY")
     writer({"relevancy_checker": "\n Starting relevancy check \n"})
     processed_answer_for_display = html.escape(_escape_markdown(answer))
 
     try:
         async with asyncio.timeout(ASYNC_TIMEOUT):
-            response = await llm.ainvoke(
-                relevancy_checker.format(document=answer, query=query)
-            )
+            response = await llm.ainvoke(relevancy_checker.format(document=answer, query=query))
             score = parse_json_markdown(response.content)
-            writer({"relevancy_checker": f""" =
+            writer({
+                "relevancy_checker":
+                    f""" =
     ---
     Relevancy score: {score.get("score")}  
     Query: {query}
     Answer: {processed_answer_for_display}
-    """})
+    """
+            })
 
             return score
-    
+
     except asyncio.TimeoutError as e:
-             writer({"relevancy_checker": f""" 
+        writer({
+            "relevancy_checker":
+                f""" 
 ----------                
 LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ----------
-"""})   
+"""
+        })
     except Exception as e:
-        writer({"relevancy_checker": f"""
+        writer({
+            "relevancy_checker":
+                f"""
 ---------
 Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ---------
-"""})
+"""
+        })
         logger.debug(f"Error parsing relevancy JSON: {e}")
 
     # default if fails
     return {"score": "yes"}
 
 
-async def fetch_query_results(
-    rag_url: str,
-    prompt: str,
-    writer: StreamWriter,
-    collection: str
-):
+async def fetch_query_results(rag_url: str, prompt: str, writer: StreamWriter, collection: str):
     """
     Calls the search_rag tool in parallel for each prompt in parallel.
     Returns a list of tuples (answer, citations).
     """
     async with aiohttp.ClientSession() as session:
-        result =  await search_rag(session, rag_url, prompt, writer, collection)
+        result = await search_rag(session, rag_url, prompt, writer, collection)
         return result
 
 
-
-def deduplicate_and_format_sources(
-    sources: List[str],
-    generated_answers: List[str],
-    relevant_list: List[dict],
-    web_results: List[str],
-    queries: List[GeneratedQuery]
-):
+def deduplicate_and_format_sources(sources: List[str],
+                                   generated_answers: List[str],
+                                   relevant_list: List[dict],
+                                   web_results: List[str],
+                                   queries: List[GeneratedQuery]):
     """
     Convert RAG and fallback results into an XML structure <sources><source>...</source></sources>.
     Each <source> has <query> and <answer>.
@@ -108,15 +126,12 @@ def deduplicate_and_format_sources(
     return ET.tostring(root, encoding="unicode")
 
 
-
-async def process_single_query(
-        query: str,
-        config: RunnableConfig,
-        writer: StreamWriter,
-        collection,
-        llm,
-        search_web: bool
-):
+async def process_single_query(query: str,
+                               config: RunnableConfig,
+                               writer: StreamWriter,
+                               collection,
+                               llm,
+                               search_web: bool):
     """
     Process a single query:
       - Fetches RAG results.
@@ -131,8 +146,8 @@ async def process_single_query(
     rag_url = config["configurable"].get("rag_url")
     # Process RAG search
     rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
-    
-    writer({"rag_answer": rag_citation}) # citation includes the answer
+
+    writer({"rag_answer": rag_citation})  # citation includes the answer
 
     # Check relevancy for this query's answer.
     relevancy = await check_relevancy(llm, query, rag_answer, writer)
@@ -140,17 +155,14 @@ async def process_single_query(
     # Optionally run a web search if the query is not relevant.
     web_answer, web_citation = None, None
     if search_web:
-        
+
         if relevancy["score"] == "no":
             result = await search_tavily(query, writer)
         else:
             result = await dummy()
         if result is not None:
-        
-            web_answers = [ 
-                res['content'] if 'score' in res and float(res['score']) > 0.6 else "" 
-                for res in result
-            ]
+
+            web_answers = [res['content'] if 'score' in res and float(res['score']) > 0.6 else "" for res in result]
 
             web_citations = [
                 f"""
@@ -164,9 +176,7 @@ ANSWER:
 CITATION:
 {res['url'].strip()}
 
-"""
-                if 'score' in res and float(res['score']) > 0.6 else "" 
-                for res in result
+""" if 'score' in res and float(res['score']) > 0.6 else "" for res in result
             ]
 
             web_answer = "\n".join(web_answers)
@@ -183,7 +193,7 @@ CITATION:
 
         # citation includes the answer
         web_result_to_stream = web_citation if web_citation != "" else f"--- \n {web_answer} \n "
-        
+
         writer({"web_answer": web_result_to_stream})
 
     return rag_answer, rag_citation, relevancy, web_answer, web_citation

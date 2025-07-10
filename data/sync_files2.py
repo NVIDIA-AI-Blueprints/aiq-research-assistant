@@ -13,33 +13,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import json
-import glob
 import asyncio
+import glob
+import json
 import logging
+import os
+import urllib.parse
 import zipfile
 from pathlib import Path
-from pydantic import BaseModel
-import aiohttp
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Literal
+
 import aiofiles
-import os
-from typing import List, Literal, Dict, Any
-import urllib.parse
+import aiohttp
+from pydantic import BaseModel
+
 # Configure logging
-logging.basicConfig(
-    level=logging.DEBUG,
-)
+logging.basicConfig(level=logging.DEBUG, )
 logger = logging.getLogger(__name__)
 
 RAG_URL = os.getenv("RAG_INGEST_URL", "http://ingestor-server:8082")
-MAX_UPLOAD_WAIT_TIME = os.getenv("MAX_UPLOAD_WAIT_TIME", 60*60)
-FILES_DIR = "."     
+MAX_UPLOAD_WAIT_TIME = os.getenv("MAX_UPLOAD_WAIT_TIME", 60 * 60)
+FILES_DIR = "."
+
 
 class Document(BaseModel):
     """ A document response from the RAG server. """
     document_name: str
     error_message: str | None = None
+
 
 class UploadResult(BaseModel):
     """ Result of an upload. """
@@ -48,15 +52,18 @@ class UploadResult(BaseModel):
     documents: List[Document]
     failed_documents: List[Document]
 
+
 class UploadStatusResponse(BaseModel):
     """ Response from the RAG server after starting an upload. """
     state: Literal["PENDING", "FINISHED"]
     result: UploadResult | None = None
 
+
 class UploadResponse(BaseModel):
     """ Response from the RAG server after starting an upload. """
     task_id: str
     message: str
+
 
 # --- Helper Functions ---
 def unzip_file(zip_path: str, extract_to: str):
@@ -64,6 +71,7 @@ def unzip_file(zip_path: str, extract_to: str):
     logger.info(f"Unzipping {zip_path} to {extract_to}")
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
+
 
 async def upload_files(paths: List[str], collection_name: str, rag_url: str) -> UploadResponse:
     """
@@ -83,13 +91,12 @@ async def upload_files(paths: List[str], collection_name: str, rag_url: str) -> 
             "extract_charts": True,
             "extract_images": False,
         },
-        
     }
 
     async with aiohttp.ClientSession() as session:
         # Read all files asynchronously
         form_data = aiohttp.FormData()
-        
+
         # Add all files to a single documents field
         for path in paths:
             dest_filename = os.path.basename(path)
@@ -99,25 +106,17 @@ async def upload_files(paths: List[str], collection_name: str, rag_url: str) -> 
                     "documents",  # Single field name for all files
                     file_content,
                     filename=dest_filename,
-                    content_type="application/pdf"
-                )
-        
+                    content_type="application/pdf")
+
         # Add the metadata once
-        form_data.add_field(
-            "data",
-            json.dumps(data),
-            content_type="application/json"
-        )
-        
+        form_data.add_field("data", json.dumps(data), content_type="application/json")
+
         endpoint = f"{rag_url}/documents"
-        
+
         try:
             async with session.request("POST", endpoint, data=form_data) as response:
                 result = await response.json()
-                return UploadResponse(
-                    task_id=result.get("task_id"),
-                    message=result.get("message")
-                )
+                return UploadResponse(task_id=result.get("task_id"), message=result.get("message"))
         except Exception as e:
             error_msg = f"Failed to start file upload, error: {e}"
             try:
@@ -128,6 +127,7 @@ async def upload_files(paths: List[str], collection_name: str, rag_url: str) -> 
             logger.error(error_msg)
             raise e
 
+
 async def create_collection(
     collection_name: list = None,
     rag_url: str = None,
@@ -136,7 +136,7 @@ async def create_collection(
     Creates a collection through the RAG server API if it doesn't already exist.
     First checks for existing collections, then creates only if needed.
     Returns the response from the server.
-    """    
+    """
 
     HEADERS = {"Content-Type": "application/json"}
 
@@ -147,13 +147,15 @@ async def create_collection(
                 if response.status != 200:
                     logger.error(f"Failed to get existing collections: {await response.text()}")
                     return None
-                
+
                 response_data = await response.json()
                 logger.info(f"Existing collections: {response_data}")
-                
+
                 # Extract collection names from the response structure
-                existing_collection_names = [collection["collection_name"] for collection in response_data.get("collections", [])]
-                
+                existing_collection_names = [
+                    collection["collection_name"] for collection in response_data.get("collections", [])
+                ]
+
                 # Check if our collection already exists
                 if collection_name[0] in existing_collection_names:
                     logger.info(f"Collection {collection_name[0]} already exists, skipping creation")
@@ -162,16 +164,17 @@ async def create_collection(
             # If collection doesn't exist, create it
             async with session.post(f"{rag_url}/collections", json=collection_name, headers=HEADERS) as response:
                 result = await response.text()
-                if '"total_failed":1' in result:  
+                if '"total_failed":1' in result:
                     logger.error(f"Failed to create collection: {result}")
                     return None
                 logger.info(f"Created collection with result: {result}")
                 return result
-            
+
         except aiohttp.ClientError as e:
             logger.error(f"Failed to create collection: {str(e)}")
             return None
-        
+
+
 async def get_upload_status(task_id: str, rag_url: str) -> UploadStatusResponse:
     """
     Get the status of an upload.
@@ -184,7 +187,7 @@ async def get_upload_status(task_id: str, rag_url: str) -> UploadStatusResponse:
         async with session.get(f"{rag_url}/status", params={"task_id": task_id}) as response:
             result = await response.json()
             return UploadStatusResponse.model_validate(result)
-        
+
 
 async def get_existing_documents(collection_name: str, rag_url: str) -> List[Document]:
     """
@@ -194,6 +197,7 @@ async def get_existing_documents(collection_name: str, rag_url: str) -> List[Doc
         async with session.get(f"{rag_url}/documents", params={"collection_name": collection_name}) as response:
             result = await response.json()
             return [Document(document_name=doc["document_name"]) for doc in result.get("documents", [])]
+
 
 async def process_zip_file(zip_path: str):
     """
@@ -214,17 +218,20 @@ async def process_zip_file(zip_path: str):
 
         if result is not None:
             break
-        
+
         if attempt < max_attempts - 1:
-            logger.warning(f"Failed to create collection on attempt {attempt + 1}/{max_attempts}. Waiting 10 seconds before retry...")
+            logger.warning(
+                f"Failed to create collection on attempt {attempt + 1}/{max_attempts}. Waiting 10 seconds before retry..."
+            )
             await asyncio.sleep(10)
-    
+
     if result is None:
-        logger.error(f"Failed to create collection {collection_name} after {max_attempts} attempts. Skipping {zip_path}")
+        logger.error(
+            f"Failed to create collection {collection_name} after {max_attempts} attempts. Skipping {zip_path}")
         return
 
     unzip_file(zip_path, extraction_path)
-    
+
     # Recursively find all files in the extraction directory
     files = []
     existing_documents = await get_existing_documents(collection_name, RAG_URL)
@@ -237,7 +244,7 @@ async def process_zip_file(zip_path: str):
                 logger.info(f"Skipping {filename} because it already exists in the collection {collection_name}")
                 continue
             files.append(os.path.abspath(os.path.join(root, filename)))
-    
+
     if len(files) == 0:
         logger.info(f"No files to upload to collection {collection_name}")
         return
@@ -260,9 +267,16 @@ async def process_zip_file(zip_path: str):
             break
 
     if upload_status.state == "FINISHED":
-        logger.info(f"Upload to collection {collection_name} finished with result: {upload_status.result.total_documents} documents attempted.")
-        logger.info(f"\n \n--- \n Document Results: {"\n".join([f"{doc.document_name}: Success"  for doc in upload_status.result.documents])}")
-        logger.info(f"\n \n Failed Documents: {"\n".join([f"{doc.document_name}: {doc.error_message}" for doc in upload_status.result.failed_documents])}")
+        logger.info(
+            f"Upload to collection {collection_name} finished with result: {upload_status.result.total_documents} documents attempted."
+        )
+
+        doc_results = '\n'.join([f'{doc.document_name}: Success' for doc in upload_status.result.documents])
+        logger.info("\n \n--- \n Document Results: %s", doc_results)
+
+        failed_docs = '\n'.join(
+            [f'{doc.document_name}: {doc.error_message}' for doc in upload_status.result.failed_documents])
+        logger.info("\n \n Failed Documents: %s", failed_docs)
 
 
 async def main():
@@ -273,13 +287,14 @@ async def main():
     if not zip_files:
         logger.info(f"No zip files found in directory {FILES_DIR}")
         return
-    
+
     logger.info(f"Found {len(zip_files)} zip files in directory {FILES_DIR}")
 
     for zip_file in zip_files:
         zip_path = os.path.join(FILES_DIR, zip_file)
         logger.info(f"Processing zip file: {zip_path}")
         await process_zip_file(zip_path)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

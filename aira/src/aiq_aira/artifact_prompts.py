@@ -50,7 +50,6 @@ draft report: a report about taiwan manufacturing
 response: {{"relevant": "yes"}}
 """
 
-
 UPDATE_ENTIRE_ARTIFACT_PROMPT = f"""You are an AI assistant, and the user has requested you make an update to an artifact you generated in the past.
 
 Here is the current content of the artifact:

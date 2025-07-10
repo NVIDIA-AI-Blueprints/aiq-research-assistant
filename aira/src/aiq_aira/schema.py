@@ -14,14 +14,17 @@
 # limitations under the License.
 
 import operator
+from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
-
-from pydantic import BaseModel, Field
-from typing_extensions import Annotated, TypedDict
-from langchain_openai import ChatOpenAI
 from typing import Dict
-from dataclasses import dataclass
+
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
+from pydantic import Field
+from typing_extensions import Annotated
+from typing_extensions import TypedDict
+
 
 class GeneratedQuery(BaseModel):
     query: str = Field(..., description="The actual text of the search query")
@@ -37,6 +40,7 @@ class GenerateQueryStateInput(BaseModel):
     report_organization: str = Field(..., description="Desired structure or constraints for the final report")
     num_queries: int = Field(3, description="Number of queries to generate")
     llm_name: str = Field(..., description="LLM model to use")
+
 
 class GenerateQueryStateOutput(BaseModel):
     queries: list[Dict] | None = None
@@ -57,23 +61,31 @@ class GenerateSummaryStateInput(BaseModel):
     llm_name: str = Field(..., description="LLM model to use")
     # You can add other metadata flags here, e.g. search_web, max_web_research_loops, etc.
 
+
 class GenerateSummaryStateOutput(BaseModel):
     citations: str | None = Field(None, description="The final list of citations formatted as a string")
-    final_report: str | None = Field(None, description="The final summarized report after the entire pipeline (web_research, summarize, reflection, finalize)")
+    final_report: str | None = Field(
+        None,
+        description=
+        "The final summarized report after the entire pipeline (web_research, summarize, reflection, finalize)")
     intermediate_step: str | None = None
+
 
 ##
 # For ArtifactQA
 ##
+
 
 # Define a new Enum for RewriteMode
 class ArtifactRewriteMode(str, Enum):
     """Rewrite modes for the LLM."""
     ENTIRE = "entire"
 
+
 class ArtifactQAInput(BaseModel):
     """Input data for artifact-based Q&A."""
-    artifact: str = Field(..., description="Previously generated artifact (e.g. a report or queries) to reference for Q&A")
+    artifact: str = Field(...,
+                          description="Previously generated artifact (e.g. a report or queries) to reference for Q&A")
     question: str = Field(..., description="User's question about the artifact")
     chat_history: list[str] = Field(default_factory=list, description="Prior conversation turns or context")
     use_internet: bool = Field(False, description="If true, the agent can do additional web or RAG lookups")
@@ -81,20 +93,22 @@ class ArtifactQAInput(BaseModel):
     additional_context: str | None = Field(None, description="Additional context to provide to the LLM")
     rag_collection: str = Field(..., description="Collection to search for information from")
 
+
 class ArtifactQAOutput(BaseModel):
     """Output data for artifact-based Q&A."""
     assistant_reply: str = Field(..., description="The agent's answer or response to the question")
     updated_artifact: str | None = Field(None, description="The updated artifact after a rewrite operation")
+
 
 ###
 # Main State for the AIRA lang graph
 ###
 @dataclass(kw_only=True)
 class AIRAState:
-    queries: list[Dict] | None = None    
+    queries: list[Dict] | None = None
     web_research_results: list[str] | None = None
     citations: str | None = None
-    running_summary: str | None = field(default=None) 
+    running_summary: str | None = field(default=None)
     final_report: str | None = field(default=None)
 
 
@@ -104,7 +118,7 @@ class AIRAState:
 class ConfigSchema(TypedDict):
     llm: ChatOpenAI
     report_organization: str
-    collection: str 
+    collection: str
     number_of_queries: int
     rag_url: str
     num_reflections: int

@@ -13,23 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+import json
 import logging
 import os
-import json
-import asyncio
+from typing import Any
+from typing import AsyncGenerator
 
-from typing import Any, AsyncGenerator
-from pydantic import BaseModel
 from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.component_ref import FunctionRef
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.function_info import FunctionInfo
-from aiq.data_models.api_server import AIQChatResponseChunk
-from aiq_aira.functions import generate_summary, generate_queries, artifact_qa
 from aiq.builder.framework_enum import LLMFrameworkEnum
+from aiq.builder.function_info import FunctionInfo
+from aiq.cli.register_workflow import register_function
+from aiq.data_models.api_server import AIQChatResponseChunk
+from aiq.data_models.component_ref import FunctionRef
+from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.function import FunctionBaseConfig
 from aiq.plugins.langchain import register
+from pydantic import BaseModel
+
+from aiq_aira.functions import artifact_qa
+from aiq_aira.functions import generate_queries
+from aiq_aira.functions import generate_summary
 
 logger = logging.getLogger(__name__)
 
@@ -44,21 +48,23 @@ class DefaultCollection(BaseModel):
     topic: str
     report_organization: str
 
+
 class DefaultCollectionsConfig(FunctionBaseConfig, name="default_collections"):
     collections: list[DefaultCollection]
+
 
 @register_function(config_type=DefaultCollectionsConfig)
 async def default_collections(config: DefaultCollectionsConfig, builder: Builder):
     """
     Returns information about the example collections used by the AIRA demo frontend
     """
+
     async def _default_collections(request: None = None) -> list[DefaultCollection]:
         return config.collections
 
-    yield FunctionInfo.from_fn(
-        _default_collections,
-        description="Information about the example collections used by the AIRA demo frontend"
-    )
+    yield FunctionInfo.from_fn(_default_collections,
+                               description="Information about the example collections used by the AIRA demo frontend")
+
 
 ################################################
 # Health Check
@@ -66,18 +72,18 @@ async def default_collections(config: DefaultCollectionsConfig, builder: Builder
 class HealthCheckConfig(FunctionBaseConfig, name="health_check"):
     pass
 
+
 @register_function(config_type=HealthCheckConfig)
 async def health_check(config: HealthCheckConfig, builder: Builder):
     """
     Health check for the AIQ AIRA backend service
     """
+
     async def _health_check(request: None = None) -> dict:
         return {"status": "OK"}
 
-    yield FunctionInfo.from_fn(
-        _health_check,
-        description="Health check for the AIQ AIRA service"
-    )
+    yield FunctionInfo.from_fn(_health_check, description="Health check for the AIQ AIRA service")
+
 
 ################################################
 # Additional Data Models
@@ -90,13 +96,15 @@ class AIResearcherInput(BaseModel):
     num_queries: int
     llm_name: str
 
+
 ################################################
 # End to end research workflow
 ################################################
-# note the component parts generate_queries, generate_summary, and artifact_qa 
+# note the component parts generate_queries, generate_summary, and artifact_qa
 # are used in the AIRA demo frontend
 # the ai_researcher workflow is not used in the AIRA demo frontend
 # the components are registered for AIQ serve by importing them in this file
+
 
 class AIResearcherWorkflowConfig(FunctionBaseConfig, name="ai_researcher"):
     """
@@ -104,6 +112,7 @@ class AIResearcherWorkflowConfig(FunctionBaseConfig, name="ai_researcher"):
     This workflow is not used in the AIRA demo frontend
     """
     rag_url: str = ""
+
 
 @register_function(config_type=AIResearcherWorkflowConfig)
 async def ai_researcher(config: AIResearcherWorkflowConfig, builder: Builder):
@@ -115,8 +124,8 @@ async def ai_researcher(config: AIResearcherWorkflowConfig, builder: Builder):
     So the user only has to call one endpoint to get from raw topic -> final report.
     """
 
-    generate_queries = builder.get_function(name="generate_query")  
-    generate_summary = builder.get_function(name="generate_summary") 
+    generate_queries = builder.get_function(name="generate_query")
+    generate_summary = builder.get_function(name="generate_summary")
 
     async def _response_stream_fn(input_message: str) -> AsyncGenerator[AIQChatResponseChunk, None]:
         """
@@ -189,7 +198,4 @@ async def ai_researcher(config: AIResearcherWorkflowConfig, builder: Builder):
         logger.debug("Finished ai_researcher orchestrated pipeline (single)")
         return final_report
 
-    yield FunctionInfo.create(
-        stream_fn=_response_stream_fn,
-        single_fn=_response_single_fn
-    )
+    yield FunctionInfo.create(stream_fn=_response_stream_fn, single_fn=_response_single_fn)

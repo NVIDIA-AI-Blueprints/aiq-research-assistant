@@ -1,39 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-import aiohttp
 import asyncio
 import json
-from urllib.parse import urljoin
-from aiq_aira.constants import ASYNC_TIMEOUT, RAG_API_KEY, TAVILY_INCLUDE_DOMAINS
-from langgraph.types import StreamWriter
-from aiq_aira.utils import get_domain
-from langchain_community.tools import TavilySearchResults
-from urllib.parse import urljoin
 import logging
+from urllib.parse import urljoin
+
+import aiohttp
+from langchain_community.tools import TavilySearchResults
+from langgraph.types import StreamWriter
+
+from aiq_aira.constants import ASYNC_TIMEOUT
+from aiq_aira.constants import RAG_API_KEY
+from aiq_aira.constants import TAVILY_INCLUDE_DOMAINS
+from aiq_aira.utils import get_domain
 
 logger = logging.getLogger(__name__)
 
-async def search_rag(
-    session: aiohttp.ClientSession,
-    url: str,
-    prompt: str,
-    writer: StreamWriter,
-    collection: str
-):
+
+async def search_rag(session: aiohttp.ClientSession, url: str, prompt: str, writer: StreamWriter, collection: str):
     """
     Calls a RAG endpoint at `url`, passing `prompt` and referencing `collection`.
     Returns a tuple (content, citations).
-    """ 
+    """
     writer({"rag_answer": "\n Performing RAG search \n"})
     logger.info("RAG SEARCH")
     headers = {
-        "accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {RAG_API_KEY}"
+        "accept": "application/json", "Content-Type": "application/json", "Authorization": f"Bearer {RAG_API_KEY}"
     }
     data = {
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
+        "messages": [{
+            "role": "user", "content": prompt
+        }],
         "use_knowledge_base": True,
         "enable_citations": True,
         "collection_name": collection
@@ -56,14 +66,8 @@ async def search_rag(
                         if "citations" in full_result:
                             if "results" in full_result["citations"]:
                                 citations_raw = full_result["citations"]["results"]
-                                cited_docs = [
-                                    (
-                                        f"{c['document_name']}"
-                                        if c['document_type'] == 'text'
-                                        else ""
-                                    )
-                                    for c in citations_raw
-                                ]
+                                cited_docs = [(f"{c['document_name']}" if c['document_type'] == 'text' else "")
+                                              for c in citations_raw]
                                 citations += ",".join(cited_docs)
                 citations = f"""
 ---
@@ -76,23 +80,20 @@ ANSWER:
 CITATION:
 {citations}
 
-"""                
+"""
                 return (content, citations)
     except asyncio.TimeoutError:
         writer({"rag_answer": f"""
 -------------
 Timeout getting RAG answer for question {prompt} 
-"""
-                })
-        return (f"Timeout fetching {req_url}:", "")        
+"""})
+        return (f"Timeout fetching {req_url}:", "")
     except Exception as e:
         writer({"rag_answer": f"""
 -------------
 Error getting RAG answer for question {prompt} 
-"""
-                })
+"""})
         return (f"Error fetching {req_url}: {e}", "")
-    
 
 
 async def search_tavily(prompt: str, writer: StreamWriter):
@@ -101,12 +102,12 @@ async def search_tavily(prompt: str, writer: StreamWriter):
     """
     logger.info("TAVILY SEARCH")
     writer({"web_answer": "\n Performing web search \n"})
-    try: 
+    try:
         all_results = []
 
         # explicitly query sets of domains
         if len(TAVILY_INCLUDE_DOMAINS) > 0:
-            domain_chunks = [TAVILY_INCLUDE_DOMAINS[i:i+5] for i in range(0, len(TAVILY_INCLUDE_DOMAINS), 5)]
+            domain_chunks = [TAVILY_INCLUDE_DOMAINS[i:i + 5] for i in range(0, len(TAVILY_INCLUDE_DOMAINS), 5)]
             for domain_chunk in domain_chunks:
                 tool = TavilySearchResults(
                     max_results=2,  # optimization try more than one search result
@@ -114,22 +115,23 @@ async def search_tavily(prompt: str, writer: StreamWriter):
                     include_answer=True,
                     include_raw_content=False,
                     include_images=False,
-                    include_domains=domain_chunk,
-                    # exclude_domains=[...], 
+                    include_domains=domain_chunk,  # exclude_domains=[...],
                 )
                 try:
                     async with asyncio.timeout(ASYNC_TIMEOUT):
                         chunk_results = await tool.ainvoke({"query": prompt})
                         all_results.extend(chunk_results)
                 except asyncio.TimeoutError:
-                    writer({"web_answer": f"""
+                    writer({
+                        "web_answer":
+                            f"""
     --------
     The Tavily request for {prompt} to domains {domain_chunk} timed out
     --------                                
                     """
                     })
-        
-        # query at least a few different domains        
+
+        # query at least a few different domains
         if len(TAVILY_INCLUDE_DOMAINS) == 0:
             seen_domains = []
             for i in range(2):
@@ -139,29 +141,33 @@ async def search_tavily(prompt: str, writer: StreamWriter):
                     include_answer=True,
                     include_raw_content=False,
                     include_images=False,
-                    exclude_domains=seen_domains, 
-                    )
+                    exclude_domains=seen_domains,
+                )
                 try:
                     async with asyncio.timeout(ASYNC_TIMEOUT):
                         chunk_results = await tool.ainvoke({"query": prompt})
                         all_results.extend(chunk_results)
                         seen_domains.extend([get_domain(r["url"]) for r in chunk_results])
                 except asyncio.TimeoutError:
-                    writer({"web_answer": f"""
+                    writer({
+                        "web_answer":
+                            f"""
         --------
         The Tavily request for {prompt} to domains {domain_chunk} timed out
         --------                                
                     """
                     })
-        
+
         return all_results
-    
+
     except Exception as e:
-        writer({"web_answer": f"""
+        writer({
+            "web_answer":
+                f"""
 --------
 Error searching web for {prompt} using Tavily with {TAVILY_INCLUDE_DOMAINS}
 --------                                
                 """
-                })
+        })
         logger.warning(f"TAVILY SEARCH FAILED {e}")
         return [{"url": "", "content": ""}]
