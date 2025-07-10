@@ -161,28 +161,20 @@ async def process_single_query(
     rag_relevancy = await check_relevancy(llm, query, rag_answer, writer)
 
     if rag_relevancy["score"] == "no":
-        logger.info("RAG NOT RELEVANT, SEARCHING ECI")
+        logger.info("RAG NOT RELEVANT, SEARCHING ECI and WEB")
         eci_answer, eci_citation = await search_eci(query, writer, eci_search_tool)
         writer({"eci_answer": eci_citation})
         logger.info(f"ECI ANSWER: {eci_citation}")
-        eci_relevancy = await check_relevancy(llm, query, eci_answer, writer)
 
-
-        if eci_relevancy["score"] == "no" and search_web:
-            logger.info("ECI NOT RELEVANT, SEARCHING WEB")
+        if search_web:
             web_answer, web_citation = await search_tavily(query, writer)
             writer({"web_answer": web_citation})
             logger.info(f"WEB ANSWER: {web_citation}")
-
+    
     if rag_relevancy["score"] == "yes":
         return rag_answer, rag_citation
     
-    if rag_relevancy["score"] == "no" and eci_relevancy["score"] == "yes":
+    if rag_relevancy["score"] == "no":
         return eci_answer, eci_citation
     
-    if rag_relevancy["score"] == "no" and eci_relevancy["score"] == "no" and search_web and web_citation is not "":
-        return web_answer, web_citation
-    
-    # fall back to rag + eci response
-    logger.info("Warning: no relevant answers found, falling back to RAG and ECI responses")
-    return "\n".join([rag_answer, eci_answer]), "\n".join([rag_citation, eci_citation])
+    return "\n".join([web_answer, eci_answer]), "\n".join([web_citation, eci_citation])

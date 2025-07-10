@@ -51,6 +51,7 @@ async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
             payload = {
                 "query": query,
                 "pageSize": query_size if query_size is not None else config.default_query_size,
+                "maxSnippetSize": 1000
             }
 
             data_sources = data_sources if data_sources is not None else config.default_data_sources
