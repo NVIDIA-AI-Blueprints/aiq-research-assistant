@@ -164,16 +164,16 @@ class GitWrapper:
             return base_ref
 
         try:
-            base_ref = "develop"
+            base_ref = "trunk"
 
             # If our current branch and the base ref are the same, then use main
             if (base_ref == GitWrapper.get_current_branch()):
                 logger.warning("Current branch is the same as the tagged branch: %s. Falling back to 'main'", base_ref)
-                base_ref = "develop"
+                base_ref = "trunk"
 
         except Exception:
-            logger.exception("Could not determine branch version falling back to develop", exc_info=True)
-            base_ref = "develop"
+            logger.exception("Could not determine branch version falling back to trunk", exc_info=True)
+            base_ref = "trunk"
 
         return GitWrapper.get_remote_branch(base_ref)
 

@@ -24,7 +24,7 @@ export PY_DIRS="${PY_ROOT} ${PROJECT_ROOT}/ci/scripts "
 
 # Determine the commits to compare against. If running in CI, these will be set. Otherwise, diff with main
 export AIQ_LOG_LEVEL=WARN
-export CI_MERGE_REQUEST_TARGET_BRANCH_NAME=${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-"develop"}
+export CI_MERGE_REQUEST_TARGET_BRANCH_NAME=${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-"trunk"}
 
 if [[ "${GITLAB_CI}" == "true" ]]; then
    export BASE_SHA=${BASE_SHA:-${CI_MERGE_REQUEST_TARGET_BRANCH_SHA:-${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$(${SCRIPT_DIR}/gitutils.py get_merge_target --current-branch=${CURRENT_BRANCH})}}}

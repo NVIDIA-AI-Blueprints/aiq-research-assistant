@@ -26,10 +26,7 @@ workflow:
 
 stages:
   - check
-  # - test
-  # - docs
-  # - package
-  # - upload
+  - docker-build
 
 variables:
   UV_CACHE_DIR: .uv-cache
@@ -73,6 +70,22 @@ check:style:
         - .pre-commit-config.yaml
     paths:
       - .cache/pre-commit
+
+
+docker-build:
+  stage: docker-build
+  inherit:
+    default: false
+  script:
+    - echo "Building Docker image"
+    - ./ci/scripts/gitlab/build_container.sh
+  tags:
+    - docker-build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'trunk'
+    - if: $CI_COMMIT_BRANCH == 'staging'
+  
 
 # test:python_tests:
 #   stage: test

@@ -21,14 +21,16 @@ source ${SCRIPT_DIR}/common.sh
 export AIQ_AVOID_GH_CLI=1 # gh cli not working with gitlab, todo look into seeing if this can be fixed
 
 function get_git_tag() {
-    FT=$(git fetch --all --tags)
+    if [[ "${LOCAL_CI}" != "1" ]]; then
+        FT=$(git fetch --all --tags)
+    fi
 
     # Get the latest Git tag, sorted by version, excluding lightweight tags
-    GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "no-tag")
+    GIT_TAG=$(git describe --tags 2>/dev/null || echo "no-tag")
 
     if [[ "${CI_CRON_NIGHTLY}" == "1" ]]; then
         if [[ ${GIT_TAG} == "no-tag" ]]; then
-            rapids-logger "Error: No tag found. Exiting."
+            echo "Error: No tag found. Exiting."
             exit 1;
         fi
 
@@ -69,12 +71,12 @@ function create_env() {
             extras+=("--group" "${arg#group:}")
         else
             # Error out if we don't know what to do with the argument
-            rapids-logger "Unknown argument to create_env: ${arg}. Must start with 'extra:' or 'group:'"
+            echo "Unknown argument to create_env: ${arg}. Must start with 'extra:' or 'group:'"
             exit 1
         fi
     done
 
-    rapids-logger "Creating Environment with extras: ${@}"
+    echo "Creating Environment with extras: ${@}"
 
     UV_SYNC_STDERROUT=$(uv sync ${extras[@]} 2>&1)
 
@@ -86,9 +88,9 @@ function create_env() {
         exit 1
     fi
 
-    rapids-logger "Final Environment"
+    echo "Final Environment"
     uv pip list
 }
 
-rapids-logger "Environment Variables"
+echo "Environment Variables"
 printenv | sort
