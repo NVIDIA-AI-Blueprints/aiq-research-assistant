@@ -23,7 +23,7 @@ else
     cd aiq-bp-internal/
     git remote add upstream ${GIT_UPSTREAM_URL}
     git fetch upstream
-    git checkout develop
+    git checkout trunk
     git checkout ${GIT_BRANCH}
     git pull
     git checkout ${GIT_COMMIT}

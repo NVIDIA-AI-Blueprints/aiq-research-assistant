@@ -19,13 +19,13 @@ case "$1" in
         STAGES=("bash")
         ;;
     "all" )
-        STAGES=("checks")
+        STAGES=("checks" "build_container")
         ;;
-    "checks" | "bash" )
+    "checks" | "bash" | "build_container")
         STAGES=("$1")
         ;;
     * )
-        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", or \"bash\""
+        echo "Error: Invalid argument \"$1\" provided. Expected values: \"all\", \"checks\", \"build_container\", or \"bash\""
         exit 1
         ;;
 esac
@@ -34,7 +34,7 @@ esac
 function git_ssh_to_https()
 {
     local url=$1
-    echo $url | sed -e 's|^git@gitlab-master\.nvidia\.com:12051|https://gitlab-master.nvidia.com/|'
+    echo $url | sed -e 's|^ssh://git@gitlab-master\.nvidia\.com:12051|https://gitlab-master.nvidia.com/|'
 }
 
 CI_ARCH=${CI_ARCH:-$(dpkg --print-architecture)}
@@ -51,6 +51,8 @@ GIT_COMMIT=$(git log -n 1 --pretty=format:%H)
 
 # Specifies whether to mount the current git repo or to use a clean clone (the default)
 USE_HOST_GIT=${USE_HOST_GIT:-1}
+
+KEEP_IMAGE=${KEEP_IMAGE:-0}
 
 LOCAL_CI_TMP=${LOCAL_CI_TMP:-${PROJ_ROOT}/.tmp/local_ci_tmp/${CI_ARCH}}
 DOCKER_EXTRA_ARGS=${DOCKER_EXTRA_ARGS:-""}
@@ -73,10 +75,14 @@ for STAGE in "${STAGES[@]}"; do
     mkdir -p ${LOCAL_CI_TMP}
     cp ${PROJ_ROOT}/ci/scripts/bootstrap_local_ci.sh ${LOCAL_CI_TMP}
 
-    DOCKER_RUN_ARGS="--rm -ti --net=host --platform=linux/${CI_ARCH} -v "${LOCAL_CI_TMP}":/ci_tmp ${ENV_LIST} --env STAGE=${STAGE}"
+    DOCKER_RUN_ARGS="--rm -ti --net=host --platform=linux/${CI_ARCH} -v "${LOCAL_CI_TMP}":/ci_tmp ${ENV_LIST} --env STAGE=${STAGE} --env KEEP_IMAGE=${KEEP_IMAGE}"
 
     if [[ "${USE_HOST_GIT}" == "1" ]]; then
         DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} -v ${PROJ_ROOT}:/aiq-bp-internal"
+    fi
+
+    if [[ "${STAGE}" == "build_container" || "${USE_DOCKER}" == "1" ]]; then
+        DOCKER_RUN_ARGS="${DOCKER_RUN_ARGS} --privileged -v /var/run/docker.sock:/var/run/docker.sock"
     fi
 
     if [[ "${STAGE}" == "bash" ]]; then
