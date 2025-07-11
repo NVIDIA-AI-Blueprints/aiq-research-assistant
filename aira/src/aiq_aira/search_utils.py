@@ -156,6 +156,8 @@ async def process_single_query(
     rag_relevancy = await check_relevancy(llm, query, rag_answer, writer)
 
     if rag_relevancy["score"] == "no":
+        eci_answer, eci_citation = "", ""
+        web_answer, web_citation = "", ""
         logger.info("RAG NOT RELEVANT, SEARCHING ECI and WEB")
         eci_answer, eci_citation = await search_eci(query, writer, eci_search_tool)
         writer({"eci_answer": eci_citation})
@@ -168,8 +170,5 @@ async def process_single_query(
     
     if rag_relevancy["score"] == "yes":
         return rag_answer, rag_citation
-    
-    if rag_relevancy["score"] == "no":
-        return eci_answer, eci_citation
     
     return "\n".join([web_answer, eci_answer]), "\n".join([web_citation, eci_citation])
