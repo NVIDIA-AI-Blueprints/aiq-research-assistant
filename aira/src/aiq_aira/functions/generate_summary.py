@@ -59,6 +59,7 @@ class AIRAGenerateSummaryConfig(FunctionBaseConfig, name="generate_summaries"):
     rag_url: str = ""
     eci_search_tool_name: str = ""
 
+
 def serialize_pydantic(obj):
     if isinstance(obj, list):
         return [serialize_pydantic(item) for item in obj]
@@ -105,19 +106,19 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
         eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
-        response: AIRAState = await graph.ainvoke(
-            input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
-            config={
-                "llm": llm,
-                "eci_search_tool": eci_search_tool,
-                "report_organization": message.report_organization,
-                "rag_url": config.rag_url,
-                "collection": message.rag_collection,
-                "search_web": message.search_web,
-                "num_reflections": message.reflection_count, 
-                "topic": message.topic,
-            }
-        )
+        response: AIRAState = await graph.ainvoke(input={
+            "queries": message.queries, "web_research_results": [], "running_summary": ""
+        },
+                                                  config={
+                                                      "llm": llm,
+                                                      "eci_search_tool": eci_search_tool,
+                                                      "report_organization": message.report_organization,
+                                                      "rag_url": config.rag_url,
+                                                      "collection": message.rag_collection,
+                                                      "search_web": message.search_web,
+                                                      "num_reflections": message.reflection_count,
+                                                      "topic": message.topic,
+                                                  })
         return GenerateSummaryStateOutput(final_report=response["final_report"], citations=response["citations"])
 
     # ------------------------------------------------------------------

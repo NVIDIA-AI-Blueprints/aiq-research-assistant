@@ -31,6 +31,7 @@ RED = "\033[91m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
+
 def to_local_time_str(timestamp: float):
     return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
 
@@ -58,9 +59,7 @@ def custom_raise_for_status(response: httpx.Response):
     if response.text:
         message += f", Text:\n{response.text}"
 
-    raise httpx.HTTPStatusError(message,
-                                request=response.request,
-                                response=response)
+    raise httpx.HTTPStatusError(message, request=response.request, response=response)
 
 
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
@@ -134,8 +133,7 @@ def format_sources(sources: str) -> str:
                 formatted_sources.append(formatted_entry)
                 src_count += 1
             else:
-                logger.info(
-                    f"Failed to clean up {entry} because it failed to parse")
+                logger.info(f"Failed to clean up {entry} because it failed to parse")
                 formatted_sources.append(entry)
                 src_count += 1
 

@@ -163,13 +163,12 @@ async def search_tavily(prompt: str, writer: StreamWriter):
         --------                                
                     """
                     })
-        
+
         # format results for deep researcher
         if all_results is not None:
-        
-            web_answers = [ 
-                res['content'] if 'score' in res and float(res['score']) > 0.6 else "" 
-                for res in all_results
+
+            web_answers = [
+                res['content'] if 'score' in res and float(res['score']) > 0.6 else "" for res in all_results
             ]
 
             web_citations = [
@@ -184,9 +183,7 @@ ANSWER:
 CITATION:
 {res['url'].strip()}
 
-"""
-                if 'score' in res and float(res['score']) > 0.6 else "" 
-                for res in all_results
+""" if 'score' in res and float(res['score']) > 0.6 else "" for res in all_results
             ]
 
             web_answer = "\n".join(web_answers)
@@ -205,7 +202,7 @@ CITATION:
         writer({"web_answer": web_result_to_stream})
 
         return (web_answer, web_citation)
-    
+
     except Exception as e:
         writer({
             "web_answer":
@@ -217,17 +214,17 @@ Error searching web for {prompt} using Tavily with {TAVILY_INCLUDE_DOMAINS}
         })
         logger.warning(f"TAVILY SEARCH FAILED {e}")
         return ("", "")
-    
+
 
 async def search_eci(prompt: str, writer: StreamWriter, eci_search_tool):
     """
     Search using ECI
     """
-    
+
     logger.info(f"ECI SEARCH: {prompt}")
 
     try:
-        # todo call eci search tool 
+        # todo call eci search tool
         content_search_response: ContentSearchResponse = await eci_search_tool.acall_invoke({"query": prompt})
         return documents_from_eci_response(prompt, content_search_response)
 
@@ -237,10 +234,8 @@ async def search_eci(prompt: str, writer: StreamWriter, eci_search_tool):
 --------
 Failed ECI search for: {prompt} 
 --------
-        """
-        })
+        """})
 
-    
     return ("", "")
 
 
@@ -250,18 +245,18 @@ def documents_from_eci_response(query, response: ContentSearchResponse):
     """
     answers = []
     citations = []
-    
+
     for result in response.results:
-        snippet_text =""
+        snippet_text = ""
         for snippet in result.snippets:
-            if snippet.text: 
+            if snippet.text:
                 snippet_text = snippet_text + "\n" + snippet.text
 
         document_answer = result.title + "\n" + snippet_text
         document_citation = format_citation(query, document_answer, result.url)
         answers.append(document_answer)
         citations.append(document_citation)
-    
+
     return "\n".join(answers), "\n".join(citations)
 
 

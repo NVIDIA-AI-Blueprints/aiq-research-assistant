@@ -43,10 +43,7 @@ async def summarize_report(existing_summary: str,
         user_input = report_extender.format(report=existing_summary, source=new_source)
     else:
         # No existing summary; use the 'summarizer_instructions' prompt
-        user_input = summarizer_instructions.format(
-            report_organization=report_organization,
-            source=new_source
-        )
+        user_input = summarizer_instructions.format(report_organization=report_organization, source=new_source)
     system_prompt = "you are a helpful assistant"
     system_prompt = update_system_prompt(system_prompt, llm)
 

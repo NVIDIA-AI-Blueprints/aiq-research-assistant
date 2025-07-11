@@ -104,8 +104,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
 
         query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [gen_query]
-        )
+            [rag_citation], [rag_answer], [gen_query])
 
         logger.info(f"Artifact QA Query message: {query_message}")
 
@@ -154,8 +153,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
 
         query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [gen_query]
-        )
+            [rag_citation], [rag_answer], [gen_query])
 
         logger.info(f"Artifact QA Query message: {query_message}")
 

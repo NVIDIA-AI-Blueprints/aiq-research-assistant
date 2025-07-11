@@ -97,12 +97,7 @@ async def fetch_query_results(rag_url: str, prompt: str, writer: StreamWriter, c
         return result
 
 
-
-def deduplicate_and_format_sources(
-    sources: List[str],
-    generated_answers: List[str],
-    queries: List[GeneratedQuery]
-):
+def deduplicate_and_format_sources(sources: List[str], generated_answers: List[str], queries: List[GeneratedQuery]):
     """
     Convert RAG and fallback results into an XML structure <sources><source>...</source></sources>.
     Each <source> has <query> and <answer>.
@@ -111,9 +106,7 @@ def deduplicate_and_format_sources(
     logger.info("DEDUPLICATE RESULTS")
     root = ET.Element("sources")
 
-    for q_json, src, gen_ans in zip(
-        queries, sources, generated_answers
-    ):
+    for q_json, src, gen_ans in zip(queries, sources, generated_answers):
         source_elem = ET.SubElement(root, "source")
         query_elem = ET.SubElement(source_elem, "query")
         query_elem.text = q_json.query
@@ -131,13 +124,13 @@ def deduplicate_and_format_sources(
 
 
 async def process_single_query(
-        query: str,
-        config: RunnableConfig,
-        writer: StreamWriter,
-        collection,
-        llm,
-        eci_search_tool,
-        search_web: bool, 
+    query: str,
+    config: RunnableConfig,
+    writer: StreamWriter,
+    collection,
+    llm,
+    eci_search_tool,
+    search_web: bool,
 ):
     """
     Process a single query:
@@ -150,10 +143,10 @@ async def process_single_query(
     rag_url = config["configurable"].get("rag_url")
 
     rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
-    
-    writer({"rag_answer": rag_citation}) # citation includes the answer
+
+    writer({"rag_answer": rag_citation})  # citation includes the answer
     logger.info(f"RAG ANSWER: {rag_citation}")
-    
+
     rag_relevancy = await check_relevancy(llm, query, rag_answer, writer)
 
     if rag_relevancy["score"] == "no":
@@ -168,8 +161,8 @@ async def process_single_query(
             web_answer, web_citation = await search_tavily(query, writer)
             writer({"web_answer": web_citation})
             logger.info(f"WEB ANSWER: {web_citation}")
-    
+
     if rag_relevancy["score"] == "yes":
         return rag_answer, rag_citation
-    
+
     return "\n".join([web_answer, eci_answer]), "\n".join([web_citation, eci_citation])

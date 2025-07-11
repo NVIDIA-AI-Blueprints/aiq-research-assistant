@@ -69,8 +69,7 @@ class CustomData(BaseModel):
 
 class DocumentMetadata(BaseModel):
     datasource: Optional[str] = None
-    datasource_instance: Optional[str] = Field(None,
-                                               alias="datasourceInstance")
+    datasource_instance: Optional[str] = Field(None, alias="datasourceInstance")
     object_type: Optional[str] = Field(None, alias="objectType")
     container: Optional[str] = None
     container_id: Optional[str] = Field(None, alias="containerId")
@@ -93,10 +92,8 @@ class DocumentMetadata(BaseModel):
 
 
 class Document(BaseModel):
-    connector_type: Optional[ConnectorType] = Field(None,
-                                                    alias="connectorType")
-    container_document: Optional['Document'] = Field(None,
-                                                     alias="containerDocument")
+    connector_type: Optional[ConnectorType] = Field(None, alias="connectorType")
+    container_document: Optional['Document'] = Field(None, alias="containerDocument")
     content: Optional[DocumentContent] = None
     datasource: Optional[str] = None
     doc_type: Optional[str] = Field(None, alias="docType")
@@ -129,8 +126,7 @@ class SearchResultSnippet(BaseModel):
     text: str
     mime_type: Optional[str] = Field(None, alias="mimeType")
     text: Optional[str] = None
-    snippet_text_ordering: Optional[int] = Field(None,
-                                                 alias="snippetTextOrdering")
+    snippet_text_ordering: Optional[int] = Field(None, alias="snippetTextOrdering")
     ranges: Optional[List[SearchResultSnippetRange]] = None
     url: Optional[str] = None
 
@@ -163,8 +159,7 @@ class StructuredResult(BaseModel):
 
 
 class SearchResult(BaseModel):
-    structured_results: Optional[List[StructuredResult]] = Field(
-        None, alias="structuredResults")
+    structured_results: Optional[List[StructuredResult]] = Field(None, alias="structuredResults")
     tracking_token: Optional[str] = Field(None, alias="trackingToken")
     document: Optional[Document] = None
     person: Optional[Person] = None
@@ -175,21 +170,15 @@ class SearchResult(BaseModel):
     snippets: Optional[List[SearchResultSnippet]] = None
     full_text: Optional[str] = Field(None, alias="fullText")
     full_text_list: Optional[List[str]] = Field(None, alias="fullTextList")
-    related_results: Optional[List[RelatedDocuments]] = Field(
-        None, alias="relatedResults")
-    clustered_results: Optional[List['SearchResult']] = Field(
-        None, alias="clusteredResults")
-    all_clustered_results: Optional[List[ClusterGroup]] = Field(
-        None, alias="allClusteredResults")
+    related_results: Optional[List[RelatedDocuments]] = Field(None, alias="relatedResults")
+    clustered_results: Optional[List['SearchResult']] = Field(None, alias="clusteredResults")
+    all_clustered_results: Optional[List[ClusterGroup]] = Field(None, alias="allClusteredResults")
     attachment_count: Optional[int] = Field(None, alias="attachmentCount")
     attachments: Optional[List['SearchResult']] = None
-    backlink_results: Optional[List['SearchResult']] = Field(
-        None, alias="backlinkResults")
+    backlink_results: Optional[List['SearchResult']] = Field(None, alias="backlinkResults")
     cluster_type: Optional[ClusterTypeEnum] = Field(None, alias="clusterType")
-    must_include_suggestions: Optional[QuerySuggestionList] = Field(
-        None, alias="mustIncludeSuggestions")
-    query_suggestion: Optional[QuerySuggestion] = Field(
-        None, alias="querySuggestion")
+    must_include_suggestions: Optional[QuerySuggestionList] = Field(None, alias="mustIncludeSuggestions")
+    query_suggestion: Optional[QuerySuggestion] = Field(None, alias="querySuggestion")
     prominence: Optional[SearchResultProminenceEnum] = None
     attachment_context: Optional[str] = Field(None, alias="attachmentContext")
     pins: Optional[List[PinDocument]] = None
@@ -198,17 +187,13 @@ class SearchResult(BaseModel):
 class SearchResponseMetadata(BaseModel):
     rewritten_query: Optional[str] = Field(None, alias="rewrittenQuery")
     searched_query: Optional[str] = Field(None, alias="searchedQuery")
-    searched_query_ranges: Optional[List[str]] = Field(
-        None, alias="searchedQueryRanges")
+    searched_query_ranges: Optional[List[str]] = Field(None, alias="searchedQueryRanges")
     original_query: Optional[str] = Field(None, alias="originalQuery")
     query_suggestion: Optional[str] = Field(None, alias="querySuggestion")
-    additional_query_suggestions: Optional[List[str]] = Field(
-        None, alias="additionalQuerySuggestions")
+    additional_query_suggestions: Optional[List[str]] = Field(None, alias="additionalQuerySuggestions")
     negated_terms: Optional[List[str]] = Field(None, alias="negatedTerms")
-    modified_query_was_used: Optional[bool] = Field(
-        None, alias="modifiedQueryWasUsed")
-    original_query_had_no_results: Optional[bool] = Field(
-        None, alias="originalQueryHadNoResults")
+    modified_query_was_used: Optional[bool] = Field(None, alias="modifiedQueryWasUsed")
+    original_query_had_no_results: Optional[bool] = Field(None, alias="originalQueryHadNoResults")
 
 
 class ResultsDescription(BaseModel):
@@ -220,8 +205,7 @@ class ResultTab(BaseModel):
     id: Optional[str] = None
     count: Optional[int] = None
     datasource: Optional[str] = None
-    datasource_instance: Optional[str] = Field(None,
-                                               alias="datasourceInstance")
+    datasource_instance: Optional[str] = Field(None, alias="datasourceInstance")
 
 
 class FacetFilterValue(BaseModel):
@@ -253,23 +237,18 @@ class ContentSearchResponse(BaseModel):
     cursor: Optional[str] = None
     error_info: Optional[Dict[str, Any]] = Field(None, alias="errorInfo")
     experiment_ids: Optional[List[int]] = Field(None, alias="experimentIds")
-    facet_results: Optional[List[FacetResult]] = Field(None,
-                                                       alias="facetResults")
-    generated_qna_result: Optional[Dict[str, Any]] = Field(
-        None, alias="generatedQnaResult")
+    facet_results: Optional[List[FacetResult]] = Field(None, alias="facetResults")
+    generated_qna_result: Optional[Dict[str, Any]] = Field(None, alias="generatedQnaResult")
     has_more_results: Optional[bool] = Field(None, alias="hasMoreResults")
     metadata: Optional[SearchResponseMetadata] = None
     request_id: Optional[str] = Field(None, alias="requestID")
     results: Optional[List[SearchResult]] = None
-    results_description: Optional[ResultsDescription] = Field(
-        None, alias="resultsDescription")
+    results_description: Optional[ResultsDescription] = Field(None, alias="resultsDescription")
     result_tab_ids: Optional[List[str]] = Field(None, alias="resultTabIds")
     result_tabs: Optional[List[ResultTab]] = Field(None, alias="resultTabs")
-    rewritten_facet_filters: Optional[List[FacetFilter]] = Field(
-        None, alias="rewrittenFacetFilters")
+    rewritten_facet_filters: Optional[List[FacetFilter]] = Field(None, alias="rewrittenFacetFilters")
     session_info: Optional[Dict[str, Any]] = Field(None, alias="sessionInfo")
-    structured_results: Optional[List[StructuredResult]] = Field(
-        None, alias="structuredResults")
+    structured_results: Optional[List[StructuredResult]] = Field(None, alias="structuredResults")
     tracking_token: Optional[str] = Field(None, alias="trackingToken")
     excluded_results_count: int = Field(..., alias="excludedResultsCount")
 

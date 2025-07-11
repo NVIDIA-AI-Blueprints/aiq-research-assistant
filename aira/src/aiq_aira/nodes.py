@@ -144,8 +144,7 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
 
     # Process each query concurrently.
     results = await asyncio.gather(*[
-        process_single_query(query, config, writer, collection, llm, eci_search_tool, search_web)
-        for query in queries
+        process_single_query(query, config, writer, collection, llm, eci_search_tool, search_web) for query in queries
     ])
 
     # Unpack results.
@@ -153,12 +152,9 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
     citations = [result[1] if result[1] is not None else "" for result in results]
 
     # Format the sources (producing a combined XML <sources> structure).
-    search_str = deduplicate_and_format_sources(
-        citations, generated_answers, state_queries
-    )
+    search_str = deduplicate_and_format_sources(citations, generated_answers, state_queries)
 
-
-    unique_citations = set(citations) # remove duplicates
+    unique_citations = set(citations)  # remove duplicates
     citation_str = "\n".join(unique_citations)
     return {"citations": citation_str, "web_research_results": [search_str]}
 
@@ -265,10 +261,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             search_web=search_web
         )
 
-
-        search_str = deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [gen_query]
-        )
+        search_str = deduplicate_and_format_sources([rag_citation], [rag_answer], [gen_query])
 
         state.web_research_results.append(search_str)
         state.citations = "\n".join([state.citations, rag_citation])
