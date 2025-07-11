@@ -78,14 +78,9 @@ LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answe
 ---------
 Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ---------
-<<<<<<< HEAD
 """
         })
         logger.debug(f"Error parsing relevancy JSON: {e}")
-=======
-"""})
-        logger.info(f"Error parsing relevancy JSON: {e}")
->>>>>>> 94c002f (add fallback)
 
     # default if fails
     return {"score": "yes"}
