@@ -35,6 +35,7 @@ from aiq_aira.functions import artifact_qa
 from aiq_aira.functions import generate_queries
 from aiq_aira.functions import generate_summary
 from aiq_aira.functions.eci import eci_search_fn
+from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,25 @@ async def default_collections(config: DefaultCollectionsConfig, builder: Builder
     yield FunctionInfo.from_fn(_default_collections,
                                description="Information about the example collections used by the AIRA demo frontend")
 
+
+################################################
+# ECI Source list for UI
+################################################
+class ECISourceListConfig(FunctionBaseConfig, name="eci_source_list"):
+    pass
+
+
+@register_function(config_type=ECISourceListConfig)
+async def eci_source_list(config: ECISourceListConfig, builder: Builder):
+    """
+    Returns a list of sources for the ECI search tool
+    """
+    eci_search_config: ECISearchConfig = builder.get_function_config(name="eci_search")
+    
+    async def _eci_source_list(request: None = None) -> list[str]:
+        return eci_search_config.default_data_sources
+
+    yield FunctionInfo.from_fn(_eci_source_list, description="List of sources for the ECI search tool")
 
 ################################################
 # Health Check
