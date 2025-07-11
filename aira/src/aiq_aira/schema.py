@@ -17,6 +17,7 @@ import operator
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
+from typing import Any
 from typing import Dict
 
 from langchain_openai import ChatOpenAI
@@ -25,7 +26,6 @@ from pydantic import Field
 from typing_extensions import Annotated
 from typing_extensions import TypedDict
 
-from typing import Any
 
 class GeneratedQuery(BaseModel):
     query: str = Field(..., description="The actual text of the search query")

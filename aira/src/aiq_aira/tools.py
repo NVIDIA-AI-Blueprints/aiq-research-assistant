@@ -26,13 +26,11 @@ from langgraph.types import StreamWriter
 from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.constants import RAG_API_KEY
 from aiq_aira.constants import TAVILY_INCLUDE_DOMAINS
-from aiq_aira.utils import get_domain
-from langchain_community.tools import TavilySearchResults
-from urllib.parse import urljoin
-import logging
-import re
-from aiq_aira.functions.eci.content_search_response import ContentSearchResponse, SearchResult, SearchResultSnippet
+from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
+from aiq_aira.functions.eci.content_search_response import SearchResult
+from aiq_aira.functions.eci.content_search_response import SearchResultSnippet
 from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
+from aiq_aira.utils import get_domain
 
 logger = logging.getLogger(__name__)
 

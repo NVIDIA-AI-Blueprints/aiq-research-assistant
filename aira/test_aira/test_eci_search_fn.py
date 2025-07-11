@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 import logging
+
 from aiq.builder.workflow_builder import WorkflowBuilder
 
 from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
+from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 
 logger = logging.getLogger(__name__)
 

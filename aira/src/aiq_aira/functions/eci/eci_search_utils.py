@@ -1,18 +1,27 @@
 import asyncio
 import base64
-from io import StringIO
+import logging
 import os
 import socket
 import time
 import uuid
 import webbrowser
-from aiq_aira.utils import BLUE, BOLD, GREEN, RED, RESET, YELLOW, custom_raise_for_status, to_local_time_str
-import httpx
-from pydantic import BaseModel
-from aiq.builder.context import AIQContext
-import logging
+from io import StringIO
+
 import appdirs
+import httpx
 import jwt
+from aiq.builder.context import AIQContext
+from pydantic import BaseModel
+
+from aiq_aira.utils import BLUE
+from aiq_aira.utils import BOLD
+from aiq_aira.utils import GREEN
+from aiq_aira.utils import RED
+from aiq_aira.utils import RESET
+from aiq_aira.utils import YELLOW
+from aiq_aira.utils import custom_raise_for_status
+from aiq_aira.utils import to_local_time_str
 
 logger = logging.getLogger(__name__)
 

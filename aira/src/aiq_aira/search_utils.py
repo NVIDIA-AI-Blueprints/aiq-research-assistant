@@ -29,8 +29,9 @@ from langgraph.types import StreamWriter
 from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.prompts import relevancy_checker
 from aiq_aira.schema import GeneratedQuery
+from aiq_aira.tools import search_eci
 from aiq_aira.tools import search_rag
-from aiq_aira.tools import search_tavily, search_eci
+from aiq_aira.tools import search_tavily
 from aiq_aira.utils import _escape_markdown
 from aiq_aira.utils import dummy
 

@@ -1,9 +1,10 @@
 import json
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.builder.function_info import FunctionInfo
 import logging
+
+from aiq.builder.builder import Builder
+from aiq.builder.function_info import FunctionInfo
+from aiq.cli.register_workflow import register_function
+from aiq.data_models.function import FunctionBaseConfig
 
 from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
 
@@ -23,8 +24,10 @@ class ECISearchConfig(FunctionBaseConfig, name="eci_search"):
 @register_function(config_type=ECISearchConfig)
 async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
     import httpx
+
+    from aiq_aira.functions.eci.eci_search_utils import get_ssa_token
+    from aiq_aira.functions.eci.eci_search_utils import get_starfleet_token
     from aiq_aira.utils import custom_raise_for_status
-    from aiq_aira.functions.eci.eci_search_utils import get_starfleet_token, get_ssa_token
 
     async with httpx.AsyncClient() as client:
 
