@@ -51,7 +51,10 @@ ExemptFiles: list[re.Pattern] = [
     re.compile(r"[^ \/\n]*docs/source/(_lib|_modules|_templates)/.*$"),
     re.compile(r"PULL_REQUEST_TEMPLATE.md"),  # Ignore the PR template,
     re.compile(r"[^ \/\n]*conda/environments/.*\.yaml$"),  # Ignore generated environment files
-    re.compile(r"^LICENSE\.md$"),  # Ignore the license file itself
+    re.compile(r"^LICENSE\.md$"),  # Ignore the license file itself,
+    re.compile(r"^scripts/.*$"),  # Ignore the internal eci stuff,
+    re.compile(r"^aira/src/aiq_aira/functions/eci/.*$"),  # Ignore the internal eci stuff
+    re.compile(r"^test_eci.md$"),  # Ignore the internal eci stuff
 ]
 
 # this will break starting at year 10000, which is probably OK :)
