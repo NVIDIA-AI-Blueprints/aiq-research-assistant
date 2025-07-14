@@ -13,11 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 import logging
+
 from aiq.builder.workflow_builder import WorkflowBuilder
 
 from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
+from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,7 @@ async def test_eci_search_fn():
 
     async with WorkflowBuilder() as builder:
 
-        fn = await builder.add_function(
-            name="eci_search", config=ECISearchConfig(allow_login=True))
+        fn = await builder.add_function(name="eci_search", config=ECISearchConfig(allow_login=True))
 
         result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?")
 
@@ -39,9 +39,7 @@ async def test_default_data_sources():
     async with WorkflowBuilder() as builder:
 
         fn = await builder.add_function(name="eci_search",
-                                        config=ECISearchConfig(
-                                            allow_login=True,
-                                            default_data_sources=["NVBUGS"]))
+                                        config=ECISearchConfig(allow_login=True, default_data_sources=["NVBUGS"]))
 
         # Test with default data sources
         result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?")
@@ -50,8 +48,7 @@ async def test_default_data_sources():
         assert result.result_tab_ids == ["nvbugs"]
 
         # Test override data sources
-        result: ContentSearchResponse = await fn.acall_invoke(
-            query="NVIDIA?", data_sources=["BENEFITS"])
+        result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?", data_sources=["BENEFITS"])
 
         assert result.result_tab_ids == ["benefits"]
 
@@ -61,15 +58,12 @@ async def test_default_query_size():
     async with WorkflowBuilder() as builder:
 
         fn = await builder.add_function(name="eci_search",
-                                        config=ECISearchConfig(
-                                            allow_login=True,
-                                            default_query_size=2))
+                                        config=ECISearchConfig(allow_login=True, default_query_size=2))
 
         result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?")
 
         assert len(result.results) == 2
 
-        result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?",
-                                                              query_size=10)
+        result: ContentSearchResponse = await fn.acall_invoke(query="NVIDIA?", query_size=10)
 
         assert len(result.results) == 10

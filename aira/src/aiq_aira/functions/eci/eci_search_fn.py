@@ -1,9 +1,10 @@
 import json
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.builder.function_info import FunctionInfo
 import logging
+
+from aiq.builder.builder import Builder
+from aiq.builder.function_info import FunctionInfo
+from aiq.cli.register_workflow import register_function
+from aiq.data_models.function import FunctionBaseConfig
 
 from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
 
@@ -23,23 +24,21 @@ class ECISearchConfig(FunctionBaseConfig, name="eci_search"):
 @register_function(config_type=ECISearchConfig)
 async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
     import httpx
+
+    from aiq_aira.functions.eci.eci_search_utils import get_ssa_token
+    from aiq_aira.functions.eci.eci_search_utils import get_starfleet_token
     from aiq_aira.utils import custom_raise_for_status
-    from aiq_aira.functions.eci.eci_search_utils import get_starfleet_token, get_ssa_token
 
     async with httpx.AsyncClient() as client:
 
-        async def _eci_search_single(
-                query: str,
-                query_size: int | None = None,
-                data_sources: list[str] | None = None
-        ) -> ContentSearchResponse:
+        async def _eci_search_single(query: str,
+                                     query_size: int | None = None,
+                                     data_sources: list[str] | None = None) -> ContentSearchResponse:
 
             # First, get the saved credentials
-            starfleet_token = await get_starfleet_token(
-                prod=config.use_prod, allow_login=config.allow_login)
+            starfleet_token = await get_starfleet_token(prod=config.use_prod, allow_login=config.allow_login)
 
-            ssa_token = await get_ssa_token(client=client,
-                                            prod=config.use_prod)
+            ssa_token = await get_ssa_token(client=client, prod=config.use_prod)
 
             # Now, make the request
             headers = {
@@ -56,9 +55,7 @@ async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
             data_sources = data_sources if data_sources is not None else config.default_data_sources
 
             if (data_sources is not None):
-                payload["requestOptions"] = {
-                    "datasourcesFilter": [ds.upper() for ds in data_sources]
-                }
+                payload["requestOptions"] = {"datasourcesFilter": [ds.upper() for ds in data_sources]}
 
             response = await client.post(
                 f"https://enterprise-content-intelligence{'-stg' if not config.use_prod else ''}.nvidia.com/v1/content/search",
@@ -69,13 +66,10 @@ async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
 
             response_json = response.json()
 
-            logger.debug("Successfully made ECI request. Response: %s",
-                         json.dumps(response_json, indent=2))
+            logger.debug("Successfully made ECI request. Response: %s", json.dumps(response_json, indent=2))
 
             return ContentSearchResponse.model_validate(response_json)
 
         yield FunctionInfo.create(
             single_fn=_eci_search_single,
-            description=
-            "Search the Enterprise Content Intelligence (ECI) repositories for a given query."
-        )
+            description="Search the Enterprise Content Intelligence (ECI) repositories for a given query.")

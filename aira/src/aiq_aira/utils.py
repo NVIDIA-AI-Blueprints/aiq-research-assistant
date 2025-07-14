@@ -14,9 +14,10 @@
 # limitations under the License.
 
 import asyncio
-import re
 import logging
+import re
 import time
+
 import httpx
 from langchain_openai import ChatOpenAI
 
@@ -58,9 +59,7 @@ def custom_raise_for_status(response: httpx.Response):
     if response.text:
         message += f", Text:\n{response.text}"
 
-    raise httpx.HTTPStatusError(message,
-                                request=response.request,
-                                response=response)
+    raise httpx.HTTPStatusError(message, request=response.request, response=response)
 
 
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
@@ -106,8 +105,7 @@ def format_sources(sources: str) -> str:
             # Split into query, answer, and citations using a more precise pattern
             # This pattern looks for newlines followed by QUERY:, ANSWER:, or CITATION(S):
             # but only if they're not preceded by a pipe (|) character (markdown table)
-            src_parts = re.split(
-                r'(?<!\|)\n(?=QUERY:|ANSWER:|CITATION(?:S)?:)', entry.strip())
+            src_parts = re.split(r'(?<!\|)\n(?=QUERY:|ANSWER:|CITATION(?:S)?:)', entry.strip())
 
             if len(src_parts) >= 4:
                 source_num = src_count
@@ -132,8 +130,7 @@ def format_sources(sources: str) -> str:
                 formatted_sources.append(formatted_entry)
                 src_count += 1
             else:
-                logger.info(
-                    f"Failed to clean up {entry} because it failed to parse")
+                logger.info(f"Failed to clean up {entry} because it failed to parse")
                 formatted_sources.append(entry)
                 src_count += 1
 

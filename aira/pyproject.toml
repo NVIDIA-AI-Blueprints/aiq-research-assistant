@@ -51,7 +51,7 @@ dependencies = [
   "propcache==0.2.1",
   "pydantic_core",
   "pydantic",
-  "pyjwt==2.11.0",
+  "pyjwt==2.10.1",
   "PyYAML==6.0.2",
   "redis==5.2.1",
   "regex==2024.11.6",
