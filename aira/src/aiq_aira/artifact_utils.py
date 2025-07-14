@@ -15,16 +15,17 @@
 
 import logging
 
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from langchain_core.messages import AIMessage
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.utils.json import parse_json_markdown
 
-from aiq_aira.artifact_prompts import (
-    UPDATE_ENTIRE_ARTIFACT_PROMPT,
-    RELEVANCY_CHECK
-)
-
-from aiq_aira.schema import ArtifactQAInput, ArtifactQAOutput, ArtifactRewriteMode
+from aiq_aira.artifact_prompts import RELEVANCY_CHECK
+from aiq_aira.artifact_prompts import UPDATE_ENTIRE_ARTIFACT_PROMPT
+from aiq_aira.schema import ArtifactQAInput
+from aiq_aira.schema import ArtifactQAOutput
+from aiq_aira.schema import ArtifactRewriteMode
 
 logger = logging.getLogger(__name__)
 
@@ -49,23 +50,21 @@ def remove_think_tags(text: str) -> str:
     return text
 
 
-
 async def check_relevant(llm, artifact, question, chat_history: list[str]):
-    
+
     try:
         prompt = PromptTemplate.from_template(RELEVANCY_CHECK)
-        relevancy_checker = prompt | llm 
-        result =  await relevancy_checker.ainvoke({"artifact": artifact,"prompt": question})
+        relevancy_checker = prompt | llm
+        result = await relevancy_checker.ainvoke({"artifact": artifact, "prompt": question})
 
-        
         response = parse_json_markdown(result.content)
         if 'relevant' not in response:
             return 'no'
-        
+
     except Exception as e:
         logger.info(f"Failed to apply guardrails with {question} and {result}")
         return 'no'
-    
+
     return response['relevant']
 
 
@@ -78,8 +77,7 @@ async def do_entire_artifact_rewrite(llm, artifact_content: str, user_message: s
     rewrite_prompt = UPDATE_ENTIRE_ARTIFACT_PROMPT.format(
         artifactContent=artifact_content,
         reflections="N/A",  # or user-specific reflections
-        updateMetaPrompt=updateMetaPrompt
-    )
+        updateMetaPrompt=updateMetaPrompt)
     # The user request is appended to the end.
     user_facing_prompt = rewrite_prompt + f"\n\nUser request:\n{user_message}"
 
@@ -97,6 +95,7 @@ async def do_entire_artifact_rewrite(llm, artifact_content: str, user_message: s
 ##############################
 # The main chat function
 ##############################
+
 
 async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAOutput:
     """
@@ -123,36 +122,27 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
 
         if rewrite_mode == ArtifactRewriteMode.ENTIRE:
 
-            updated = await do_entire_artifact_rewrite(llm, current_artifact,
-                                                       add_context_to_user_message(user_message))
+            updated = await do_entire_artifact_rewrite(llm, current_artifact, add_context_to_user_message(user_message))
 
-            return ArtifactQAOutput(
-                updated_artifact=updated,
-                assistant_reply="Here is the updated artifact (entire rewrite)."
-            )
+            return ArtifactQAOutput(updated_artifact=updated,
+                                    assistant_reply="Here is the updated artifact (entire rewrite).")
 
         else:
             # Unrecognized rewrite mode
-            return ArtifactQAOutput(
-                updated_artifact=current_artifact,
-                assistant_reply=(
-                    f"I do not recognize rewrite_mode={rewrite_mode}. "
-                    f"No changes made. Q/A session is available if needed."
-                )
-            )
+            return ArtifactQAOutput(updated_artifact=current_artifact,
+                                    assistant_reply=(f"I do not recognize rewrite_mode={rewrite_mode}. "
+                                                     f"No changes made. Q/A session is available if needed."))
 
     # 2) Otherwise, do normal Q&A with the artifact
     # We build a system + conversation + user approach
     # We'll stuff the artifact in a system message for context
-    system_context = (
-        "<app-context>\n"
-        "You are a helpful AI assistant. The user has an artifact (text, doc, or code) in front of them. "
-        "You can refer to it as needed to answer questions or provide clarifications. "
-        "When writing code, do not wrap with triple backticks, as the UI doesn't want them. "
-        "Follow the user requests carefully.\n"
-        "</app-context>\n\n"
-        f"<artifact>\n{current_artifact}\n</artifact>"
-    )
+    system_context = ("<app-context>\n"
+                      "You are a helpful AI assistant. The user has an artifact (text, doc, or code) in front of them. "
+                      "You can refer to it as needed to answer questions or provide clarifications. "
+                      "When writing code, do not wrap with triple backticks, as the UI doesn't want them. "
+                      "Follow the user requests carefully.\n"
+                      "</app-context>\n\n"
+                      f"<artifact>\n{current_artifact}\n</artifact>")
 
     # Convert chat_history to a list of Human/AI messages.
     # We'll just do a naive approach: even indices are user, odd indices are assistant.
@@ -179,7 +169,4 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
 
     assistant_reply = answer_buf.strip()
 
-    return ArtifactQAOutput(
-        updated_artifact=current_artifact,
-        assistant_reply=assistant_reply
-    )
+    return ArtifactQAOutput(updated_artifact=current_artifact, assistant_reply=assistant_reply)

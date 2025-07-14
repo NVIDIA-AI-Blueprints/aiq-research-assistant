@@ -1,0 +1,14 @@
+{
+    "ignorePatterns": [
+        {"pattern": "^https?://localhost:.*$"},
+        {"pattern": "^https?://$"},
+        {"pattern": "^https://(platform\\.)?openai\\.com"},
+        {
+            "pattern": "^https://code\\.visualstudio\\.com$"
+        },
+        {"pattern": "^https://github\\.com/jarmak-nv/rapids-repo-template"},
+        {"pattern": "^https://integrate\\.api\\.nvidia\\.com/v1"},
+        {"pattern": "^http://aira-backend"},
+        {"pattern": "^https://tavily.com"}
+    ]
+}

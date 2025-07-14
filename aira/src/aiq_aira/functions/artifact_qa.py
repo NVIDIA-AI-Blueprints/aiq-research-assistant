@@ -1,21 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
-from typing import AsyncGenerator
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.builder.function_info import FunctionInfo
-from aiq.builder.framework_enum import LLMFrameworkEnum
-from aiq.data_models.component_ref import FunctionRef, LLMRef
 import os
+from typing import AsyncGenerator
 
-from aiq_aira.schema import (
-    ArtifactQAInput,
-    ArtifactQAOutput,
-    GeneratedQuery
-)
+from aiq.builder.builder import Builder
+from aiq.builder.framework_enum import LLMFrameworkEnum
+from aiq.builder.function_info import FunctionInfo
+from aiq.cli.register_workflow import register_function
+from aiq.data_models.component_ref import FunctionRef
+from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.function import FunctionBaseConfig
 
-from aiq_aira.artifact_utils import artifact_chat_handler, check_relevant
-from aiq_aira.nodes import process_single_query, deduplicate_and_format_sources
+from aiq_aira.artifact_utils import artifact_chat_handler
+from aiq_aira.artifact_utils import check_relevant
+from aiq_aira.nodes import deduplicate_and_format_sources
+from aiq_aira.nodes import process_single_query
+from aiq_aira.schema import ArtifactQAInput
+from aiq_aira.schema import ArtifactQAOutput
+from aiq_aira.schema import GeneratedQuery
 
 logger = logging.getLogger(__name__)
 
@@ -52,26 +68,19 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         apply_guardrail = os.getenv("AIRA_APPLY_GUARDRAIL", "false")
 
         if apply_guardrail.lower() == "true":
-        
-            relevancy_check = await check_relevant(
-                llm=llm,
-                artifact=query_message.artifact,
-                question=query_message.question,
-                chat_history=query_message.chat_history
-            )
+
+            relevancy_check = await check_relevant(llm=llm,
+                                                   artifact=query_message.artifact,
+                                                   question=query_message.question,
+                                                   chat_history=query_message.chat_history)
 
             if relevancy_check == 'no':
                 return ArtifactQAOutput(
                     updated_artifact=query_message.artifact,
-                    assistant_reply="Sorry, I am not able to help answer that question. Please try again."
-                )
-            
+                    assistant_reply="Sorry, I am not able to help answer that question. Please try again.")
+
         # Only enabled when not rewrite mode or rewrite mode is "entire"
-        graph_config = {
-            "configurable" :{
-                "rag_url": config.rag_url,
-            }
-        }
+        graph_config = {"configurable": {"rag_url": config.rag_url, }}
 
         def writer(message):
             """
@@ -89,15 +98,10 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             search_web=query_message.use_internet
         )
 
-        gen_query = GeneratedQuery(
-            query=query_message.question,
-            report_section=query_message.artifact,
-            rationale="Q/A"
-        )
+        gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
 
         query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query]
-        )
+            [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query])
 
         logger.info(f"Artifact QA Query message: {query_message}")
 
@@ -111,27 +115,20 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         apply_guardrail = os.getenv("AIRA_APPLY_GUARDRAIL", "false")
 
         if apply_guardrail.lower() == "true":
-        
-            relevancy_check = await check_relevant(
-                llm=llm,
-                artifact=query_message.artifact,
-                question=query_message.question,
-                chat_history=query_message.chat_history
-            )
+
+            relevancy_check = await check_relevant(llm=llm,
+                                                   artifact=query_message.artifact,
+                                                   question=query_message.question,
+                                                   chat_history=query_message.chat_history)
 
             if relevancy_check == 'no':
                 yield ArtifactQAOutput(
                     updated_artifact=query_message.artifact,
-                    assistant_reply="Sorry, I am not able to help answer that question. Please try again."
-                )
+                    assistant_reply="Sorry, I am not able to help answer that question. Please try again.")
                 return
-            
+
         # Only enabled when not rewrite mode or rewrite mode is "entire"
-        graph_config = {
-            "configurable": {
-                "rag_url": config.rag_url,
-            }
-        }
+        graph_config = {"configurable": {"rag_url": config.rag_url, }}
 
         def writer(message):
             """
@@ -149,15 +146,10 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             search_web=query_message.use_internet
         )
 
-        gen_query = GeneratedQuery(
-            query=query_message.question,
-            report_section=query_message.artifact,
-            rationale="Q/A"
-        )
+        gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
 
         query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query]
-        )
+            [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query])
 
         logger.info(f"Artifact QA Query message: {query_message}")
 
@@ -166,5 +158,4 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
     yield FunctionInfo.create(
         single_fn=_artifact_qa,
         stream_fn=_artifact_qa_streaming,
-        description="Chat-based Q&A about a previously generated artifact, optionally doing additional RAG lookups."
-    )
+        description="Chat-based Q&A about a previously generated artifact, optionally doing additional RAG lookups.")

@@ -13,21 +13,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from pathlib import Path
-from aiq.builder.workflow_builder import WorkflowBuilder
-from aiq_aira.functions.artifact_qa import ArtifactQAConfig
-from aiq_aira.schema import ArtifactQAInput, ArtifactQAOutput, ArtifactRewriteMode
-from aiq.data_models.config import AIQConfig
-import yaml
 import logging
+from pathlib import Path
 
-# for some reason I have to manually import these functions for the workflow builder to run 
-from aiq_aira.functions import artifact_qa, generate_summary, generate_queries
-from aiq_aira import register
-from aiq.llm.openai_llm import openai_llm
+import pytest
+import yaml
+from aiq.builder.workflow_builder import WorkflowBuilder
+from aiq.data_models.config import AIQConfig
 from aiq.front_ends.fastapi.register import register_fastapi_front_end
 from aiq.llm import register  # Import LLM registration module
+from aiq.llm.openai_llm import openai_llm
+
+from aiq_aira import register
+# for some reason I have to manually import these functions for the workflow builder to run
+from aiq_aira.functions import artifact_qa
+from aiq_aira.functions import generate_queries
+from aiq_aira.functions import generate_summary
+from aiq_aira.functions.artifact_qa import ArtifactQAConfig
+from aiq_aira.schema import ArtifactQAInput
+from aiq_aira.schema import ArtifactQAOutput
+from aiq_aira.schema import ArtifactRewriteMode
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,7 @@ SAMPLE_TEXT_ARTIFACT = """
 The healthcare sector is experiencing rapid technological advancements.
 """
 
+
 @pytest.fixture
 async def workflow_builder():
     """Fixture to provide a WorkflowBuilder instance with artifact_qa configured."""
@@ -54,80 +60,78 @@ async def workflow_builder():
     async with WorkflowBuilder.from_config(config=config) as builder:
         yield builder
 
+
 @pytest.mark.asyncio
 async def test_artifact_qa_basic_qa(workflow_builder):
     """Test basic Q&A functionality without any rewrite mode."""
     async for builder in workflow_builder:
         workflow = builder.build(entry_function="artifact_qa")
-        
-        input_data = ArtifactQAInput(
-            artifact=SAMPLE_TEXT_ARTIFACT,
-            question="What is the main topic of this report?",
-            chat_history=[],
-            use_internet=False,
-            rag_collection=TEST_RAG_COLLECTION
-        )
+
+        input_data = ArtifactQAInput(artifact=SAMPLE_TEXT_ARTIFACT,
+                                     question="What is the main topic of this report?",
+                                     chat_history=[],
+                                     use_internet=False,
+                                     rag_collection=TEST_RAG_COLLECTION)
         # Validate the input
         input_data.model_validate(input_data.model_dump())
-        
+
         async with workflow.run(input_data) as runner:
             result = await runner.result()
             assert isinstance(result, ArtifactQAOutput)
             assert result.updated_artifact == SAMPLE_TEXT_ARTIFACT
             assert "healthcare" in result.assistant_reply.lower()
 
+
 @pytest.mark.asyncio
 async def test_artifact_qa_entire_rewrite(workflow_builder):
     """Test rewriting the entire artifact."""
     async for builder in workflow_builder:
         workflow = builder.build(entry_function="artifact_qa")
-        
-        input_data = ArtifactQAInput(
-            artifact=SAMPLE_TEXT_ARTIFACT,
-            question="Make this report more technical and detailed",
-            chat_history=[],
-            use_internet=False,
-            rewrite_mode=ArtifactRewriteMode.ENTIRE,
-            rag_collection=TEST_RAG_COLLECTION
-        )
+
+        input_data = ArtifactQAInput(artifact=SAMPLE_TEXT_ARTIFACT,
+                                     question="Make this report more technical and detailed",
+                                     chat_history=[],
+                                     use_internet=False,
+                                     rewrite_mode=ArtifactRewriteMode.ENTIRE,
+                                     rag_collection=TEST_RAG_COLLECTION)
         # Validate the input
         input_data.model_validate(input_data.model_dump())
-        
+
         async with workflow.run(input_data) as runner:
             result = await runner.result()
             assert isinstance(result, ArtifactQAOutput)
             assert result.updated_artifact != SAMPLE_TEXT_ARTIFACT
             assert "Here is the updated artifact (entire rewrite)" in result.assistant_reply
 
+
 @pytest.mark.asyncio
 async def test_artifact_qa_highlighted_rewrite(workflow_builder):
     """Test rewriting only highlighted portions of the artifact."""
     async for builder in workflow_builder:
         workflow = builder.build(entry_function="artifact_qa")
-        
-        input_data = ArtifactQAInput(
-            artifact=SAMPLE_TEXT_ARTIFACT,
-            question="Make the executive summary more concise",
-            chat_history=[],
-            use_internet=False,
-            rewrite_mode=ArtifactRewriteMode.HIGHLIGHTED,
-            additional_context="## Executive Summary",
-            rag_collection=TEST_RAG_COLLECTION
-        )
+
+        input_data = ArtifactQAInput(artifact=SAMPLE_TEXT_ARTIFACT,
+                                     question="Make the executive summary more concise",
+                                     chat_history=[],
+                                     use_internet=False,
+                                     rewrite_mode=ArtifactRewriteMode.HIGHLIGHTED,
+                                     additional_context="## Executive Summary",
+                                     rag_collection=TEST_RAG_COLLECTION)
         # Validate the input
         input_data.model_validate(input_data.model_dump())
-        
+
         async with workflow.run(input_data) as runner:
             result = await runner.result()
             assert isinstance(result, ArtifactQAOutput)
             assert "Updated only the highlighted part" in result.assistant_reply
+
 
 @pytest.mark.asyncio
 async def test_artifact_qa_highlighted_rewrite_empty_context(workflow_builder):
     """Test rewriting with HIGHLIGHTED mode but empty additional context."""
     async for builder in workflow_builder:
         workflow = builder.build(entry_function="artifact_qa")
-        
+
         input_data = ArtifactQAInput(
             artifact=SAMPLE_TEXT_ARTIFACT,
             question="Make this more concise",
@@ -135,11 +139,10 @@ async def test_artifact_qa_highlighted_rewrite_empty_context(workflow_builder):
             use_internet=False,
             rewrite_mode=ArtifactRewriteMode.HIGHLIGHTED,
             additional_context="",  # Empty context
-            rag_collection=TEST_RAG_COLLECTION
-        )
+            rag_collection=TEST_RAG_COLLECTION)
         # Validate the input
         input_data.model_validate(input_data.model_dump())
-        
+
         async with workflow.run(input_data) as runner:
             result = await runner.result()
             assert isinstance(result, ArtifactQAOutput)

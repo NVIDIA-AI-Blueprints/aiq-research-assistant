@@ -1,15 +1,32 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Create Research Reports with AI-Q Blueprint User Interface
 
 The AI-Q Research Assistant builds off of the NVIDIA RAG Blueprint, allowing users to upload multi-modal PDFs and then create detailed research reports. 
 
 - First a user can add documents. Example datasets are included, one with 100+ PDFs containing earnings data for Meta, Alphabet, and Amazon and a second with PDFs containing research on Cystic Fibrosis. 
 
-  ![Screenshot showing document upload](/docs/images/aira_upload_screenshot.png)
+  ![Screenshot showing document upload](../docs/images/aira_upload_screenshot.png)
 
 
 - Enter a report topic and desired report structure
 
-  ![Screenshot showing prompts](/docs/images/aira_prompt_screemshot.png)
+  ![Screenshot showing prompts](../docs/images/aira_prompt_screemshot.png)
 
   ```
   # Example Prompt
@@ -18,7 +35,7 @@ The AI-Q Research Assistant builds off of the NVIDIA RAG Blueprint, allowing use
 
 - Review and edit a research plan
 
-  ![Screenshot showing the research plan](/docs/images/aira_plan_screenshot.png)
+  ![Screenshot showing the research plan](../docs/images/aira_plan_screenshot.png)
 
   ``` 
   # Example Research Plan
@@ -34,7 +51,7 @@ The AI-Q Research Assistant builds off of the NVIDIA RAG Blueprint, allowing use
 
 - Perform deep research to create a report, sourcing data from the on-premise documents and the web
 
-  ![Screenshot showing the report](/docs/images/aira_report_screenshot.png)
+  ![Screenshot showing the report](../docs/images/aira_report_screenshot.png)
 
   ``` 
   # Example Report 
