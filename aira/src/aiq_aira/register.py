@@ -81,7 +81,7 @@ async def eci_source_list(config: ECISourceListConfig, builder: Builder):
     Returns a list of sources for the ECI search tool
     """
     eci_search_config: ECISearchConfig = builder.get_function_config(name="eci_search")
-    
+
     async def _eci_source_list(request: None = None) -> list[str]:
         return eci_search_config.default_data_sources
 
@@ -101,13 +101,12 @@ async def default_prompt(config: DefaultPromptConfig, builder: Builder):
     """
     Returns the default prompt for the frontend
     """
+
     async def _default_prompt(request: None = None) -> dict:
-        return {
-            "report_structure": config.report_structure,
-            "report_topic": config.report_topic
-        }
+        return {"report_structure": config.report_structure, "report_topic": config.report_topic}
 
     yield FunctionInfo.from_fn(_default_prompt, description="Default prompt for the frontend")
+
 
 ################################################
 # Health Check
