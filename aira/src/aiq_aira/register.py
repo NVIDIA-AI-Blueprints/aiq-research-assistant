@@ -87,6 +87,28 @@ async def eci_source_list(config: ECISourceListConfig, builder: Builder):
 
     yield FunctionInfo.from_fn(_eci_source_list, description="List of sources for the ECI search tool")
 
+
+################################################
+# ECI Source list for UI
+################################################
+class DefaultPromptConfig(FunctionBaseConfig, name="default_prompt"):
+    report_structure: str = "Example prompt structure: Summarize recent research progress in reinforcement learning focused on enabling agents to explore efficiently and proactively under conditions of sparse rewards and constraints, respectively. Additionally, analyze and discuss the potential implications and insights this research provides for trajectory planning problems."
+    report_topic: str = "Add the title of you report here."
+
+
+@register_function(config_type=DefaultPromptConfig)
+async def default_prompt(config: DefaultPromptConfig, builder: Builder):
+    """
+    Returns the default prompt for the frontend
+    """
+    async def _default_prompt(request: None = None) -> dict:
+        return {
+            "report_structure": config.report_structure,
+            "report_topic": config.report_topic
+        }
+
+    yield FunctionInfo.from_fn(_default_prompt, description="Default prompt for the frontend")
+
 ################################################
 # Health Check
 ################################################
