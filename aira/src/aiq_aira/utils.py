@@ -67,6 +67,9 @@ def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
 
+    if hasattr(llm, "model") and "nemotron" in llm.model:
+        system_prompt = "detailed thinking on"
+
     if hasattr(llm, "model_name") and "nemotron" in llm.model_name:
         system_prompt = "detailed thinking on"
 
