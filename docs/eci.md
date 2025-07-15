@@ -1,31 +1,25 @@
+# Enterprise Content Intelligence (ECI) Tools
 
 ## Setup
 
-1. Create a virtual environment
+Ensure the project has been installed and the virtual environment has been activated.
 
-   ```bash
-   uv venv --seed .venv --python 3.11
-   source .venv/bin/activate
-   ```
+```bash
+# Create a virtual environment
+uv venv --seed .venv --python 3.12
+source .venv/bin/activate
+uv sync --all-groups --all-extras
 
-2. Install the dependencies
-
-   ```bash
-   uv pip install -r ./scripts/eci_auth/requirements.txt
-   ```
-
-3. Test the install
-
-   ```bash
-   python -m scripts.eci_auth.cli --help
-   ```
+# Test the install
+uv run aira eci --help
+```
 
 ## Usage
 
 At any time, you can run the following command to see the available commands:
 
 ```bash
-python -m scripts.eci_auth.cli --help
+uv run aira --help
 ```
 
 ### Starfleet
@@ -33,19 +27,21 @@ python -m scripts.eci_auth.cli --help
 To login to Starfleet, run the following command:
 
 ```bash
-python -m scripts.eci_auth.cli starfleet
+uv run aira auth starfleet
+# or for production
+uv run aira auth --prod starfleet <commands>
 ```
 
 Once you have logged in, your credentials will be saved to the default `appdata` directory and will be used automatically from then on.
 
 To force a login to Starfleet, run the following command:
 ```bash
-python -m scripts.eci_auth.cli starfleet --force-login
+uv run aira auth starfleet --force-login
 ```
 
 To force a refresh of the Starfleet credentials, run the following command:
 ```bash
-python -m scripts.eci_auth.cli starfleet --force-refresh
+uv run aira auth starfleet --force-refresh
 ```
 
 ### SSA
@@ -53,14 +49,16 @@ python -m scripts.eci_auth.cli starfleet --force-refresh
 To login to SSA, run the following command:
 
 ```bash
-python -m scripts.eci_auth.cli ssa
+uv run aira auth ssa
+# or for production
+uv run aira auth --prod ssa <commands>
 ```
 
 Once you have logged in, your credentials will be saved to the default `appdata` directory and will be used automatically from then on.
 
 To force a login to SSA, run the following command:
 ```bash
-python -m scripts.eci_auth.cli ssa --force-login
+uv run aira auth ssa --force-login
 ```
 
 ### ECI
@@ -68,7 +66,9 @@ python -m scripts.eci_auth.cli ssa --force-login
 To make a request to ECI, run the following command:
 
 ```bash
-python -m scripts.eci_auth.cli eci --query="NIM"
+uv run aira eci --query="NIM"
+# or for production
+uv run aira eci --prod --query="NIM"
 ```
 
 This will make a request to the ECI endpoint and print the response to the console. If there are more than one page of results, the response will be paginated and you will need to make multiple requests to get the entire response. Simply press `ENTER` to get the next page of results when you see this message:

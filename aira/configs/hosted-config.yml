@@ -38,6 +38,14 @@ general:
         method: GET
         description: Get the default collections
         function_name: default_collections
+      - path: /eci_source_list
+        method: GET
+        description: Get the list of ECI sources
+        function_name: eci_source_list
+      - path: /default_prompt
+        method: GET
+        description: Get the default prompt
+        function_name: default_prompt
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -71,15 +79,35 @@ functions:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
     rag_url: http://rag-server:8081/v1 
+    eci_search_tool_name: eci_search
+  
+  eci_search:
+    _type: eci_search
+    use_prod: True
+    default_data_sources:
+      - "sharepoint"
+      - "confluence"
+      - "nvidiadocs"
+      - "nvidiablogs"
+      - "nvidianews"
+    default_query_size: 2
 
   artifact_qa:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
     rag_url: http://rag-server:8081/v1
+    eci_search_tool_name: eci_search
   
   health_check:
     _type: health_check
+
+  eci_source_list:
+    _type: eci_source_list
+
+  default_prompt:
+    _type: default_prompt
+    # can set report_structure and report_topic here
 
   default_collections:
     _type: default_collections

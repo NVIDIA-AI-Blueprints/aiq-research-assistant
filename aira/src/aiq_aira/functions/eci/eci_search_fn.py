@@ -1,12 +1,9 @@
-import json
 import logging
 
 from aiq.builder.builder import Builder
 from aiq.builder.function_info import FunctionInfo
 from aiq.cli.register_workflow import register_function
 from aiq.data_models.function import FunctionBaseConfig
-
-from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
 
 logger = logging.getLogger(__name__)
 
@@ -25,52 +22,23 @@ class ECISearchConfig(FunctionBaseConfig, name="eci_search"):
 async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
     import httpx
 
-    from aiq_aira.functions.eci.eci_search_utils import get_ssa_token
-    from aiq_aira.functions.eci.eci_search_utils import get_starfleet_token
-    from aiq_aira.utils import custom_raise_for_status
+    from aiq_aira.functions.eci.content_search_response import ContentSearchResponse
+    from aiq_aira.functions.eci.eci_search import ECISearchRequest
+    from aiq_aira.functions.eci.eci_search import eci_search_single
 
     async with httpx.AsyncClient() as client:
 
-        async def _eci_search_single(query: str,
-                                     query_size: int | None = None,
-                                     data_sources: list[str] | None = None) -> ContentSearchResponse:
+        async def _eci_search_inner(query: str,
+                                    query_size: int | None = None,
+                                    data_sources: list[str] | None = None) -> ContentSearchResponse:
 
-            # First, get the saved credentials
-            starfleet_token = await get_starfleet_token(prod=config.use_prod, allow_login=config.allow_login)
+            request = ECISearchRequest(
+                query=query,
+                query_size=query_size if query_size is not None else config.default_query_size,
+                data_sources=data_sources if data_sources is not None else config.default_data_sources)
 
-            ssa_token = await get_ssa_token(client=client, prod=config.use_prod)
-
-            # Now, make the request
-            headers = {
-                "Authorization": f"Bearer {ssa_token}",
-                "Nv-Actor-Token": starfleet_token,
-                "Content-Type": "application/json",
-            }
-
-            payload = {
-                "query": query,
-                "pageSize": query_size if query_size is not None else config.default_query_size,
-                "maxSnippetSize": 1000
-            }
-
-            data_sources = data_sources if data_sources is not None else config.default_data_sources
-
-            if (data_sources is not None):
-                payload["requestOptions"] = {"datasourcesFilter": [ds.upper() for ds in data_sources]}
-
-            response = await client.post(
-                f"https://enterprise-content-intelligence{'-stg' if not config.use_prod else ''}.nvidia.com/v1/content/search",
-                headers=headers,
-                json=payload)
-
-            custom_raise_for_status(response)
-
-            response_json = response.json()
-
-            logger.debug("Successfully made ECI request. Response: %s", json.dumps(response_json, indent=2))
-
-            return ContentSearchResponse.model_validate(response_json)
+            return await eci_search_single(client=client, prod=config.use_prod, request=request)
 
         yield FunctionInfo.create(
-            single_fn=_eci_search_single,
+            single_fn=_eci_search_inner,
             description="Search the Enterprise Content Intelligence (ECI) repositories for a given query.")

@@ -253,7 +253,7 @@ class ContentSearchResponse(BaseModel):
     excluded_results_count: int = Field(..., alias="excludedResultsCount")
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         use_enum_values = True
 
 

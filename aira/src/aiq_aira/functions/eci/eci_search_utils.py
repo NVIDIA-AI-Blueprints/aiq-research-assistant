@@ -240,7 +240,11 @@ async def starfleet_refresh_flow(*,
     return saved_credentials
 
 
-async def starfleet_login(*, prod: bool = False, force_login: bool = False, force_refresh: bool = False):
+async def starfleet_login(*,
+                          client: httpx.AsyncClient,
+                          prod: bool = False,
+                          force_login: bool = False,
+                          force_refresh: bool = False):
 
     # First, check if we have saved credentials
     app_data_dir = appdirs.user_cache_dir(appauthor="NVIDIA", appname="nvidia-aiq-util")
@@ -248,55 +252,53 @@ async def starfleet_login(*, prod: bool = False, force_login: bool = False, forc
 
     saved_credentials: StarfleetSavedCredentials | None = None
 
-    async with httpx.AsyncClient() as client:
-        try:
-            if os.path.exists(credentials_file) and not force_login:
-                with open(credentials_file, "r", encoding="utf-8") as f:
-                    saved_credentials = StarfleetSavedCredentials.model_validate_json(f.read())
+    try:
+        if os.path.exists(credentials_file) and not force_login:
+            with open(credentials_file, "r", encoding="utf-8") as f:
+                saved_credentials = StarfleetSavedCredentials.model_validate_json(f.read())
 
-                # Check if the token has expired (within 1 minute)
-                if saved_credentials.id_token_expires_at > time.time() - 60 and not force_refresh:
-                    # Token is still valid, so we can use it. Print the expiration time in a human readable format
-                    print(f"{GREEN}Existing Starfleet Credentials found and still valid.{RESET}")
-                    print(saved_credentials.print_info())
+            # Check if the token has expired (within 1 minute)
+            if saved_credentials.id_token_expires_at > time.time() - 60 and not force_refresh:
+                # Token is still valid, so we can use it. Print the expiration time in a human readable format
+                print(f"{GREEN}Existing Starfleet Credentials found and still valid.{RESET}")
+                print(saved_credentials.print_info())
 
-                    return saved_credentials
-                elif saved_credentials.client_token_expires_at > time.time() - 60:
-                    # ID token has expired, but client token is still valid
-                    print(
-                        f"{YELLOW}Existing Starfleet Credentials found but ID token has expired. Refreshing...{RESET}")
+                return saved_credentials
+            elif saved_credentials.client_token_expires_at > time.time() - 60:
+                # ID token has expired, but client token is still valid
+                print(f"{YELLOW}Existing Starfleet Credentials found but ID token has expired. Refreshing...{RESET}")
 
-                    saved_credentials = await starfleet_refresh_flow(client=client,
-                                                                     saved_credentials=saved_credentials,
-                                                                     prod=prod)
+                saved_credentials = await starfleet_refresh_flow(client=client,
+                                                                 saved_credentials=saved_credentials,
+                                                                 prod=prod)
 
-                else:
-                    # Both tokens have expired, so we need to refresh them
-                    print(
-                        f"{RED}Existing Starfleet Credentials found but both tokens have expired. Logging in again...{RESET}"
-                    )
-                    os.remove(credentials_file)
+            else:
+                # Both tokens have expired, so we need to refresh them
+                print(
+                    f"{RED}Existing Starfleet Credentials found but both tokens have expired. Logging in again...{RESET}"
+                )
+                os.remove(credentials_file)
 
-                    saved_credentials = None
+                saved_credentials = None
 
-        except Exception as e:
-            print(f"{RED}Error trying to load Starfleet Credentials: {e}{RESET}")
-            print(f"{YELLOW}Running Starfleet login process...{RESET}")
+    except Exception as e:
+        print(f"{RED}Error trying to load Starfleet Credentials: {e}{RESET}")
+        print(f"{YELLOW}Running Starfleet login process...{RESET}")
 
-            saved_credentials = None
+        saved_credentials = None
 
-        if (not saved_credentials):
-            saved_credentials = await starfleet_login_flow(client=client, prod=prod)
+    if (not saved_credentials):
+        saved_credentials = await starfleet_login_flow(client=client, prod=prod)
 
-        # Save both the token and the client token to a file on the machine in the default appdata directory
-        os.makedirs(app_data_dir, exist_ok=True)
+    # Save both the token and the client token to a file on the machine in the default appdata directory
+    os.makedirs(app_data_dir, exist_ok=True)
 
-        with open(credentials_file, "w", encoding="utf-8") as f:
-            f.write(saved_credentials.model_dump_json())
+    with open(credentials_file, "w", encoding="utf-8") as f:
+        f.write(saved_credentials.model_dump_json())
 
-        print(f"{GREEN}Successfully logged in to Starfleet!{RESET}")
-        print(saved_credentials.print_info())
-        print(f"Starfleet Credentials saved to {credentials_file}")
+    print(f"{GREEN}Successfully logged in to Starfleet!{RESET}")
+    print(saved_credentials.print_info())
+    print(f"Starfleet Credentials saved to {credentials_file}")
 
     return saved_credentials
 
@@ -356,7 +358,7 @@ async def ssa_login_flow(*, client: httpx.AsyncClient, prod: bool = False) -> SS
     return ssa_saved_credentials
 
 
-async def ssa_login(*, client: httpx.AsyncClient, prod: bool = False, force_login: bool = False):
+async def ssa_login(*, client: httpx.AsyncClient, prod: bool = False, force_login: bool = False) -> SSASavedCredentials:
 
     app_data_dir = appdirs.user_cache_dir(appauthor="NVIDIA", appname="nvidia-aiq-util")
     credentials_file = os.path.join(app_data_dir, f"ssa-credentials{'-stg' if not prod else '-prod'}.json")
@@ -405,7 +407,7 @@ async def ssa_login(*, client: httpx.AsyncClient, prod: bool = False, force_logi
     return saved_credentials
 
 
-async def get_starfleet_token(*, prod: bool = False, allow_login: bool = False) -> str:
+async def get_starfleet_token(*, client: httpx.AsyncClient, prod: bool = False, allow_login: bool = False) -> str:
 
     # First, check if we have the token in the auth header
     headers = AIQContext.get().metadata.headers
@@ -425,7 +427,8 @@ async def get_starfleet_token(*, prod: bool = False, allow_login: bool = False) 
         return token
 
     if (allow_login):
-        starfleet_saved_credentials = await starfleet_login(prod=prod, force_login=False)
+        print(f"{YELLOW}No Starfleet token found. Logging in...{RESET}")
+        starfleet_saved_credentials = await starfleet_login(client=client, prod=prod, force_login=False)
 
         return starfleet_saved_credentials.id_token
 
@@ -435,6 +438,31 @@ async def get_starfleet_token(*, prod: bool = False, allow_login: bool = False) 
 
 
 async def get_ssa_token(*, client: httpx.AsyncClient, prod: bool = False) -> str:
+    """
+    Retrieve the SSA (Secure Service Authentication) access token.
+
+    This function attempts to obtain the SSA token in the following order:
+    1. Checks the `AIQ_SSA_TOKEN` environment variable.
+    2. If not found, performs the SSA login flow using the provided HTTP client,
+       optionally targeting production endpoints if `prod` is True.
+
+    Parameters
+    ----------
+    client : httpx.AsyncClient
+        The HTTP client to use for making authentication requests.
+    prod : bool, optional
+        Whether to use production endpoints for authentication. Defaults to False.
+
+    Returns
+    -------
+    str
+        The SSA access token as a string.
+
+    Raises
+    ------
+    Exception
+        If unable to retrieve or obtain the SSA token.
+    """
 
     token = os.getenv("AIQ_SSA_TOKEN", None)
 
