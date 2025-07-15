@@ -14,8 +14,10 @@
 # limitations under the License.
 
 variables:
+  UV_CACHE_DIR: .uv-cache
   GIT_SUBMODULE_STRATEGY: recursive
   GIT_SUBMODULE_FORCE_HTTPS: "true"
+  BUILD_AIQ_COMPAT: "true"
 
 workflow:
   rules:
@@ -27,12 +29,6 @@ workflow:
 stages:
   - check
   - docker-build
-
-variables:
-  UV_CACHE_DIR: .uv-cache
-  GIT_SUBMODULE_STRATEGY: recursive
-  GIT_SUBMODULE_FORCE_HTTPS: "true"
-  BUILD_AIQ_COMPAT: "true"
 
 default:
   image: rapidsai/ci-conda:cuda12.5.1-ubuntu22.04-py3.12
@@ -85,7 +81,7 @@ docker-build:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH == 'trunk'
     - if: $CI_COMMIT_BRANCH == 'staging'
-  
+
 
 # test:python_tests:
 #   stage: test
