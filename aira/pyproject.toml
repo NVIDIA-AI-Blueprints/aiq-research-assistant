@@ -36,13 +36,12 @@ dependencies = [
   "jsonpatch==1.33",
   "jsonpointer==3.0.0",
   "langchain-core",
-  "langchain-openai",
   "langchain-nvidia-ai-endpoints",
-  "langgraph==0.2.69",
+  "langchain-openai",
   "langgraph-checkpoint==2.0.10",
   "langgraph-sdk==0.1.51",
   "langgraph==0.2.69",
-  "langsmith==0.4.4",
+  "langsmith==0.3.4",
   "litellm",
   "msgpack==1.1.0",
   "multidict==6.1.0",
@@ -54,7 +53,7 @@ dependencies = [
   "propcache==0.2.1",
   "pydantic_core",
   "pydantic",
-  "pyjwt",
+  "pyjwt==2.10.1",
   "PyYAML==6.0.2",
   "redis==5.2.1",
   "regex==2024.11.6",
@@ -85,10 +84,10 @@ dev = [
   "isort==5.12.0",
   "pre-commit>=4.0,<5.0",
   "pylint==3.3.*",
-  "pytest>=8.3.5",
   "pytest-aiohttp>=1.1.0",
   "pytest-asyncio>=0.25.3",
   "pytest-dotenv>=0.5.2",
+  "pytest>=8.3.5",
   "yapf==0.43.*",
 ]
 weave = [
@@ -218,7 +217,6 @@ ignore = ["conf.py"]
 # ignore-list. The regex matches against paths and can be in Posix or Windows
 # format. Because '\\' represents the directory delimiter on Windows systems, it
 # can't be used as an escape character.
-ignore-paths = ["nv_internal/.*"]
 
 # Files or directories matching the regular expression patterns are skipped. The
 # regex matches against base names, not paths. The default value ignores Emacs
@@ -381,7 +379,6 @@ method-naming-style = "snake_case"
 # method-rgx =
 
 # Naming style matching correct module names.
-module-naming-style = "snake_case"
 
 # Regular expression matching correct module names. Overrides module-naming-
 # style. If left empty, module names will be checked with the set naming style.
@@ -571,7 +568,6 @@ disable = [
   "deprecated-pragma",
   "duplicate-code",                # This is too restrictive for our codebase
   "file-ignored",
-  "import-error",                  # pylint gets confused by tests for our examples
   "import-outside-toplevel",       # Allow lazy imports inside of methods
   "locally-disabled",
   "missing-class-docstring",

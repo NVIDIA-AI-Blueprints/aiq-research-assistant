@@ -229,16 +229,6 @@ async def search_eci(prompt: str, writer: StreamWriter, eci_search_tool):
 
     logger.info(f"ECI SEARCH: {prompt}")
 
-    # If ECI search tool is not configured, return empty results
-    if eci_search_tool is None:
-        logger.info("ECI search tool not configured, skipping ECI search")
-        writer({"eci_answer": """
---------
-ECI search tool not configured, skipping ECI search
---------
-        """})
-        return ("", "")
-
     try:
         # todo call eci search tool
         content_search_response: ContentSearchResponse = await eci_search_tool.acall_invoke({"query": prompt})

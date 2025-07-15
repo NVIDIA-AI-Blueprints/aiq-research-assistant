@@ -31,7 +31,6 @@ RED = "\033[91m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
-
 def to_local_time_str(timestamp: float):
     return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
 
@@ -45,11 +44,31 @@ async def async_gen(num_loops: int):
         await asyncio.sleep(0.0)
 
 
+def custom_raise_for_status(response: httpx.Response):
+    """
+    Custom raise for status for httpx responses which provide a more detailed error message including any
+    response text.
+    """
+
+    if response.is_success:
+        return
+
+    message = f"HTTP Error. Code: {response.status_code}, Reason: {response.reason_phrase}, URL: {response.url}"
+
+    if response.text:
+        message += f", Text:\n{response.text}"
+
+    raise httpx.HTTPStatusError(message, request=response.request, response=response)
+
+
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
     logger.debug("--- [DEBUG] ENTERING update_system_prompt ---")
+    if hasattr(llm, "model") and "nemotron" in llm.model:
+        system_prompt = "detailed thinking on"
+
     if hasattr(llm, "model") and "nemotron" in llm.model:
         system_prompt = "detailed thinking on"
 

@@ -42,7 +42,7 @@ class ArtifactQAConfig(FunctionBaseConfig, name="artifact_qa"):
     """
     llm_name: LLMRef = "instruct_llm"
     rag_url: str = ""
-    eci_search_tool_name: str = ""
+    eci_search_tool_name: FunctionRef
 
 
 @register_function(config_type=ArtifactQAConfig)
@@ -54,21 +54,13 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
     Report edits are indicated by the 'rewrite_mode' parameter, set by the UI.
     For each case, the single query search endpoint is called with the user query and added as additional context.
     The search result, current report, and user query are then processed.
-    The search is done to enable questions or edit requests that go beyond the 
+    The search is done to enable questions or edit requests that go beyond the
     scope of the original report contents.
     """
 
     # Acquire the LLM from the builder
     llm = await aiq_builder.get_llm(llm_name=config.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    
-    # Make ECI search tool optional - only get it if a name is provided
-    eci_search_tool = None
-    if config.eci_search_tool_name:
-        try:
-            eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
-        except ValueError:
-            logger.warning(f"ECI search tool '{config.eci_search_tool_name}' not found. Proceeding without ECI search.")
-            eci_search_tool = None
+    eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
     async def _artifact_qa(query_message: ArtifactQAInput) -> ArtifactQAOutput:
         """
@@ -94,7 +86,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
 
         def writer(message):
             """
-            The RAG search expects a stream writer function. 
+            The RAG search expects a stream writer function.
             This is a temporary placeholder to satisfy the type checker.
             """
             logger.debug(f"Writing message: {message}")
@@ -143,7 +135,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
 
         def writer(message):
             """
-            The RAG search expects a stream writer function. 
+            The RAG search expects a stream writer function.
             This is a temporary placeholder to satisfy the type checker.
             """
             logger.debug(f"Writing message: {message}")
