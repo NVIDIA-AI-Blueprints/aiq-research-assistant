@@ -31,9 +31,14 @@ from aiq_aira.functions.eci.content_search_response import SearchResult
 from aiq_aira.functions.eci.content_search_response import SearchResultSnippet
 from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
 from aiq_aira.utils import get_domain
+from aiq.profiler.decorators.function_tracking import track_function
+from langchain_community.tools import TavilySearchResults
+from urllib.parse import urljoin
+import logging
 
 logger = logging.getLogger(__name__)
 
+@track_function(metadata={"source": "search_rag"})
 
 async def search_rag(session: aiohttp.ClientSession, url: str, prompt: str, writer: StreamWriter, collection: str):
     """
@@ -99,8 +104,9 @@ Timeout getting RAG answer for question {prompt}
 Error getting RAG answer for question {prompt} 
 """})
         return (f"Error fetching {req_url}: {e}", "")
+    
 
-
+@track_function(metadata={"source": "search_tavily"})
 async def search_tavily(prompt: str, writer: StreamWriter):
     """
     Web search using Tavily Search Tool
@@ -222,6 +228,16 @@ async def search_eci(prompt: str, writer: StreamWriter, eci_search_tool):
     """
 
     logger.info(f"ECI SEARCH: {prompt}")
+
+    # If ECI search tool is not configured, return empty results
+    if eci_search_tool is None:
+        logger.info("ECI search tool not configured, skipping ECI search")
+        writer({"eci_answer": """
+--------
+ECI search tool not configured, skipping ECI search
+--------
+        """})
+        return ("", "")
 
     try:
         # todo call eci search tool

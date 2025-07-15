@@ -45,34 +45,35 @@ async def async_gen(num_loops: int):
         await asyncio.sleep(0.0)
 
 
-def custom_raise_for_status(response: httpx.Response):
-    """
-    Custom raise for status for httpx responses which provide a more detailed error message including any
-    response text.
-    """
-
-    if response.is_success:
-        return
-
-    message = f"HTTP Error. Code: {response.status_code}, Reason: {response.reason_phrase}, URL: {response.url}"
-
-    if response.text:
-        message += f", Text:\n{response.text}"
-
-    raise httpx.HTTPStatusError(message, request=response.request, response=response)
-
-
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
-
+    logger.debug("--- [DEBUG] ENTERING update_system_prompt ---")
     if hasattr(llm, "model") and "nemotron" in llm.model:
         system_prompt = "detailed thinking on"
 
-    if hasattr(llm, "model_name") and "nemotron" in llm.model_name:
-        system_prompt = "detailed thinking on"
+    logger.debug(f"--- [DEBUG] Initial system_prompt: '{system_prompt}'")
+    
+    # Log llm attributes for debugging
+    llm_model = getattr(llm, 'model', 'N/A')
+    llm_model_name = getattr(llm, 'model_name', 'N/A')
+    logger.debug(f"--- [DEBUG] LLM details: model='{llm_model}', model_name='{llm_model_name}'")
 
+    has_model = hasattr(llm, "model") and "nemotron" in llm.model
+    has_model_name = hasattr(llm, "model_name") and "nemotron" in llm.model_name
+    logger.debug(f"--- [DEBUG] Checking for 'nemotron': in llm.model? {has_model}, in llm.model_name? {has_model_name}")
+
+    if has_model:
+        logger.debug("--- [DEBUG] Overwriting system_prompt because 'nemotron' was found in llm.model.")
+        system_prompt = "detailed thinking on"
+    else:
+        # For non-nemotron models, provide clear JSON format instructions
+        logger.debug("--- [DEBUG] Using JSON format instructions for non-nemotron model.")
+        system_prompt = """You are a helpful assistant. When asked to generate structured data, you must respond with valid JSON format exactly as specified in the instructions. Follow the format requirements precisely and ensure all required fields are included."""
+
+    logger.debug(f"--- [DEBUG] Final system_prompt being returned: '{system_prompt}'")
+    logger.debug("--- [DEBUG] LEAVING update_system_prompt ---")
     return system_prompt
 
 

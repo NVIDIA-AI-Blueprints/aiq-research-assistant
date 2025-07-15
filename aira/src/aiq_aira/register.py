@@ -27,8 +27,6 @@ from aiq.cli.register_workflow import register_function
 from aiq.data_models.api_server import AIQChatResponseChunk
 from aiq.data_models.component_ref import FunctionRef
 from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.plugins.langchain import register
 from pydantic import BaseModel
 
 from aiq_aira.functions import artifact_qa
@@ -36,6 +34,10 @@ from aiq_aira.functions import generate_queries
 from aiq_aira.functions import generate_summary
 from aiq_aira.functions.eci import eci_search_fn
 from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
+
+# Import evaluation components
+from aiq_aira.eval import evaluator_register
+from aiq_aira.eval import generator_register
 
 logger = logging.getLogger(__name__)
 

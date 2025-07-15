@@ -45,6 +45,7 @@ The AI-Q NVIDIA Research Assistant blueprint allows you to create a deep researc
 - **Data Sources**: Integration with the NVIDIA RAG blueprint to search multimodal documents with text, charts, and tables. Optional web search through Tavily.
 - **Demo Web Application**: Frontend web application showcasing end-to-end use of the AI-Q Research Assistant.
 
+
 ## Target Audience
 
 - *Research Analysts:* This blueprint can be deployed by IT organizations to provide an on-premise deep research application for analysts

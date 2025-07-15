@@ -27,8 +27,8 @@ from aiq.data_models.function import FunctionBaseConfig
 
 from aiq_aira.artifact_utils import artifact_chat_handler
 from aiq_aira.artifact_utils import check_relevant
-from aiq_aira.nodes import deduplicate_and_format_sources
-from aiq_aira.nodes import process_single_query
+from aiq_aira.search_utils import deduplicate_and_format_sources
+from aiq_aira.search_utils import process_single_query
 from aiq_aira.schema import ArtifactQAInput
 from aiq_aira.schema import ArtifactQAOutput
 from aiq_aira.schema import GeneratedQuery
@@ -60,7 +60,15 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
 
     # Acquire the LLM from the builder
     llm = await aiq_builder.get_llm(llm_name=config.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+    
+    # Make ECI search tool optional - only get it if a name is provided
+    eci_search_tool = None
+    if config.eci_search_tool_name:
+        try:
+            eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+        except ValueError:
+            logger.warning(f"ECI search tool '{config.eci_search_tool_name}' not found. Proceeding without ECI search.")
+            eci_search_tool = None
 
     async def _artifact_qa(query_message: ArtifactQAInput) -> ArtifactQAOutput:
         """

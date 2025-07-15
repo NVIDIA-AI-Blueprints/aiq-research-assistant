@@ -14,8 +14,7 @@
 # limitations under the License.
 
 import os
-
-ASYNC_TIMEOUT = 120
+ASYNC_TIMEOUT=120 
 
 # Only needed if RAG endpoint requires an API key
 RAG_API_KEY = os.getenv("RAG_API_KEY", "")

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import json
+import logging
 import typing
 from typing import AsyncGenerator
 
@@ -37,6 +38,8 @@ from aiq_aira.schema import AIRAState
 from aiq_aira.schema import ConfigSchema
 from aiq_aira.schema import GenerateSummaryStateInput
 from aiq_aira.schema import GenerateSummaryStateOutput
+
+logger = logging.getLogger(__name__)
 
 
 def serialize_pydantic(obj):
@@ -104,7 +107,17 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+        # Note: NIM doesn't support model_kwargs stream_options like OpenAI
+        # llm.model_kwargs["stream_options"] = {"include_usage": True, "continuous_usage_stats": True}
+        
+        # Make ECI search tool optional - only get it if a name is provided
+        eci_search_tool = None
+        if config.eci_search_tool_name:
+            try:
+                eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+            except ValueError:
+                logger.warning(f"ECI search tool '{config.eci_search_tool_name}' not found. Proceeding without ECI search.")
+                eci_search_tool = None
 
         response: AIRAState = await graph.ainvoke(input={
             "queries": message.queries, "web_research_results": [], "running_summary": ""
@@ -131,7 +144,17 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+        # Note: NIM doesn't support model_kwargs stream_options like OpenAI
+        # llm.model_kwargs["stream_options"] = {"include_usage": True, "continuous_usage_stats": True}
+        
+        # Make ECI search tool optional - only get it if a name is provided
+        eci_search_tool = None
+        if config.eci_search_tool_name:
+            try:
+                eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+            except ValueError:
+                logger.warning(f"ECI search tool '{config.eci_search_tool_name}' not found. Proceeding without ECI search.")
+                eci_search_tool = None
 
         async for _t, val in graph.astream(
                 input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
