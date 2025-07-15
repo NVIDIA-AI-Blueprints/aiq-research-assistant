@@ -21,10 +21,8 @@ from aiq.builder.builder import Builder
 from aiq.builder.framework_enum import LLMFrameworkEnum
 from aiq.builder.function_info import FunctionInfo
 from aiq.cli.register_workflow import register_function
-from aiq.data_models.api_server import AIQChatResponseChunk
-from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.component_ref import FunctionRef
 from aiq.data_models.function import FunctionBaseConfig
-from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END
 from langgraph.graph import START
 from langgraph.graph import StateGraph
@@ -57,6 +55,7 @@ class AIRAGenerateSummaryConfig(FunctionBaseConfig, name="generate_summaries"):
     Configuration for the generate_summary function/endpoint
     """
     rag_url: str = ""
+    eci_search_tool_name: FunctionRef
 
 
 def serialize_pydantic(obj):
@@ -103,12 +102,14 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
         response: AIRAState = await graph.ainvoke(input={
             "queries": message.queries, "web_research_results": [], "running_summary": ""
         },
                                                   config={
                                                       "llm": llm,
+                                                      "eci_search_tool": eci_search_tool,
                                                       "report_organization": message.report_organization,
                                                       "rag_url": config.rag_url,
                                                       "collection": message.rag_collection,
@@ -128,12 +129,14 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
 
         async for _t, val in graph.astream(
                 input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
                 stream_mode=['custom', 'values'],
                 config={
                     "llm": llm,
+                    "eci_search_tool": eci_search_tool,
                     "report_organization": message.report_organization,
                     "rag_url": config.rag_url,
                     "collection": message.rag_collection,

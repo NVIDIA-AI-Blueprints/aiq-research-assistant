@@ -38,6 +38,14 @@ general:
         method: GET
         description: Get the default collections
         function_name: default_collections
+      - path: /eci_source_list
+        method: GET
+        description: Get the list of ECI sources
+        function_name: eci_source_list
+      - path: /default_prompt
+        method: GET
+        description: Get the default prompt
+        function_name: default_prompt
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -45,20 +53,20 @@ llms:
   # that uses local NVIDIA NIM microservices.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   instruct_llm:
-    _type: openai
+    _type: nim
     model_name: meta/llama-3.3-70b-instruct
     temperature: 0.0
-    base_url: http://aira-instruct-llm:8000/v1
+    base_url: http://nim-llm-ms:8000/v1
     api_key: not-needed
   # The reasoning llm is used for report planning and reflection and should be a reasoning model
   # that supports thinking tokens. The default configuration below is used assuming a docker compose
   # deployment of AIRA and RAG with a local NVIDIA NIM microservice for the nemotron model.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   nemotron:
-    _type: openai
+    _type: nim
     model_name : nvidia/llama-3.3-nemotron-super-49b-v1
     temperature: 0.5
-    base_url: http://nim-llm-ms:8000/v1 # default if deployed using RAG blueprint and docker compose
+    base_url: http://aira-instruct-llm:8000/v1 # default if deployed using RAG blueprint and docker compose
     max_tokens: 5000
     stream: true
     api_key: not-needed
@@ -72,15 +80,35 @@ functions:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
     rag_url: http://rag-server:8081/v1 
+    eci_search_tool_name: eci_search
+  
+  eci_search:
+    _type: eci_search
+    use_prod: True
+    default_data_sources:
+      - "sharepoint"
+      - "confluence"
+      - "nvidiadocs"
+      - "nvidiablogs"
+      - "nvidianews"
+    default_query_size: 2
 
   artifact_qa:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
     rag_url: http://rag-server:8081/v1
+    eci_search_tool_name: eci_search
   
   health_check:
     _type: health_check
+
+  eci_source_list:
+    _type: eci_source_list
+
+  default_prompt:
+    _type: default_prompt
+    # can set report_structure and report_topic here
 
   default_collections:
     _type: default_collections

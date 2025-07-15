@@ -17,6 +17,7 @@ import operator
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
+from typing import Any
 from typing import Dict
 
 from langchain_openai import ChatOpenAI
@@ -117,6 +118,7 @@ class AIRAState:
 ##
 class ConfigSchema(TypedDict):
     llm: ChatOpenAI
+    eci_search_tool: Any
     report_organization: str
     collection: str
     number_of_queries: int
