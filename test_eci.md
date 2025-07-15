@@ -40,7 +40,8 @@ AIQ_STARFLEET_CLIENT_ID="get-this-from-lopp-or-demoret"
 4. Create starfleet token
 
 ```
-uv sync --all-groups --all-extras
+cd aira
+uv sync --all-groups --all-extras --prerelease=allow
 uv run --env-file test.env aira auth --prod starfleet
 ```
 

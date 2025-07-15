@@ -7,7 +7,7 @@ A complete evaluation framework for AI Research Assistant (AIRA) workflows, feat
 The evaluation suite now **automatically generates missing evaluation fields** from your dataset:
 - **Context Relevance Questions**: Generates targeted questions for evaluating retrieved contexts
 - **Coverage Facts/Claims**: Extracts key facts from ground truth for coverage assessment
-- **Skip Workflow Method**: You can upload a dataset that already includes these fields, and the system will automatically detect them in the workflow, so no additional steps are required on your part.
+- **Skip Workflow Hack**: You can upload a dataset that already includes these fields, and the system will automatically detect them in the workflow, so no additional steps are required on your part.
 
 
 ## Prerequisites & Dependencies
@@ -32,7 +32,7 @@ After cloning the repository, make sure to checkout to the correct branch:
 ```bash
 git clone <repository-url> 
 cd into it
-git checkout ajay-nat-eval-updates 
+git checkout <branch-name>
 ```
 
 ### 2. Installation
@@ -47,9 +47,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Create virtual environment with Python 3.12
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
-
+Activate with: source .venv/bin/activate
 # Install AIRA package in development mode
-uv pip install -e "./aira[dev]"
+uv pip install -e "./aira[dev]" --prerelease=allow
 ```
 
 
@@ -67,7 +67,7 @@ cd ..
 ```bash
 export NVIDIA_API_KEY="your_nvidia_api_key"
 export TAVILY_API_KEY="your_tavily_api_key"  # Optional for web search
-export WANDB_API_KEY="your_wandb_api_key" #optional again, there are more instructions below if you want to set up tracing to w&b weave
+export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instructions below if you want to set up tracing to w&b weave
 ```
 
 ### 3. Run Evaluation
@@ -75,14 +75,14 @@ export WANDB_API_KEY="your_wandb_api_key" #optional again, there are more instru
 ```bash
 
 # Full workflow + evaluation (requires RAG server) + saving logs to txt file 
-aiq eval --config_file aira/configs/eval_config.yml 
+uv run aiq eval --config_file aira/configs/eval_config.yml 
 ```
 ### 4. Run Evaluation saving it to .txt file 
 
 ```bash
 
 # I would recommend running with > output.txt 2>&1 to better analyze the log statements / any errors
-aiq eval --config_file aira/configs/eval_config.yml > output.txt 2>&1
+uv run aiq eval --config_file aira/configs/eval_config.yml > output.txt 2>&1
 ```
 
 
@@ -202,12 +202,16 @@ eval:
     .tmp/aiq_aira
 ```
 
+### 4. Run the evaluation the same. You should see 
+
 **Important**: The `workflow_alias` determines how your evaluation runs will be labeled and organized in Weave. Use descriptive names like:
 - `"baseline_experiment"`
 - `"v2_with_reflection"`  
 - `"cystic_fibrosis_eval"`
 
 **Information Tracked on Weave**: Weave will track your evaluation metrics (citation quality, etc.) for each individual run. Additionally, it will also contain information about your dataset and configuration information such as the llm_type that you used to run certain portions of your experiment allowing for better comparsions.
+
+![Weave Dashboard](images/weave_dashboard.png)
 
 ### Key Configuration Options
 
@@ -223,7 +227,7 @@ The `citation_pairing_llm` setting controls which model pairs facts with citatio
 ```yaml
 workflow:
   generator:
-    citation_pairing_llm: gpt-4o-20241120  # Default, good performance
+    citation_pairing_llm: gpt-4o-20241120  # Default, good performance. High chance to see rate limiting when using llm_gateway. If you do I would recommend switching to the mistral model(nvdev/mistralai/mixtral-8x22b-instruct-v0.1) over any llama model for this task
 ```
 **Required environment variables if you want to use gpt models (LLM Gateway):**
 ```bash
@@ -235,7 +239,7 @@ export NV_CLIENT_SECRET="your_client_secret"
 ```yaml
 workflow:
   generator:
-    citation_pairing_llm: nvdev/meta/llama-3.1-70b-instruct
+    citation_pairing_llm: nvdev/mistralai/mixtral-8x22b-instruct-v0.1
 ```
 **Uses existing:** `NVIDIA_API_KEY` (no additional setup required)
 
@@ -285,6 +289,84 @@ aiq-bp-internal/
     └── evaluate.md                # This documentation
 ```
 
+## Implementing a Custom Evaluator
+
+Adding your own custom evaluator to the AIRA evaluation suite is a straightforward process. Follow these steps to integrate your own evaluation logic:
+
+### 1. Create the Evaluator Class
+
+First, create a new Python file for your evaluator (e.g., `my_custom_evaluator.py`) inside `aira/src/aiq_aira/eval/evaluators/`. Your class should inherit from a base class or implement the required `evaluate` method.
+
+```python
+# aira/src/aiq_aira/eval/evaluators/my_custom_evaluator.py
+from aiq.builder.evaluator import EvaluatorBase, EvaluationOutput
+
+class MyCustomEvaluator(EvaluatorBase):
+    async def evaluate(self, workflow_output, **kwargs) -> EvaluationOutput:
+        # Your evaluation logic here
+        score = 0.95
+        return EvaluationOutput(
+            evaluator=self.config.name,
+            metric="custom_metric",
+            value=score
+        )
+```
+
+### 2. Define the Configuration
+
+Next, define a configuration class for your evaluator. This class should inherit from `EvaluatorBaseConfig` and include a unique `name` for your evaluator.
+
+```python
+# In the same file
+from aiq.data_models.evaluator import EvaluatorBaseConfig
+
+class MyCustomEvaluatorConfig(EvaluatorBaseConfig, name="my_custom_evaluator"):
+    # Add any custom configuration fields here
+    pass
+```
+
+### 3. Register the Evaluator
+
+Now, you need to register your new evaluator so that the AIQ Toolkit can discover it. In `aira/src/aiq_aira/eval/evaluator_register.py`, add the following:
+
+-   Import your new evaluator and its config.
+-   Create a registration function using the `@register_evaluator` decorator.
+
+```python
+# aira/src/aiq_aira/eval/evaluator_register.py
+
+# ... existing imports
+from aiq_aira.eval.evaluators.my_custom_evaluator import MyCustomEvaluator, MyCustomEvaluatorConfig
+
+@register_evaluator(config_type=MyCustomEvaluatorConfig)
+async def register_my_custom_evaluator(config: MyCustomEvaluatorConfig, builder: EvalBuilder):
+    evaluator = MyCustomEvaluator(config=config)
+    yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate)
+```
+
+### 4. Add to the Evaluation Config
+
+Finally, add your new evaluator to the `eval_config.yml` file under the `evaluators` section.
+
+```yaml
+# aira/configs/eval_config.yml
+eval:
+  evaluators:
+    # ... other evaluators
+    my_custom_evaluator:
+      _type: my_custom_evaluator
+```
+
+### 5. Reinstall the Package
+
+To ensure all your changes are picked up, reinstall the `aiq_aira` package in editable mode:
+
+```bash
+uv pip install -e "./aira[dev]" --prerelease=allow
+```
+
+That's it! You can now run the evaluation, and your custom evaluator will be included in the process. Please reach out to Kyle Zheng if there are any questions
+
 ## Developer Workflow
 
 ### 1. Create Your Dataset
@@ -317,7 +399,7 @@ workflow:
 
 ### 3. Run Evaluation
 ```bash
-aiq eval --config_file aira/configs/eval_config.yml
+uv run aiq eval --config_file aira/configs/eval_config.yml
 ```
 
 ### 4. Check Results

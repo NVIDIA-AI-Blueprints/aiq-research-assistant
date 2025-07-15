@@ -27,6 +27,7 @@ from aiq.cli.register_workflow import register_function
 from aiq.data_models.api_server import AIQChatResponseChunk
 from aiq.data_models.component_ref import FunctionRef
 from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.function import FunctionBaseConfig
 from pydantic import BaseModel
 
 from aiq_aira.functions import artifact_qa
@@ -82,9 +83,9 @@ async def eci_source_list(config: ECISourceListConfig, builder: Builder):
     """
     Returns a list of sources for the ECI search tool
     """
-    eci_search_config: ECISearchConfig = builder.get_function_config(name=config.eci_search_fn_name)
 
     async def _eci_source_list(request: None = None) -> list[str]:
+        eci_search_config: ECISearchConfig = builder.get_function_config(name=config.eci_search_fn_name)
         return eci_search_config.default_data_sources
 
     yield FunctionInfo.from_fn(_eci_source_list, description="List of sources for the ECI search tool")
