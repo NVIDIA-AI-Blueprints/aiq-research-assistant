@@ -36,6 +36,7 @@ from aiq_aira.functions import generate_queries
 from aiq_aira.functions import generate_summary
 from aiq_aira.functions.eci import eci_search_fn
 from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
+from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ async def default_collections(config: DefaultCollectionsConfig, builder: Builder
 # ECI Source list for UI
 ################################################
 class ECISourceListConfig(FunctionBaseConfig, name="eci_source_list"):
-    pass
+    eci_search_fn_name: FunctionRef = "eci_search"
 
 
 @register_function(config_type=ECISourceListConfig)
@@ -80,7 +81,7 @@ async def eci_source_list(config: ECISourceListConfig, builder: Builder):
     """
     Returns a list of sources for the ECI search tool
     """
-    eci_search_config: ECISearchConfig = builder.get_function_config(name="eci_search")
+    eci_search_config: ECISearchConfig = builder.get_function_config(name=config.eci_search_fn_name)
 
     async def _eci_source_list(request: None = None) -> list[str]:
         return eci_search_config.default_data_sources

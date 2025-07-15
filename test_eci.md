@@ -40,8 +40,8 @@ AIQ_STARFLEET_CLIENT_ID="get-this-from-lopp-or-demoret"
 4. Create starfleet token
 
 ```
-uv pip install -r scripts/eci_auth/requirements.txt
-uv run --env-file test.env scripts/eci_auth/cli.py --prod starfleet
+uv sync --all-groups --all-extras
+uv run --env-file test.env aira auth --prod starfleet
 ```
 
 Copy the ID token, set this as the `Authorization` header in requests to a backend that has been deployed with the appropriate SSA client and SSA secret already in place. The authorization header only needs to be on artifact_qa and generate_summary calls, or on ai_researcher calls.

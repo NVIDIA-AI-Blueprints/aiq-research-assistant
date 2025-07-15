@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
 
 from aiq.builder.builder import Builder
@@ -51,7 +50,9 @@ async def eci_search_fn(config: ECISearchConfig, aiq_builder: Builder):
             request = ECISearchRequest(
                 query=query,
                 query_size=query_size if query_size is not None else config.default_query_size,
-                data_sources=data_sources if data_sources is not None else config.default_data_sources)
+                max_snippet_size=1000,
+                data_sources=data_sources if data_sources is not None else config.default_data_sources,
+            )
 
             return await eci_search_single(client=client, prod=config.use_prod, request=request)
 
