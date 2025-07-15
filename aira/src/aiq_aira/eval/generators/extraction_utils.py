@@ -266,7 +266,6 @@ async def _get_llm_response_structured(
                         # If the response is directly a list
                         return result
                     else:
-                        print(f"DEBUG: Unexpected result type: {type(result)}")
                         return []
                         
                 except Exception as fallback_error:
@@ -444,13 +443,9 @@ async def extract_groundness_facts(final_report: str, llm: str, verbose: bool = 
     """    
     if verbose:
         logger.info("Starting fact/claim extraction from report")
-        logger.info("  - Report length: %d characters", len(final_report))
     
     try:
         prompt = FACT_CLAIM_EXTRACTION_PROMPT.format(final_report=final_report)
-        
-        if verbose:
-            logger.debug("Sending prompt to LLM for fact extraction")
         
         raw_result = await _get_llm_response_structured(
             prompt, 
@@ -552,8 +547,6 @@ async def pair_facts_with_aira_sources(
     
     if verbose:
         logger.info(f"Found {len(sources)} sources in citation section")
-        for source_num, content in sources.items():
-            logger.info(f"  Source {source_num}: {content[:100]}...")
     
     # Use LLM to match facts with sources
     fact_source_pairs = []
@@ -641,7 +634,6 @@ async def pair_facts_with_citations(
     if verbose:
         logger.info("Starting fact-citation pairing")
         logger.info("  - Number of facts to process: %d", len(facts))
-        logger.info("  - Report length: %d characters", len(final_report))
     
     # Check if the final_report actually contains inline citations
     citation_pattern = re.compile(r'\([0-9]+\)|\[[0-9]+\]')
@@ -676,9 +668,6 @@ async def pair_facts_with_citations(
                 fact=fact
             )
             
-            if verbose and fact_idx < 3:  # Log details for first few facts
-                logger.debug("Processing fact %d: %s", fact_idx + 1, fact[:100] + "..." if len(fact) > 100 else fact)
-            
             # Use GPT-4o specifically for citation pairing instead of the passed llm parameter
             raw_result = await _get_llm_response_structured(
                 prompt, 
@@ -708,9 +697,6 @@ async def pair_facts_with_citations(
                     logger.warning(f"Citation {citation} not found in report for fact: {fact[:50]}...")
             
             citations = valid_citations
-            
-            if verbose and fact_idx < 3:  # Log details for first few facts
-                logger.debug("  - Found citations: %s", citations)
             
             return citations
             
@@ -888,9 +874,6 @@ async def generate_context_relevance_questions(
     try:
         prompt = QG_TEMPLATE.format(topic=topic, ground_truth=ground_truth)
         
-        if verbose:
-            logger.debug("Sending prompt to LLM for question generation")
-        
         raw_result = await _get_llm_response_structured(
             prompt, 
             response_format=QuestionsResponse,
@@ -953,9 +936,6 @@ async def generate_coverage_facts_claims(
     
     try:
         prompt = FACT_EXTRACTION_TEMPLATE.format(ground_truth=ground_truth)
-        
-        if verbose:
-            logger.debug("Sending prompt to LLM for facts extraction")
         
         raw_result = await _get_llm_response_structured(
             prompt, 

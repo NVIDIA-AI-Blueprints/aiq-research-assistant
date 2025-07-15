@@ -139,19 +139,11 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     logger.info(f"Response contains <think>: {'<think>' in answer_agg}")
     logger.info(f"Response contains </think>: {'</think>' in answer_agg}")
     
-    # Show the end of the response to see where it truncated
-    if len(answer_agg) > 500:
-        logger.info(f"Response ending (last 500 chars): ...{answer_agg[-500:]}")
-    else:
-        logger.info(f"Full response: {answer_agg}")
-
     # Try to parse with </think> tags first (for nemotron models)
     if "</think>" in answer_agg:
         splitted = answer_agg.split("</think>")
         if len(splitted) >= 2:
             json_str = splitted[1].strip()
-            logger.info(f"Extracted JSON from nemotron response (length: {len(json_str)})")
-            logger.info(f"Raw JSON string: {json_str}")
         else:
             # If splitting fails, the response is malformed
             logger.error("Found <think> but failed to properly split on </think>")
@@ -167,8 +159,6 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
         else:
             # Direct JSON parsing (for instruct models)
             json_str = answer_agg
-            logger.info(f"Using full response as JSON for instruct model (length: {len(json_str)})")
-            logger.info(f"Raw JSON string: {json_str}")
 
     try:
         queries = parse_json_markdown(json_str)
@@ -187,13 +177,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
                     logger.warning(f"Query {i} missing required fields: {query}")
             queries = validated_queries
             
-            # Log the actual parsed queries for verification
-            logger.info(f"Successfully parsed {len(queries)} queries:")
-            for i, query in enumerate(queries, 1):
-                logger.info(f"  Query {i}:")
-                logger.info(f"    - Query: {query.get('query', 'N/A')}")
-                logger.info(f"    - Section: {query.get('report_section', 'N/A')}")
-                logger.info(f"    - Rationale: {query.get('rationale', 'N/A')}...")
+            logger.info(f"Successfully parsed {len(queries)} queries")
             
     except Exception as e:
         logger.error(f"Error parsing queries as JSON: {e}")
