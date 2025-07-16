@@ -81,7 +81,10 @@ services:
     container_name: rag-redis
     ports:
       - "6379:6379"
-    command: redis-server --save "" --appendonly no
+    # Enable persistence: save every 60s if 1+ keys changed, AOF enabled
+    command: redis-server --save 60 1 --appendonly yes
+    volumes:
+      - rag-redis-data:/data
     networks:
       - nvidia-rag
     profiles: ["aira"]
@@ -118,3 +121,7 @@ networks:
   nvidia-rag:
     external: false
     name: nvidia-rag
+
+# Persistent volumes
+volumes:
+  rag-redis-data:

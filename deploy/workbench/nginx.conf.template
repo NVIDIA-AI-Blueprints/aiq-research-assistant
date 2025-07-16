@@ -34,7 +34,7 @@ server {
             deny all;
         }
         
-        proxy_pass ${AIRA_BASE_URL}$request_uri;
+        proxy_pass ${AIRA_BASE_URL};
         proxy_set_header Host $http_host;
     }
     
@@ -50,7 +50,9 @@ server {
             deny all;
         }
         
-        proxy_pass ${AIRA_BASE_URL}/collections;
+        # Rewrite to remove /v2/protected/aiq/v1 prefix
+        rewrite ^/v2/protected/aiq/v1/(.*) /$1 break;
+        proxy_pass ${AIRA_BASE_URL};
         proxy_set_header Host $http_host;
     }
     
