@@ -49,7 +49,7 @@ general:
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
-  # The default configuration below is assuming a docker compose deployment of AIRA 
+  # The default configuration below is assuming a docker compose deployment of AIRA
   # that uses local NVIDIA NIM microservices.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   instruct_llm:
@@ -57,7 +57,7 @@ llms:
     model_name: meta/llama-3.3-70b-instruct
     temperature: 0.0
     base_url: https://integrate.api.nvidia.com/v1
-    
+
   # The reasoning llm is used for report planning and reflection and should be a reasoning model
   # that supports thinking tokens. The default configuration below is used assuming a docker compose
   # deployment of AIRA and RAG with a local NVIDIA NIM microservice for the nemotron model.
@@ -69,7 +69,7 @@ llms:
     base_url: https://integrate.api.nvidia.com/v1
     max_tokens: 5000
     stream: true
-  
+
 
 functions:
   generate_query:
@@ -78,9 +78,9 @@ functions:
   generate_summary:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1 
+    rag_url: http://${AIRA_RAG_ENDPOINT:-rag-server}:8081/v1
     eci_search_tool_name: eci_search
-  
+
   eci_search:
     _type: eci_search
     use_prod: True
@@ -96,9 +96,9 @@ functions:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1
+    rag_url: http://${AIRA_RAG_ENDPOINT:-rag-server}:8081/v1
     eci_search_tool_name: eci_search
-  
+
   health_check:
     _type: health_check
 

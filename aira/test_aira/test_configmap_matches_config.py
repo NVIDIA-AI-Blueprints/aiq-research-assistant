@@ -40,7 +40,7 @@ def test_configmap_matches_config():
     """
     current_dir = Path(__file__).parent
     helm_chart_path = current_dir / ".." / ".." / "deploy" / "helm" / "aiq-aira" / "templates" / "configmap.yaml"
-    reference_config_path = current_dir / ".." / "configs" / "config.yml"
+    reference_config_path = current_dir / ".." / ".." / "configs" / "config.yml"
 
     # Load the reference config file
     with open(reference_config_path, "r") as f:
