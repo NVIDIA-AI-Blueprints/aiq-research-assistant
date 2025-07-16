@@ -101,7 +101,7 @@ async def check_existing_collections(collection_names: List[str]) -> tuple[List[
         return [], collection_names
 
 
-async def cleanup_expired_collections(rag_url: str):
+async def cleanup_expired_collections(rag_ingest_url: str):
     """Monitor Redis key expiration and delete corresponding RAG collections"""
     r = await get_redis()
 
@@ -122,7 +122,7 @@ async def cleanup_expired_collections(rag_url: str):
                 try:
                     async with httpx.AsyncClient() as client:
                         response = await client.request(method="DELETE",
-                                                        url=f"{rag_url}/collections",
+                                                        url=f"{rag_ingest_url}/collections",
                                                         json=[collection_name])
                         if response.status_code in [200, 201]:
                             result = response.json()
@@ -136,7 +136,7 @@ async def cleanup_expired_collections(rag_url: str):
                     logger.error(f"Error deleting collection {collection_name}: {e}")
 
 
-async def initialize_redis(rag_url: str):
+async def initialize_redis(rag_ingest_url: str):
     """Initialize Redis connection and start cleanup task"""
     global cleanup_task
 
@@ -152,7 +152,7 @@ async def initialize_redis(rag_url: str):
 
         # Start cleanup task if not already running
         if cleanup_task is None:
-            cleanup_task = asyncio.create_task(cleanup_expired_collections(rag_url))
+            cleanup_task = asyncio.create_task(cleanup_expired_collections(rag_ingest_url))
 
     except Exception as e:
         logger.error(f"Failed to connect to Redis: {e}")
@@ -161,7 +161,7 @@ async def initialize_redis(rag_url: str):
 
 class PostCollectionsConfig(FunctionBaseConfig, name="post_collections"):
     """Configuration for POST /collections endpoint"""
-    rag_url: str = ""
+    rag_ingest_url: str = ""
 
 
 @register_function(config_type=PostCollectionsConfig)
@@ -169,7 +169,7 @@ async def post_collections_fn(config: PostCollectionsConfig, aiq_builder: Builde
     """Handle collection creation - forward to RAG and track in Redis"""
 
     # Initialize Redis on first use
-    await initialize_redis(config.rag_url)
+    await initialize_redis(config.rag_ingest_url)
 
     async def _post_collections(request: CollectionRequest) -> CollectionResponse:
         """Create collections and track them in Redis"""
@@ -195,7 +195,7 @@ async def post_collections_fn(config: PostCollectionsConfig, aiq_builder: Builde
                     "collection_type": request.collection_type, "embedding_dimension": request.embedding_dimension
                 }
 
-                url = f"{config.rag_url}/collections"
+                url = f"{config.rag_ingest_url}/collections"
                 logger.info(f"Creating new collections at {url} with params: {params}")
                 logger.info(f"New collection names: {new_collections}")
                 if existing:

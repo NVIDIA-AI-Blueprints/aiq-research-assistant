@@ -132,7 +132,7 @@ functions:
 
   post_collections:
     _type: post_collections
-    rag_url: http://rag-server:8082/v1
+    rag_ingest_url: http://ingestor-server:8082/v1
 
 workflow:
   _type: ai_researcher

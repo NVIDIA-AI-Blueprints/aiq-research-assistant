@@ -63,7 +63,7 @@ services:
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
       # Redis configuration for session management
-      REDIS_HOST: rag-redis
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       SESSION_TIMEOUT_HOURS: ${SESSION_TIMEOUT_HOURS:-24}
     volumes:
@@ -71,20 +71,20 @@ services:
     networks:
       - nvidia-rag
     depends_on:
-      rag-redis:
+      redis:
         condition: service_healthy
     profiles: ["aira"]
 
   # Redis for session TTL tracking
-  rag-redis:
+  redis:
     image: redis:7-alpine
-    container_name: rag-redis
+    container_name: redis
     ports:
       - "6379:6379"
     # Enable persistence: save every 60s if 1+ keys changed, AOF enabled
     command: redis-server --save 60 1 --appendonly yes
     volumes:
-      - rag-redis-data:/data
+      - redis-data:/data
     networks:
       - nvidia-rag
     profiles: ["aira"]
@@ -104,7 +104,7 @@ services:
     environment:
       # Route collections to AIRA, documents directly to RAG
       - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082}
-      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:8086}
+      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     depends_on:
@@ -119,9 +119,9 @@ services:
 # set external to false
 networks:
   nvidia-rag:
-    external: false
+    external: true
     name: nvidia-rag
 
 # Persistent volumes
 volumes:
-  rag-redis-data:
+  redis-data:
