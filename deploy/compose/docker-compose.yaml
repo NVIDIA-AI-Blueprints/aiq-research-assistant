@@ -62,11 +62,34 @@ services:
       AIRA_APPLY_GUARDRAIL: "false"
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
+      # Redis configuration for session management
+      REDIS_HOST: rag-redis
+      REDIS_PORT: 6379
+      SESSION_TIMEOUT_HOURS: ${SESSION_TIMEOUT_HOURS:-24}
     volumes:
       - ../../aira/configs:/app/configs
     networks:
       - nvidia-rag
+    depends_on:
+      rag-redis:
+        condition: service_healthy
     profiles: ["aira"]
+
+  # Redis for session TTL tracking
+  rag-redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no
+    networks:
+      - nvidia-rag
+    profiles: ["aira"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   aira-nginx:
     image: nginx:latest
@@ -76,30 +99,15 @@ services:
     expose:
       - "8051"
     environment:
-      # If you are deploying RAG separately,
-      # update to match the URL for the Ingestor Server in your RAG deployment
+      # Route collections to AIRA, documents directly to RAG
       - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082}
-      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
+      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:8086}
     volumes:
       - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     depends_on:
       - aira-backend
     networks:
       - nvidia-rag
-    profiles: ["aira"]
-    
-  aira-frontend:
-    container_name: aira-frontend
-    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.1.0
-    ports:
-      - "3001:3001"
-    expose:
-      - "3001"
-    networks:
-      - nvidia-rag
-    environment:
-      NVWB_TRIM_PREFIX: true
-      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
     profiles: ["aira"]
 
 # Use the nvidia-rag network created by the 
@@ -108,5 +116,5 @@ services:
 # set external to false
 networks:
   nvidia-rag:
-    external: true
+    external: false
     name: nvidia-rag

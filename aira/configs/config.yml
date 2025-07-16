@@ -46,6 +46,16 @@ general:
         method: GET
         description: Get the default prompt
         function_name: default_prompt
+      - path: /collections
+        method: POST
+        description: Create RAG collections with session tracking
+        function_name: post_collections
+
+  telemetry:
+    logging:
+      console:
+        _type: console
+        level: WARN
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -120,6 +130,14 @@ functions:
         topic: "Financial"
         report_organization: "You are a financial analyst who specializes in financial statement analysis. Write a financial report analyzing the 2023 financial performance of Amazon. Identify trends in revenue growth, net income, and total assets. Discuss how these trends affected Amazon's yearly financial performance for 2023. Your output should be organized into a brief introduction, as many sections as necessary to create a comprehensive report, and a conclusion. Format your answer in paragraphs. Use factual sources such as Amazon's quarterly meeting releases for 2023. Cross analyze the sources to draw original and sound conclusions and explain your reasoning for arriving at conclusions. Do not make any false or unverifiable claims. I want a factual report with cited sources."
 
+  post_collections:
+    _type: post_collections
+    rag_url: http://rag-server:8082/v1
 
 workflow:
   _type: ai_researcher
+
+eval:
+  general:
+    output_dir: ./aira_eval_results
+    dataset:
