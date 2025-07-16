@@ -75,6 +75,32 @@ async def track_collection(collection_name: str):
     logger.info(f"Tracking collection: {collection_name} (TTL: {SESSION_TIMEOUT}s)")
 
 
+async def check_existing_collections(collection_names: List[str]) -> tuple[List[str], List[str]]:
+    """Check which collections exist in Redis (and thus in RAG)"""
+    r = await get_redis()
+    existing = []
+    new_collections = []
+    
+    try:
+        # Check each collection in Redis
+        for collection_name in collection_names:
+            session_key = f"session:{collection_name}"
+            # Check if key exists (not expired)
+            if await r.exists(session_key):
+                existing.append(collection_name)
+                logger.debug(f"Collection '{collection_name}' found in Redis (active session)")
+            else:
+                new_collections.append(collection_name)
+                logger.debug(f"Collection '{collection_name}' not found in Redis (new or expired)")
+        
+        return existing, new_collections
+        
+    except Exception as e:
+        logger.error(f"Error checking collections in Redis: {e}")
+        # If error occurs, assume all are new
+        return [], collection_names
+
+
 async def cleanup_expired_collections(rag_url: str):
     """Monitor Redis key expiration and delete corresponding RAG collections"""
     r = await get_redis()
@@ -149,16 +175,33 @@ async def post_collections_fn(config: PostCollectionsConfig, aiq_builder: Builde
         """Create collections and track them in Redis"""
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
             try:
-                # Forward request to RAG with query parameters
+                # Check which collections already exist in Redis (non-expired)
+                existing, new_collections = await check_existing_collections(request.collection_names)
+
+                # Log existing collections (no TTL refresh)
+                for name in existing:
+                    logger.info(f"Collection '{name}' already exists - using existing session")
+
+                # If all collections already exist, return success
+                if not new_collections:
+                    return CollectionResponse(message=f"All collections already exist: {', '.join(existing)}",
+                                              successful=existing,
+                                              failed=[],
+                                              total_success=len(existing),
+                                              total_failed=0)
+
+                # Create only the new collections
                 params = {
                     "collection_type": request.collection_type, "embedding_dimension": request.embedding_dimension
                 }
 
                 url = f"{config.rag_url}/collections"
-                logger.info(f"Creating collections at {url} with params: {params}")
-                logger.info(f"Collection names: {request.collection_names}")
+                logger.info(f"Creating new collections at {url} with params: {params}")
+                logger.info(f"New collection names: {new_collections}")
+                if existing:
+                    logger.info(f"Existing collection names (skipped): {existing}")
 
-                response = await client.post(url, json=request.collection_names, params=params)
+                response = await client.post(url, json=new_collections, params=params)
 
                 # If successful, track the collections
                 if response.status_code in [200, 201]:
@@ -168,19 +211,27 @@ async def post_collections_fn(config: PostCollectionsConfig, aiq_builder: Builde
                     for name in result.get("successful", []):
                         await track_collection(name)
 
-                    return CollectionResponse(message=result.get("message", "Collection creation process completed."),
-                                              successful=result.get("successful", []),
-                                              failed=result.get("failed", []),
-                                              total_success=result.get("total_success", 0),
-                                              total_failed=result.get("total_failed", 0))
-                else:
-                    error_text = response.text
+                    # Combine results
+                    all_successful = existing + result.get("successful", [])
+
                     return CollectionResponse(
-                        message=f"Failed to create collections: {response.status_code} - {error_text}",
-                        successful=[],
-                        failed=request.collection_names,
-                        total_success=0,
-                        total_failed=len(request.collection_names))
+                        message=
+                        f"Collection creation completed. Created: {len(result.get('successful', []))}, Already existed: {len(existing)}",
+                        successful=all_successful,
+                        failed=result.get("failed", []),
+                        total_success=len(all_successful),
+                        total_failed=result.get("total_failed", 0))
+                elif len(existing) > 0:
+                    error_text = response.text
+                    # Still return existing as successful, following existing RAG API behavior
+                    return CollectionResponse(
+                        message=f"Failed to create new collections: {response.status_code} - {error_text}",
+                        successful=existing,
+                        failed=new_collections,
+                        total_success=len(existing),
+                        total_failed=len(new_collections))
+                else:
+                    raise Exception(f"Failed to create collections: {response.status_code} - {response.text}")
 
             except Exception as e:
                 logger.error(f"Error creating collections: {e}")

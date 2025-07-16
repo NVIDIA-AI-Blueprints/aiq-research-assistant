@@ -48,7 +48,7 @@ general:
         function_name: default_prompt
       - path: /collections
         method: POST
-        description: Create RAG collections with session tracking
+        description: Check if collections exist and create new ones if they don't, and track them for automatic cleanup
         function_name: post_collections
 
   telemetry:
