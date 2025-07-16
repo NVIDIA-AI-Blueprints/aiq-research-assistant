@@ -62,6 +62,8 @@ services:
       AIRA_APPLY_GUARDRAIL: "false"
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
+      # Required for rag middleware via fastapi extensions
+      RAG_INGEST_URL: ${RAG_INGEST_URL:-http://rag-server:8082/v1}
       # Redis configuration for session management
       REDIS_HOST: aira-redis
       REDIS_PORT: 6380
@@ -95,25 +97,6 @@ services:
       timeout: 5s
       retries: 5
 
-  aira-nginx:
-    image: nginx:latest
-    container_name: aira-nginx
-    ports:
-      - "8051:8051"
-    expose:
-      - "8051"
-    environment:
-      # Route collections to AIRA, documents directly to RAG
-      - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082}
-      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
-    volumes:
-      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
-    depends_on:
-      - aira-backend
-    networks:
-      - nvidia-rag
-    profiles: ["aira"]
-
   aira-frontend:
     container_name: aira-frontend
     image: nvcr.io/nvidia/blueprint/aira-frontend:v1.1.0
@@ -125,7 +108,7 @@ services:
       - nvidia-rag
     environment:
       NVWB_TRIM_PREFIX: true
-      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
+      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-backend:3838}
     profiles: ["aira"]
 
 # Use the nvidia-rag network created by the 

@@ -16,7 +16,7 @@
 general:
   use_uvloop: true
   front_end:
-    _type: fastapi
+    _type: aira_frontend
     endpoints:
       - path: /generate_query
         method: POST
@@ -46,10 +46,6 @@ general:
         method: GET
         description: Get the default prompt
         function_name: default_prompt
-      - path: /collections
-        method: POST
-        description: Check if collections exist and create new ones if they don't, and track them for automatic cleanup
-        function_name: post_collections
 
   telemetry:
     logging:
@@ -129,10 +125,6 @@ functions:
       - name: "Financial_Dataset"
         topic: "Financial"
         report_organization: "You are a financial analyst who specializes in financial statement analysis. Write a financial report analyzing the 2023 financial performance of Amazon. Identify trends in revenue growth, net income, and total assets. Discuss how these trends affected Amazon's yearly financial performance for 2023. Your output should be organized into a brief introduction, as many sections as necessary to create a comprehensive report, and a conclusion. Format your answer in paragraphs. Use factual sources such as Amazon's quarterly meeting releases for 2023. Cross analyze the sources to draw original and sound conclusions and explain your reasoning for arriving at conclusions. Do not make any false or unverifiable claims. I want a factual report with cited sources."
-
-  post_collections:
-    _type: post_collections
-    rag_ingest_url: http://ingestor-server:8082/v1
 
 workflow:
   _type: ai_researcher

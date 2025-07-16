@@ -37,7 +37,7 @@ from aiq_aira.functions import generate_summary
 from aiq_aira.functions.eci import eci_search_fn
 from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
-from aiq_aira.functions.session_rag import session_collections
+from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 
 logger = logging.getLogger(__name__)
 

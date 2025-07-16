@@ -14,20 +14,12 @@
 # limitations under the License.
 
 import asyncio
-import json
 import logging
 import os
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import List, Optional
 
 import httpx
 import redis.asyncio as redis
-from aiq.builder.builder import Builder
-from aiq.builder.function_info import FunctionInfo
-from aiq.cli.register_workflow import register_function
-from aiq.data_models.function import FunctionBaseConfig
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -156,7 +148,7 @@ async def initialize_redis(rag_ingest_url: str):
         # Enable keyspace notifications for expirations. Required for the pub/sub to work.
         await r.config_set("notify-keyspace-events", "Ex")
         logger.info(f"Connected to Redis and enabled expiration notifications.")
-        logger.info(f"Session timeout configured to {SESSION_TIMEOUT // 3600} hours.")
+        logger.info(f"Session timeout configured to {SESSION_TIMEOUT // 3600} hours ({SESSION_TIMEOUT} seconds).")
 
         # --- Robust Task Management ---
         # Check if the task exists and has stopped for any reason (e.g., completed, failed).
@@ -180,89 +172,3 @@ async def initialize_redis(rag_ingest_url: str):
     except Exception as e:
         logger.error(f"Failed to initialize Redis or start cleanup task: {e}")
         raise
-
-
-class PostCollectionsConfig(FunctionBaseConfig, name="post_collections"):
-    """Configuration for POST /collections endpoint"""
-    rag_ingest_url: str = ""
-
-
-@register_function(config_type=PostCollectionsConfig)
-async def post_collections_fn(config: PostCollectionsConfig, aiq_builder: Builder):
-    """Handle collection creation - forward to RAG and track in Redis"""
-
-    # Initialize Redis on first use
-    await initialize_redis(config.rag_ingest_url)
-
-    async def _post_collections(request: CollectionRequest) -> CollectionResponse:
-        """Create collections and track them in Redis"""
-        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
-            try:
-                # Check which collections already exist in Redis (non-expired)
-                existing, new_collections = await check_existing_collections(request.collection_names)
-
-                # Log existing collections (no TTL refresh)
-                for name in existing:
-                    logger.info(f"Collection '{name}' already exists - using existing session")
-
-                # If all collections already exist, return success
-                if not new_collections:
-                    return CollectionResponse(message=f"All collections already exist: {', '.join(existing)}",
-                                              successful=existing,
-                                              failed=[],
-                                              total_success=len(existing),
-                                              total_failed=0)
-
-                # Create only the new collections
-                params = {
-                    "collection_type": request.collection_type, "embedding_dimension": request.embedding_dimension
-                }
-
-                url = f"{config.rag_ingest_url}/collections"
-                logger.info(f"Creating new collections at {url} with params: {params}")
-                logger.info(f"New collection names: {new_collections}")
-                if existing:
-                    logger.info(f"Existing collection names (skipped): {existing}")
-
-                response = await client.post(url, json=new_collections, params=params)
-
-                # If successful, track the collections
-                if response.status_code in [200, 201]:
-                    result = response.json()
-
-                    # Track each successful collection in Redis
-                    for name in result.get("successful", []):
-                        await track_collection(name)
-
-                    # Combine results
-                    all_successful = existing + result.get("successful", [])
-
-                    return CollectionResponse(
-                        message=
-                        f"Collection creation completed. Created: {len(result.get('successful', []))}, Already existed: {len(existing)}",
-                        successful=all_successful,
-                        failed=result.get("failed", []),
-                        total_success=len(all_successful),
-                        total_failed=result.get("total_failed", 0))
-                elif len(existing) > 0:
-                    error_text = response.text
-                    # Still return existing as successful, following existing RAG API behavior
-                    return CollectionResponse(
-                        message=f"Failed to create new collections: {response.status_code} - {error_text}",
-                        successful=existing,
-                        failed=new_collections,
-                        total_success=len(existing),
-                        total_failed=len(new_collections))
-                else:
-                    raise Exception(f"Failed to create collections: {response.status_code} - {response.text}")
-
-            except Exception as e:
-                logger.error(f"Error creating collections: {e}")
-                return CollectionResponse(message=f"Error creating collections: {str(e)}",
-                                          successful=[],
-                                          failed=request.collection_names,
-                                          total_success=0,
-                                          total_failed=len(request.collection_names))
-
-    yield FunctionInfo.create(single_fn=_post_collections,
-                              description="Create RAG collections and track them for automatic cleanup")
