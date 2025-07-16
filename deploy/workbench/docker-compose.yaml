@@ -130,16 +130,17 @@ services:
     image: redis:7-alpine
     container_name: aira-redis
     ports:
-      - "6380:6379"
+      - "6380:6380"
     # Enable persistence: save every 60s if 1+ keys changed, AOF enabled
-    command: redis-server --save 60 1 --appendonly yes
+    # Run Redis on port 6380 internally to avoid conflicts
+    command: redis-server --port 6380 --save 60 1 --appendonly yes
     volumes:
       - aira-redis-data:/data
     networks:
       - nvidia-rag
     profiles: ["aira-no-gpu", "aira-gpu"]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-p", "6380", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
