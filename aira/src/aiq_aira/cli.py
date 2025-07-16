@@ -32,7 +32,7 @@ RESET = "\033[0m"
 @click.pass_context
 def run_cli(ctx: click.Context):
 
-    dotenv.load_dotenv()
+    dotenv.load_dotenv(override=True)
 
 
 @run_cli.group(name="auth", invoke_without_command=True, no_args_is_help=True)
