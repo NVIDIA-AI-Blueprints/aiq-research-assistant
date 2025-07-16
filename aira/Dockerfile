@@ -33,14 +33,18 @@ RUN uv python install 3.12
 
 # Copy the local build context (your project files) into the container's /app directory
 COPY ./aira/entrypoint.sh /entrypoint.sh
-COPY ./aira/. /app
+
+# Only copy the configs directory. The rest of the code is copied in the install
+COPY ./aira/configs/* /app/configs/
+
+
 
 
 RUN uv venv --python-preference managed
 ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_AIQ_AIRA="0.0.0"
 
-# Use uv to install Python dependencies 
-RUN uv pip install /app 
+# Use uv to install Python dependencies
+RUN uv pip install /app
 
 RUN chmod +x /entrypoint.sh
 
