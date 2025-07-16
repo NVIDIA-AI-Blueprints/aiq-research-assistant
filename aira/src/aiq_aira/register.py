@@ -82,6 +82,7 @@ async def eci_source_list(config: ECISourceListConfig, builder: Builder):
     """
     Returns a list of sources for the ECI search tool
     """
+
     async def _eci_source_list(request: None = None) -> list[str]:
         eci_search_config: ECISearchConfig = builder.get_function_config(name=config.eci_search_fn_name)
         return eci_search_config.default_data_sources
