@@ -40,7 +40,7 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 # Redis connection pool
 redis_pool = None
 # Background task reference
-cleanup_task = None
+cleanup_task: Optional[asyncio.Task] = None
 
 
 class CollectionRequest(BaseModel):
@@ -102,60 +102,83 @@ async def check_existing_collections(collection_names: List[str]) -> tuple[List[
 
 
 async def cleanup_expired_collections(rag_ingest_url: str):
-    """Monitor Redis key expiration and delete corresponding RAG collections"""
+    """
+    Monitors Redis key expirations and sends a DELETE request to the RAG API
+    for the corresponding collection. This task runs indefinitely.
+    """
     r = await get_redis()
 
-    # Subscribe to key expiration events
+    # Subscribe to the keyspace channel for expired events
     pubsub = r.pubsub()
     await pubsub.subscribe("__keyevent@0__:expired")
 
-    logger.info("Started monitoring collection expirations")
+    logger.info("Started monitoring collection expirations.")
 
     async for message in pubsub.listen():
-        if message["type"] == "message":
-            expired_key = message["data"]
-            if expired_key.startswith("session:"):
-                collection_name = expired_key.replace("session:", "")
-                logger.info(f"Session expired: {collection_name}")
+        # This loop will run forever, processing messages as they arrive.
+        try:
+            if message["type"] == "message":
+                expired_key = message["data"]
+                if expired_key.startswith("session:"):
+                    collection_name = expired_key.replace("session:", "")
+                    logger.info(f"Session expired for collection: {collection_name}. Triggering deletion.")
 
-                # Delete collection from RAG
-                try:
+                    # Asynchronously delete the collection from the RAG service
                     async with httpx.AsyncClient() as client:
                         response = await client.request(method="DELETE",
                                                         url=f"{rag_ingest_url}/collections",
-                                                        json=[collection_name])
+                                                        json=[collection_name],
+                                                        timeout=30.0)
                         if response.status_code in [200, 201]:
                             result = response.json()
                             if collection_name in result.get("successful", []):
-                                logger.info(f"Successfully deleted collection: {collection_name}")
+                                logger.info(f"Successfully deleted collection from RAG: {collection_name}")
                             else:
-                                logger.error(f"Failed to delete collection {collection_name}: {result}")
+                                logger.error(f"RAG API failed to delete collection {collection_name}: {result}")
                         else:
-                            logger.error(f"Failed to delete collection {collection_name}: {response.status_code}")
-                except Exception as e:
-                    logger.error(f"Error deleting collection {collection_name}: {e}")
+                            logger.error(
+                                f"Failed to delete collection {collection_name}. Status: {response.status_code}, Body: {response.text}"
+                            )
+        except Exception as e:
+            # This broad exception catch ensures the monitoring loop itself doesn't die
+            # from a transient error (e.g., network issue, bad response from RAG API).
+            logger.error(f"Error in cleanup loop for key '{message.get('data', 'N/A')}': {e}. Resuming monitoring...")
 
 
 async def initialize_redis(rag_ingest_url: str):
-    """Initialize Redis connection and start cleanup task"""
+    """Initialize Redis connection and ensure the cleanup task is running."""
     global cleanup_task
 
-    # Test Redis connection
     try:
         r = await get_redis()
         await r.ping()
 
-        # Enable keyspace notifications for expirations
+        # Enable keyspace notifications for expirations. Required for the pub/sub to work.
         await r.config_set("notify-keyspace-events", "Ex")
-        logger.info(f"Connected to Redis and enabled expiration notifications")
-        logger.info(f"Session timeout configured to {SESSION_TIMEOUT // 3600} hours")
+        logger.info(f"Connected to Redis and enabled expiration notifications.")
+        logger.info(f"Session timeout configured to {SESSION_TIMEOUT // 3600} hours.")
 
-        # Start cleanup task if not already running
+        # --- Robust Task Management ---
+        # Check if the task exists and has stopped for any reason (e.g., completed, failed).
+        if cleanup_task is not None and cleanup_task.done():
+            try:
+                # Log the exception if the task failed, which is useful for debugging.
+                exception = cleanup_task.exception()
+                if exception:
+                    logger.error(f"Cleanup task stopped with an exception: {exception}. Restarting...")
+                else:
+                    logger.warning("Cleanup task stopped unexpectedly without an exception. Restarting...")
+            except asyncio.CancelledError:
+                logger.warning("Cleanup task was cancelled. Restarting...")
+            cleanup_task = None  # Reset to allow re-creation.
+
+        # Start the cleanup task if it's not running.
         if cleanup_task is None:
+            logger.info("Starting background task for expired collection cleanup.")
             cleanup_task = asyncio.create_task(cleanup_expired_collections(rag_ingest_url))
 
     except Exception as e:
-        logger.error(f"Failed to connect to Redis: {e}")
+        logger.error(f"Failed to initialize Redis or start cleanup task: {e}")
         raise
 
 
