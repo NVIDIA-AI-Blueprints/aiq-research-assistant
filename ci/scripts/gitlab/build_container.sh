@@ -41,7 +41,7 @@ fi
 GIT_TAG=$(get_git_tag)
 IMAGE_NAME="nvcr.io/nvstaging/blueprint/aira-backend:${GIT_TAG}"
 echo "Building container '${IMAGE_NAME}'"
-docker build -f aira/Dockerfile -t "${IMAGE_NAME}" .
+docker build -f deploy/Dockerfile -t "${IMAGE_NAME}" .
 
 # Ensure we clean up even if the push fails
 set +e

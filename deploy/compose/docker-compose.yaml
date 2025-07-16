@@ -35,7 +35,7 @@ services:
             - driver: nvidia
               # RAG uses 0,1 so we assign 2,3 to the LLM
               device_ids: ['${AIRA_LLM_MS_GPU_ID:-2,3}']
-              capabilities: [gpu] 
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/v1/health/ready')"]
       interval: 30s
@@ -51,7 +51,7 @@ services:
     runtime: nvidia
     build:
       context: ../../
-      dockerfile: aira/Dockerfile
+      dockerfile: deploy/Dockerfile
     entrypoint: "/entrypoint.sh"
     ports:
       - "3838:3838"
@@ -69,7 +69,7 @@ services:
       REDIS_PORT: 6380
       SESSION_TIMEOUT_HOURS: ${SESSION_TIMEOUT_HOURS:-24}
     volumes:
-      - ../../aira/configs:/app/configs
+      - ../../configs:/app/configs
     networks:
       - nvidia-rag
     depends_on:
@@ -111,7 +111,7 @@ services:
       INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-backend:3838}
     profiles: ["aira"]
 
-# Use the nvidia-rag network created by the 
+# Use the nvidia-rag network created by the
 # RAG docker compose deployment
 # If you are deploying RAG separately
 # set external to false

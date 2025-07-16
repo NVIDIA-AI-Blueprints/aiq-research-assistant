@@ -34,7 +34,7 @@ services:
             - driver: nvidia
               # RAG uses 0,1 so we assign 2,3 to the LLM
               device_ids: ['${AIRA_LLM_MS_GPU_ID_0:-2}', '${AIRA_LLM_MS_GPU_ID_1:-3}']
-              capabilities: [gpu] 
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/v1/health/ready')"]
       interval: 30s
@@ -50,7 +50,7 @@ services:
     image: nvcr.io/nvidia/blueprint/aira-backend:v1.0.0
     build:
       context: ../../
-      dockerfile: aira/Dockerfile
+      dockerfile: deploy/Dockerfile
     entrypoint: "/entrypoint.sh"
     ports:
       - "3838:3838"
@@ -66,7 +66,7 @@ services:
       REDIS_PORT: 6380
       SESSION_TIMEOUT_HOURS: ${SESSION_TIMEOUT_HOURS:-24}
     volumes:
-      - ../../aira/configs:/app/configs
+      - ../../configs:/app/configs
     networks:
       - nvidia-rag
     depends_on:
@@ -74,7 +74,7 @@ services:
         condition: service_healthy
     profiles: ["aira-no-gpu"]
 
-  aira-backend-gpu: 
+  aira-backend-gpu:
     <<: *aira-backend-no-gpu
     environment:
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}

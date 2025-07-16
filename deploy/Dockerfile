@@ -13,8 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+######## Builder Stage #########
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS builder
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+
+WORKDIR /build
+
+# Copy the source code
+COPY ./pyproject.toml /build/pyproject.toml
+COPY ./aira/ /build/aira/
+
+# Build the package. Mount .git to get the version from the git tag
+RUN --mount=source=.git,target=.git,type=bind \
+   uv build --directory /build
+
+
+######## Final Stage #########
 FROM nvcr.io/nvidia/base/ubuntu:jammy-20250415.1
 
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 # Install uv package manager
 # The installer requires curl (and certificates) to download the release archive
@@ -29,19 +46,26 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 # Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
 
+WORKDIR /app
+
+# Install python 3.12 as the default python version
 RUN uv python install 3.12
+RUN uv venv --python-preference managed --seed
 
 # Copy the local build context (your project files) into the container's /app directory
-COPY ./aira/entrypoint.sh /entrypoint.sh
-COPY ./aira/. /app/aira
-COPY ./pyproject.toml /app/pyproject.toml
-
-RUN uv venv --python-preference managed
-ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_AIQ_AIRA="0.0.0"
-
-# Use uv to install Python dependencies 
-RUN uv pip install /app
+COPY ./deploy/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Copy the built package into the container's /app directory
+RUN --mount=from=builder,source=/build,target=/build,type=bind \
+    --mount=type=cache,target=/root/.cache/uv \
+   uv pip install /build/dist/aiq_aira-*.whl
+
+# Only copy the configs directory. The rest of the code is copied in the install
+COPY ./configs/* /app/configs/
+
+# Uncomment if we want to use the CMD instead of the entrypoint
+# CMD ["uv", "run","aiq", "serve", "--config_file", "/app/configs/config.yml", "--host", "0.0.0.0", "--port", "3838"]
+
+CMD ["/entrypoint.sh"]

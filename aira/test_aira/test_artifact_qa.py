@@ -51,7 +51,7 @@ The healthcare sector is experiencing rapid technological advancements.
 @pytest.fixture
 async def workflow_builder():
     """Fixture to provide a WorkflowBuilder instance with artifact_qa configured."""
-    config_path = Path(__file__).parent.parent / "configs" / "config.yml"
+    config_path = Path(__file__).parent.parent.parent / "configs" / "config.yml"
     with open(config_path, 'r') as file:
         config_dict = yaml.safe_load(file)
         config = AIQConfig.parse_obj(config_dict)
