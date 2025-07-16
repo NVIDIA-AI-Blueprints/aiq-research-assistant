@@ -80,7 +80,7 @@ async def check_existing_collections(collection_names: List[str]) -> tuple[List[
     r = await get_redis()
     existing = []
     new_collections = []
-    
+
     try:
         # Check each collection in Redis
         for collection_name in collection_names:
@@ -92,9 +92,9 @@ async def check_existing_collections(collection_names: List[str]) -> tuple[List[
             else:
                 new_collections.append(collection_name)
                 logger.debug(f"Collection '{collection_name}' not found in Redis (new or expired)")
-        
+
         return existing, new_collections
-        
+
     except Exception as e:
         logger.error(f"Error checking collections in Redis: {e}")
         # If error occurs, assume all are new
