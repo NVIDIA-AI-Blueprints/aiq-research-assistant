@@ -41,7 +41,7 @@ default:
     - pip install uv
     - uv venv --seed .venv
     - source .venv/bin/activate
-    - uv pip install -e "./aira[dev]"
+    - uv sync --all-groups --all-extras
 
     # Ensure Git LFS is installed
     - conda install git-lfs -y

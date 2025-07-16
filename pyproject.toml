@@ -2,9 +2,11 @@
 build-backend = "setuptools.build_meta"
 requires = ["setuptools >= 64", "setuptools-scm>=8"]
 
-[tool.setuptools_scm]
-root = ".."
+[tool.setuptools]
+package-dir = {"" = "aira/src"}
 
+[tool.setuptools_scm]
+root = "."
 
 [project]
 name = "aiq_aira"
@@ -18,13 +20,16 @@ dependencies = [
   "aiqtoolkit>=1.2.0a20250703",
   "annotated-types==0.7.0",
   "anyio==4.8.0",
+  "appdirs~=1.4.4",
   "arize-phoenix~=6.1",
   "async-timeout==5.0.1",
   "attrs==25.1.0",
   "certifi==2025.1.31",
   "charset-normalizer==3.4.1",
+  "click~=8.2.1",
   "colorama",
   "distro==1.9.0",
+  "dotenv~=0.9.9",
   "exceptiongroup==1.2.2",
   "frozenlist==1.5.0",
   "gql<4",  # keep GraphQL client version compatible
@@ -95,14 +100,14 @@ weave = [
 ]
 
 
-[tool.uv.sources]
-aiq = { path = "../ai-query-engine", editable = true }
-
 [tool.uv]
 managed = true
 
 [project.entry-points.'aiq.plugins']
 aiq_aira = "aiq_aira.register"
+
+[project.scripts]
+aira = "aiq_aira.cli:run_cli"
 
 # ===== flake8 Config =====
 [tool.flake8]
@@ -260,7 +265,7 @@ py-version = "3.11"
 # source root is an absolute path or a path relative to the current working
 # directory used to determine a package namespace for modules located under the
 # source root.
-source-roots = ["src", "packages/*/src"]
+source-roots = ["aira/src", "aira/test_aira", "data"]
 
 # When enabled, pylint would attempt to guess common misconfiguration and emit
 # user-friendly hints instead of false-positive error messages.

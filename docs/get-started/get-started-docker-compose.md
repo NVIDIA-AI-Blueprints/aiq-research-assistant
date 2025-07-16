@@ -19,7 +19,7 @@ limitations under the License.
 
 This guide describes how to deploy the AI-Q Research Assistant using Docker.
 
-## Prerequisites 
+## Prerequisites
 
 
 1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, or 2xB200 GPUs are required.
@@ -30,7 +30,7 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 
 4. NVIDIA Container Toolkit
 
-5. (Optional) This blueprint supports Tavily web search to supplement data from RAG. A Tavily API key can be supplied to enable this function. 
+5. (Optional) This blueprint supports Tavily web search to supplement data from RAG. A Tavily API key can be supplied to enable this function.
 
 
 ### Hardware Requirements
@@ -43,12 +43,12 @@ No GPUs are required
 
 ### NVIDIA NIM Microservices
 
-Access the following NVIDIA NIM microservices 
+Access the following NVIDIA NIM microservices
 - NemoRetriever
   - Page Elements
   - Table Structure
   - Graphic Elements
-  - Paddle OCR 
+  - Paddle OCR
 - Llama Instruct 3.3 70B
 - Llama Nemotron 3.3 Super 49B
 
@@ -109,7 +109,7 @@ Deploy the RAG NVIDIA NIM microservices, including the LLM. *This step can take 
 docker compose -f rag/deploy/compose/nims.yaml up -d
 ```
 
-For A100 system, run the following commands 
+For A100 system, run the following commands
 
 ```bash
 export LLM_MS_GPU_ID=1,2
@@ -117,9 +117,9 @@ export LLM_MS_GPU_ID=1,2
 docker compose -f rag/deploy/compose/nims.yaml up -d
 ```
 
-TIP: You can watch the status with `watch -n 2 'docker ps --format "table {{.Names}}\t{{.Status}}"'`. 
+TIP: You can watch the status with `watch -n 2 'docker ps --format "table {{.Names}}\t{{.Status}}"'`.
 
-To confirm that the deployment is successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`, you should see: 
+To confirm that the deployment is successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`, you should see:
 
 ```
    NAMES                                   STATUS
@@ -141,7 +141,7 @@ export VECTORSTORE_GPU_DEVICE_ID=0
 docker compose -f rag/deploy/compose/vectordb.yaml up -d
 ```
 
-To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see: 
+To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see:
 
 ```
 milvus-standalone                Up 2 minutes
@@ -155,7 +155,7 @@ Deploy the ingestion server:
 docker compose -f rag/deploy/compose/docker-compose-ingestor-server.yaml up -d
 ```
 
-To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see: 
+To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see:
 
 ```
 compose-redis-1                  Up 3 minutes
@@ -169,7 +169,7 @@ Deploy the RAG server:
 docker compose -f rag/deploy/compose/docker-compose-rag-server.yaml up -d
 ```
 
-To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see: 
+To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see:
 
 ```
 rag-playground                   Up 4 minutes
@@ -184,7 +184,7 @@ Next deploy the instruct model. *This step can take up to 45 minutes*.
 docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
 ```
 
-For A100 system, run the following commands 
+For A100 system, run the following commands
 
 ```bash
 export AIRA_LLM_MS_GPU_ID=3,4,5,6
@@ -192,7 +192,7 @@ export AIRA_LLM_MS_GPU_ID=3,4,5,6
 docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
 ```
 
-TIP: you can watch the status with `watch -n 2 'docker ps --format "table {{.Names}}\t{{.Status}}"'`. 
+TIP: you can watch the status with `watch -n 2 'docker ps --format "table {{.Names}}\t{{.Status}}"'`.
 
 To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see:
 
@@ -243,7 +243,7 @@ docker run \
 
 This command will populate the default collections with sample documents. Note that this process can take up to 60 minutes to complete, during which time manual uploads from the frontend may not work properly.
 
-Troubleshooting tips if the default collection creation fails: 
+Troubleshooting tips if the default collection creation fails:
 
 
 1. If you did not deploy RAG via docker compose, you will need to replace these values in the docker run command above:
@@ -252,7 +252,7 @@ Troubleshooting tips if the default collection creation fails:
 
 2. If you get an error that the zip file is not a valid zip file
 
-  Install git LFS for your platform, eg `sudo apt-get install git-lfs` and then run: 
+  Install git LFS for your platform, eg `sudo apt-get install git-lfs` and then run:
 
   ```bash
   git lfs install
@@ -300,11 +300,11 @@ docker ps
 
 > If you already have RAG deployed, skip to the next step.
 
-To deploy using hosted NVIDIA NIM microservices, follow the instructions for [deploying the RAG blueprint using hosted models](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-nvidia-hosted-models). 
+To deploy using hosted NVIDIA NIM microservices, follow the instructions for [deploying the RAG blueprint using hosted models](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-nvidia-hosted-models).
 
-### Update AI-Q Research Assistant Configuration 
+### Update AI-Q Research Assistant Configuration
 
-Edit the *AIRA configuration file* located at `aira/configs/config.yml`. 
+Edit the *AIRA configuration file* located at `configs/config.yml`.
 
 Update the following values, leaving the rest of the file with the default values.
 
@@ -324,7 +324,7 @@ Edit the *Docker Compose file* located at `deploy/compose/docker-compose.yaml`.
 
   - [ ] Update the value `services.aira-backend.environment.TAVILY_API_KEY` with your TAVILY API Key
   - [ ] If you have deployed RAG on a different server than AIRA, update the value `services.aira-nginx.environment.RAG_INGEST_URL` with the *public http IP address of the RAG ingestor service* such as `http://UPDATE-TO-YOUR-RAG-IP-SERVER:8082`. If you have deployed RAG using docker compose on the same server as AIRA, leave the default value.
-  
+
   > **WARNING:** The rag ingest IP address must be resolvable outside the docker network, so addresses such as `localhost` or `rag-server` will not work. Currently only http addresses are supported. HTTPS rag deployments, or authenticated RAG deployments, will require updates to the NGINX proxy.
 
 

@@ -43,7 +43,7 @@ TEST_RAG_COLLECTION = "Default_Financial"
 @pytest.fixture
 async def workflow_builder():
     """Fixture to provide a WorkflowBuilder instance with generate_queries configured."""
-    config_path = Path(__file__).parent.parent / "configs" / "config.yml"
+    config_path = Path(__file__).parent.parent.parent / "configs" / "config.yml"
     with open(config_path, 'r') as file:
         config_dict = yaml.safe_load(file)
         config = AIQConfig.parse_obj(config_dict)
