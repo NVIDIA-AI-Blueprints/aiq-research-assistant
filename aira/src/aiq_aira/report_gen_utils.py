@@ -24,6 +24,7 @@ from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.prompts import report_extender
 from aiq_aira.prompts import summarizer_instructions
 from aiq_aira.utils import update_system_prompt
+from aiq_aira.utils import handle_stream_and_think_tags
 
 logger = logging.getLogger(__name__)
 
@@ -52,58 +53,10 @@ async def summarize_report(existing_summary: str,
         ("human", "{input}"),
     ])
     chain = prompt | llm
-
-    # Stream the result
-    result = ""
-    in_think_section = False
     input_payload = {"input": user_input}
-
-    # Check if LLM has streaming disabled
-    llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
-    logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
-
-    try:
-        writer({"summarize_sources": "\n Starting summary \n"})
-        async with asyncio.timeout(ASYNC_TIMEOUT):
-            if llm_stream_enabled:
-                # Use streaming for LLMs that support it
-                async for chunk in chain.astream(input_payload):
-                    result += chunk.content
-
-                    # Track if we're in a think section to avoid showing reasoning to users
-                    if "<think>" in chunk.content:
-                        in_think_section = True
-                    if "</think>" in chunk.content:
-                        in_think_section = False
-                        # Don't stream the closing think tag
-                        continue
-
-                    # Only stream content that's not in think sections
-                    if not in_think_section:
-                        writer({"summarize_sources": chunk.content})
-            else:
-                # Use non-streaming for LLMs with streaming disabled (like nemotron)
-                logger.debug("Using non-streaming mode for summarize LLM")
-                response = await chain.ainvoke(input_payload)
-                result = response.content
-
-                # For non-streaming, we need to filter out think sections before showing to user
-                if "<think>" in result and "</think>" in result:
-                    # Show everything after </think>
-                    think_end = result.find("</think>")
-                    if think_end != -1:
-                        user_content = result[think_end + len("</think>"):].strip()
-                        if user_content:
-                            writer({"summarize_sources": user_content})
-                else:
-                    # No think tags, show everything
-                    writer({"summarize_sources": result})
-    except asyncio.TimeoutError as e:
-        writer({
-            "summarize_sources":
-                " \n \n ---------------- \n \n Timeout error from reasoning LLM. Consider running report generation again. \n \n "
-        })
-        return user_input
+    
+    writer({"summarize_sources": "\n Starting summary \n"})
+    result = await handle_stream_and_think_tags(chain, input_payload, writer, "summarize_sources")
 
     # Handle both think tag and direct text responses properly
     if "<think>" in result and "</think>" in result:
@@ -112,7 +65,7 @@ async def summarize_report(existing_summary: str,
             start = result.find("<think>")
             end = result.find("</think>") + len("</think>")
             result = result[:start] + result[end:]
-
+        
         # Handle case where opening <think> tag might be missing
         while "</think>" in result:
             end = result.find("</think>") + len("</think>")

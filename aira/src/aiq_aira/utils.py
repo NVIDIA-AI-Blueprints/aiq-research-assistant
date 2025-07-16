@@ -20,6 +20,10 @@ import time
 
 import httpx
 from langchain_openai import ChatOpenAI
+from langchain_core.utils.json import parse_json_markdown
+from langgraph.types import StreamWriter
+
+from aiq_aira.constants import ASYNC_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
@@ -179,3 +183,42 @@ def _escape_markdown(text: str) -> str:
     text = text.replace("|", "\\|")
     text = text.replace("\n", "\\n")
     return text
+
+
+async def handle_stream_and_think_tags(chain, input_payload, writer, writer_key):
+    """
+    Handles streaming responses from an LLM, filtering out content within <think> tags.
+    """
+    llm = chain.last
+    llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
+    logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
+
+    full_response = ""
+    in_think_section = False
+
+    try:
+        async with asyncio.timeout(ASYNC_TIMEOUT):
+            if llm_stream_enabled:
+                async for chunk in chain.astream(input_payload):
+                    full_response += chunk.content
+                    if "<think>" in chunk.content:
+                        in_think_section = True
+                    if "</think>" in chunk.content:
+                        in_think_section = False
+                        continue
+                    if not in_think_section:
+                        writer({writer_key: chunk.content})
+            else:
+                response = await chain.ainvoke(input_payload)
+                full_response = response.content
+                if "<think>" in full_response and "</think>" in full_response:
+                    think_end = full_response.find("</think>")
+                    user_content = full_response[think_end + len("</think>"):].strip()
+                    if user_content:
+                        writer({writer_key: user_content})
+                else:
+                    writer({writer_key: full_response})
+    except asyncio.TimeoutError:
+        writer({writer_key: " \n \n ---------------- \n \n Timeout error from reasoning LLM. \n \n "})
+
+    return full_response

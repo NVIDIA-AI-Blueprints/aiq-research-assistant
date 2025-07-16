@@ -271,11 +271,40 @@ The suite includes comprehensive evaluators for research report quality:
 - **Hallucination**: Detects unsupported claims in generated reports
 - **Citation Quality**: Validates accuracy and relevance of citations
 
+
+### Custom Evaluators with Dual Template Evaluation
+
+The following custom evaluators use **dual template evaluation** for robustness:
+
+#### Hallucination Evaluator
+- **Dual Template Evaluation**: Uses two different prompt templates to evaluate hallucinations
+- **Rating Scale**: 0 (no hallucination) to 1 (hallucination detected)
+- **Final Score**: Average of both template scores
+
+#### Synthesis Evaluator
+- **Dual Template Evaluation**: Uses two different prompt templates to evaluate synthesis quality
+- **Rating Scale**: 0 (pure extraction) to 4 (expert synthesis)
+- **Final Score**: Average of both template scores, normalized to 0-1 scale
+
+#### Coverage Evaluator
+- **Single Template Evaluation**: Uses one template to evaluate fact coverage
+- **Rating Scale**: 0 (not covered) to 1 (covered)
+
+#### Citation Quality Evaluator
+- **Citation Verification**: Uses RAGAS ResponseGroundedness to verify if facts are supported by cited sources
+- **Scoring Method**: Calculates precision, recall, and F1 scores based on citation validity (threshold 0.5)
+- **Final Score**: F1 score between 0 and 1, where 1 indicates perfect citation quality
+
+
 ### RAGAS Integration
 - **Context Relevance**: How relevant retrieved contexts are to the query
 - **Answer Accuracy**: Factual correctness compared to ground truth
 - **Groundedness**: Whether responses are supported by retrieved contexts
 
+**How it works:**
+- The RAGAS metrics returns a score from 0 to 1 using the standard RAGAS libarary implementation
+
+  
 ### Common Issues
 
 1. **Import Errors**: Ensure both packages are installed in development mode (`pip install -e .`)
@@ -284,7 +313,7 @@ The suite includes comprehensive evaluators for research report quality:
 
 
 
-## Project Structure (will fix this later when merged)
+## Project Structure Harness Structure 
 
 ```
 aiq-bp-internal/
