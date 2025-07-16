@@ -144,28 +144,3 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
             if isinstance(e, HTTPException):
                 raise
             raise HTTPException(status_code=500, detail=str(e))
-    
-    # PATCH /documents - Update documents
-    @app.patch("/documents", tags=["rag-endpoints"])
-    async def update_documents(request: DocumentRequest):
-        """Update documents in a collection"""
-        try:
-            if not request.documents:
-                raise HTTPException(status_code=400, detail="Documents array cannot be empty")
-            
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.patch(
-                    f"{rag_ingest_url}/documents",
-                    json=request.model_dump()
-                )
-                
-                if response.status_code != 200:
-                    raise HTTPException(status_code=response.status_code, detail=response.json())
-                
-                return response.json()
-                
-        except Exception as e:
-            logger.error(f"Error updating documents: {e}")
-            if isinstance(e, HTTPException):
-                raise
-            raise HTTPException(status_code=500, detail=str(e)) 
