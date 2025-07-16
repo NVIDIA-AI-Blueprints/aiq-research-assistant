@@ -65,7 +65,7 @@ async def summarize_report(existing_summary: str,
             start = result.find("<think>")
             end = result.find("</think>") + len("</think>")
             result = result[:start] + result[end:]
-        
+
         # Handle case where opening <think> tag might be missing
         while "</think>" in result:
             end = result.find("</think>") + len("</think>")

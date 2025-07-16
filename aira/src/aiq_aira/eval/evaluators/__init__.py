@@ -37,5 +37,9 @@ __all__ = [
     "CitationQualityEvaluatorConfig",
     "RagasWrapperEvaluator",
     "RagasWrapperEvaluatorConfig",  # "WeaveEvaluator",
+<<<<<<< HEAD
     # "WeaveEvaluatorConfig",
+=======
+  # "WeaveEvaluatorConfig",
+>>>>>>> 6ed8f35 (Formatting and linting)
 ]
