@@ -15,16 +15,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Testing with ECI
+# Testing with ECI 
 
-1. Checkout git repo
+1. Checkout git repo 
 
 ```
 git clone ssh://git@gitlab-master.nvidia.com:12051/chat-labs/OpenSource/agentiq-blueprint/aiq-bp-internal.git
 git fetch origin eci-search && git checkout eci-search
 ```
 
-2. Create a virtualenv
+2. Create a virtualenv 
 
 ```
 uv venv --python 3.12

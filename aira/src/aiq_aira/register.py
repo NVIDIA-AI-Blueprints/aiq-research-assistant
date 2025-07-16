@@ -34,6 +34,7 @@ from pydantic import BaseModel
 from aiq_aira.functions import artifact_qa
 from aiq_aira.functions import generate_queries
 from aiq_aira.functions import generate_summary
+from aiq_aira.functions.eci import eci_search_fn
 from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
 

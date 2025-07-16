@@ -157,13 +157,16 @@ dependencies = [
     { name = "aiqtoolkit-langchain" },
     { name = "annotated-types" },
     { name = "anyio" },
+    { name = "appdirs" },
     { name = "arize-phoenix" },
     { name = "async-timeout" },
     { name = "attrs" },
     { name = "certifi" },
     { name = "charset-normalizer" },
+    { name = "click" },
     { name = "colorama" },
     { name = "distro" },
+    { name = "dotenv" },
     { name = "exceptiongroup" },
     { name = "frozenlist" },
     { name = "h11" },
@@ -232,14 +235,17 @@ requires-dist = [
     { name = "aiqtoolkit-langchain", specifier = ">=1.2.0a1" },
     { name = "annotated-types", specifier = "==0.7.0" },
     { name = "anyio", specifier = "==4.8.0" },
+    { name = "appdirs", specifier = "~=1.4.4" },
     { name = "arize-phoenix", specifier = "~=6.1" },
     { name = "async-timeout", specifier = "==5.0.1" },
     { name = "attrs", specifier = "==25.1.0" },
     { name = "certifi", specifier = "==2025.1.31" },
     { name = "charset-normalizer", specifier = "==3.4.1" },
+    { name = "click", specifier = "~=8.2.1" },
     { name = "colorama" },
     { name = "distro", specifier = "==1.9.0" },
     { name = "docker", marker = "extra == 'dev'", specifier = ">=7.1.0" },
+    { name = "dotenv", specifier = "~=0.9.9" },
     { name = "exceptiongroup", specifier = "==1.2.2" },
     { name = "frozenlist", specifier = "==1.5.0" },
     { name = "h11", specifier = ">=0.16.0" },
@@ -784,6 +790,17 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/91/9b/4a2ea29aeba62471211598dac5d96825bb49348fa07e906ea930394a83ce/docker-7.1.0.tar.gz", hash = "sha256:ad8c70e6e3f8926cb8a92619b832b4ea5299e2831c14284663184e200546fa6c", size = 117834 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e3/26/57c6fb270950d476074c087527a558ccb6f4436657314bfb6cdf484114c4/docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0", size = 147774 },
+]
+
+[[package]]
+name = "dotenv"
+version = "0.9.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dotenv" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/b7/545d2c10c1fc15e48653c91efde329a790f2eecfbbf2bd16003b5db2bab0/dotenv-0.9.9-py2.py3-none-any.whl", hash = "sha256:29cf74a087b31dafdb5a446b6d7e11cbce8ed2741540e2339c69fbef92c94ce9", size = 1892 },
 ]
 
 [[package]]
