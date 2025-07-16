@@ -37,5 +37,5 @@ __all__ = [
     "CitationQualityEvaluatorConfig",
     "RagasWrapperEvaluator",
     "RagasWrapperEvaluatorConfig",  # "WeaveEvaluator",
-  # "WeaveEvaluatorConfig",
+    # "WeaveEvaluatorConfig",
 ]
