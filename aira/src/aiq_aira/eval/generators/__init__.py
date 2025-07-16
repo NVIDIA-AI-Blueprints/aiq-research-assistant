@@ -4,4 +4,4 @@
 # Import generators to register them with the AIRAGeneratorRegistry
 from .generate_full import AIRAFullGenerator
 
-__all__ = ["AIRAFullGenerator"] 
+__all__ = ["AIRAFullGenerator"]

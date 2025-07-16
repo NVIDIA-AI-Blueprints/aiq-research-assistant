@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
+
 
 class AIResearcherEvalInput(BaseModel):
     id: str
@@ -28,6 +30,7 @@ class AIResearcherEvalInput(BaseModel):
     ground_truth: str
     context_relevance_questions: Optional[list[dict]] = []
     coverage_facts_claims: Optional[list[str]] = []
+
 
 class AIResearcherEvalOutput(AIResearcherEvalInput):
     queries: Optional[list[dict]] = []

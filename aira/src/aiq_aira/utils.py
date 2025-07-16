@@ -31,9 +31,6 @@ RED = "\033[91m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
-def to_local_time_str(timestamp: float):
-    return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
-
 
 async def async_gen(num_loops: int):
     """
@@ -42,6 +39,10 @@ async def async_gen(num_loops: int):
     for i in range(num_loops):
         yield i
         await asyncio.sleep(0.0)
+
+
+def to_local_time_str(timestamp: float):
+    return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(timestamp))
 
 
 def custom_raise_for_status(response: httpx.Response):
@@ -73,7 +74,7 @@ def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
         system_prompt = "detailed thinking on"
 
     logger.debug(f"--- [DEBUG] Initial system_prompt: '{system_prompt}'")
-    
+
     # Log llm attributes for debugging
     llm_model = getattr(llm, 'model', 'N/A')
     llm_model_name = getattr(llm, 'model_name', 'N/A')

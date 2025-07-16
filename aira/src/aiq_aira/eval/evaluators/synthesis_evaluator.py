@@ -13,41 +13,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import json
 import logging
-import typing as t
-from dataclasses import dataclass, field
-import asyncio
-import re
 import os
+import re
+import typing as t
+from dataclasses import dataclass
+from dataclasses import field
 
-from langchain_core.prompt_values import StringPromptValue
-from pydantic import BaseModel, Field
-from ragas.metrics.base import MetricWithLLM, SingleTurnMetric, MetricType
-from ragas.dataset_schema import SingleTurnSample
+from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.evaluator import EvaluatorBaseConfig
+from aiq.eval.evaluator.evaluator_model import EvalInput
+from aiq.eval.evaluator.evaluator_model import EvalInputItem
+from aiq.eval.evaluator.evaluator_model import EvalOutput
+from aiq.eval.evaluator.evaluator_model import EvalOutputItem
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.language_models.base import BaseLanguageModel
-
-from aiq.data_models.evaluator import EvaluatorBaseConfig
-from aiq.eval.evaluator.evaluator_model import EvalInputItem, EvalOutputItem, EvalInput, EvalOutput
-from aiq.data_models.component_ref import LLMRef
+from langchain_core.prompt_values import StringPromptValue
+from pydantic import BaseModel
+from pydantic import Field
+from ragas.dataset_schema import SingleTurnSample
+from ragas.metrics.base import MetricType
+from ragas.metrics.base import MetricWithLLM
+from ragas.metrics.base import SingleTurnMetric
 
 from aiq_aira.eval.schema import AIResearcherEvalOutput
-
 
 logger = logging.getLogger(__name__)
 
 # --- Pydantic Models and Config ---
 
+
 class SynthesisEvaluatorConfig(EvaluatorBaseConfig, name="synthesis"):
     """Configuration for the synthesis evaluator."""
     llm: LLMRef = Field(description="The LLM to use for evaluation.")
-    is_workflow_output: bool = Field(False, description="Flag to indicate if this is a workflow output file with complete data.")
+    is_workflow_output: bool = Field(
+        False, description="Flag to indicate if this is a workflow output file with complete data.")
+
 
 class SynthesisJudgment(BaseModel):
     """LLM Judgment of synthesis quality (0-4 scale)."""
     rationale: str = Field(description="Brief explanation of your reasoning")
     score: int = Field(description="Score from 0 to 4")
+
 
 # --- Core Metric Logic ---
 
@@ -205,17 +214,15 @@ Your response should follow this format:
 ```
 """
 
+
 @dataclass
 class AIRASynthesis(MetricWithLLM, SingleTurnMetric):
     name: str = "synthesis_score"
-    _required_columns: t.Dict[MetricType, t.Set[str]] = field(
-        default_factory=lambda: {
-            MetricType.SINGLE_TURN: {
-                "response",  # The generated report
-                "reference", # The combined source texts
-            },
-        }
-    )
+    _required_columns: t.Dict[MetricType, t.Set[str]] = field(default_factory=lambda: {
+        MetricType.SINGLE_TURN: {
+            "response",  # The generated report
+            "reference",  # The combined source texts
+        }, })
     retry: int = 5
     rationale_a: str = ""
     rationale_b: str = ""
@@ -223,15 +230,13 @@ class AIRASynthesis(MetricWithLLM, SingleTurnMetric):
     async def _get_score_with_retry(self, template: str, report: str, sources: str) -> t.Tuple[float, str]:
         for attempt in range(self.retry):
             try:
-                formatted_prompt = StringPromptValue(
-                    text=template.format(report=report, sources=sources)
-                )
-                
+                formatted_prompt = StringPromptValue(text=template.format(report=report, sources=sources))
+
                 # First, try with structured output
                 llm_with_so = self.llm.with_structured_output(SynthesisJudgment)
                 resp = await llm_with_so.ainvoke(formatted_prompt)
                 parsed = json.loads(resp.model_dump_json())
-                
+
                 score = parsed.get("score", 0) / 4.0
                 rationale = parsed.get("rationale", "")
                 return score, rationale
@@ -242,9 +247,9 @@ class AIRASynthesis(MetricWithLLM, SingleTurnMetric):
                     from langchain_core.messages import HumanMessage
                     raw_resp = await self.llm.ainvoke([HumanMessage(content=formatted_prompt.text)])
                     raw_text = raw_resp.content if hasattr(raw_resp, 'content') else str(raw_resp)
-                    
+
                     logger.info(f"Raw LLM response (attempt {attempt + 1}):\n{raw_text}")
-                    
+
                     json_match = re.search(r'```json\s*(\{.*?\})\s*```', raw_text, re.DOTALL)
                     if not json_match:
                         json_match = re.search(r'(\{.*?\})', raw_text, re.DOTALL)
@@ -254,14 +259,14 @@ class AIRASynthesis(MetricWithLLM, SingleTurnMetric):
                         # Clean up common JSON errors like trailing commas
                         json_str = re.sub(r',(\s*})', r'\1', json_str)
                         parsed = json.loads(json_str)
-                        
+
                         score = parsed.get("score", 0) / 4.0
                         rationale = parsed.get("rationale", "")
                         logger.info(f"Successfully parsed fallback JSON: {parsed}")
                         return score, rationale
-                    
+
                     logger.error(f"Failed to extract JSON from raw text: {raw_text}")
-                    
+
                 except Exception as fallback_e:
                     logger.warning(f"Fallback parsing also failed (attempt {attempt + 1}): {str(fallback_e)}")
 
@@ -282,17 +287,20 @@ class AIRASynthesis(MetricWithLLM, SingleTurnMetric):
 
         score_a, self.rationale_a = await self._get_score_with_retry(template_synthesis_a, report, sources)
         score_b, self.rationale_b = await self._get_score_with_retry(template_synthesis_b, report, sources)
-        
+
         return (score_a + score_b) / 2.0
+
 
 # --- Main Evaluator Class ---
 
+
 class SynthesisEvaluator:
+
     def __init__(self, llm: BaseLanguageModel, max_concurrency: int = 4, output_dir: str = None):
         self.llm = llm
         self.max_concurrency = max_concurrency
         self.output_dir = output_dir or ".tmp/aiq_aira"
-        
+
     async def evaluate_item(self, item: EvalInputItem) -> EvalOutputItem:
         """
         Evaluate synthesis quality for a single item.
@@ -305,17 +313,19 @@ class SynthesisEvaluator:
         report = data_source.finalized_summary
         if not report.strip():
             return EvalOutputItem(
-                id=item.id, 
-                score=0.0, 
+                id=item.id,
+                score=0.0,
                 reasoning={
                     "error": "Generated report (finalized_summary) is empty.",
                     "debug_info": {
-                        "has_finalized_summary": data_source.finalized_summary is not None,
-                        "keys_in_item": list(data_source.model_dump().keys()) if isinstance(data_source, dict) else None,
-                        "item_id": item.id,
+                        "has_finalized_summary":
+                            data_source.finalized_summary is not None,
+                        "keys_in_item":
+                            list(data_source.model_dump().keys()) if isinstance(data_source, dict) else None,
+                        "item_id":
+                            item.id,
                     }
-                }
-            )
+                })
 
         # Extract contexts for synthesis evaluation
         contexts = []
@@ -326,7 +336,7 @@ class SynthesisEvaluator:
                     contexts.append(context_item["context"])
                 elif isinstance(context_item, str):
                     contexts.append(context_item)
-        
+
         web_answers = data_source.web_answers
         if isinstance(web_answers, list):
             for web_answer in web_answers:
@@ -336,7 +346,9 @@ class SynthesisEvaluator:
                         contexts.append(answer_content)
 
         if not contexts:
-            return EvalOutputItem(id=item.id, score=0.0, reasoning={"error": "No contexts available for synthesis evaluation."})
+            return EvalOutputItem(id=item.id,
+                                  score=0.0,
+                                  reasoning={"error": "No contexts available for synthesis evaluation."})
 
         source_texts = "\n".join(contexts)
         logger.info(f"Synthesis evaluation for item {item.id}: Report Length={len(report)}, Contexts={len(contexts)}")
@@ -345,7 +357,7 @@ class SynthesisEvaluator:
         sample = SingleTurnSample(response=report, reference=source_texts)
         scorer = AIRASynthesis(llm=self.llm)
         score = await scorer._single_turn_ascore(sample=sample, callbacks=None)
-        
+
         reasoning = {
             "synthesis_score": score,
             "report_snippet": report[:200] + "..." if len(report) > 200 else "",
@@ -356,18 +368,16 @@ class SynthesisEvaluator:
 
         return EvalOutputItem(id=item.id, score=score, reasoning=reasoning)
 
-    async def evaluate(self, eval_input: EvalInput) -> EvalOutput:        
+    async def evaluate(self, eval_input: EvalInput) -> EvalOutput:
         semaphore = asyncio.Semaphore(self.max_concurrency)
-        
+
         async def wrapped_evaluate_item(item: EvalInputItem) -> EvalOutputItem:
             async with semaphore:
                 return await self.evaluate_item(item)
-        
-        eval_output_items = await asyncio.gather(
-            *[wrapped_evaluate_item(item) for item in eval_input.eval_input_items]
-        )
-        
+
+        eval_output_items = await asyncio.gather(*[wrapped_evaluate_item(item) for item in eval_input.eval_input_items])
+
         scores = [item.score for item in eval_output_items if item.score is not None]
         avg_score = sum(scores) / len(scores) if scores else 0.0
-        
-        return EvalOutput(average_score=avg_score, eval_output_items=eval_output_items) 
+
+        return EvalOutput(average_score=avg_score, eval_output_items=eval_output_items)

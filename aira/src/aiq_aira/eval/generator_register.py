@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 This file defines the workflow for evaluating the AI Research Assistant (AIRA).
 
@@ -34,13 +33,15 @@ The full generator integrates with the AI Research Assistant workflow to:
 3. Import the class in this file to populate the GeneratorRegistry
 """
 
-import logging
 import json
-from aiq_aira.eval.config import AIRAEvaluatorWorkflowConfig
+import logging
 
 from aiq.builder.builder import Builder
 from aiq.cli.register_workflow import register_function
-from aiq_aira.eval.schema import AIResearcherEvalInput, AIResearcherEvalOutput
+
+from aiq_aira.eval.config import AIRAEvaluatorWorkflowConfig
+from aiq_aira.eval.schema import AIResearcherEvalInput
+from aiq_aira.eval.schema import AIResearcherEvalOutput
 
 logger = logging.getLogger(__name__)
 
@@ -77,9 +78,11 @@ class AIRAGeneratorRegistry:
     @classmethod
     def register(cls, name: str):
         """Decorator to register a generator."""
+
         def decorator(generator_class):
             cls._generators[name] = generator_class
             return generator_class
+
         return decorator
 
     @classmethod
@@ -97,14 +100,15 @@ class AIRAGeneratorRegistry:
 
 def register_generator(name: str):
     """Decorator to register a generator with the registry."""
-    return AIRAGeneratorRegistry.register(name) 
+    return AIRAGeneratorRegistry.register(name)
+
 
 @register_function(config_type=AIRAEvaluatorWorkflowConfig)
 async def aira_evaluator_workflow(config: AIRAEvaluatorWorkflowConfig, builder: Builder):
     '''Workflow for evaluating AI Research Assistant performance'''
-    from aiq_aira.eval.generators import register
-
     from aiq.builder.function_info import FunctionInfo
+
+    from aiq_aira.eval.generators import register
 
     def _convert_input(input_str: str) -> AIResearcherEvalInput:
         '''Convert a JSON string into an AIRAResearchInput object.'''
@@ -113,19 +117,17 @@ async def aira_evaluator_workflow(config: AIRAEvaluatorWorkflowConfig, builder: 
         except Exception as e:
             raise ValueError(f"Invalid input format: {e}") from e
 
-    def _convert_output(aira_input: AIResearcherEvalInput, 
-                       generated_queries: list[str],
-                       final_report: str, 
-                       citations: str,
-                       intermediate_steps: list[str] = None) -> AIResearcherEvalInput:
+    def _convert_output(aira_input: AIResearcherEvalInput,
+                        generated_queries: list[str],
+                        final_report: str,
+                        citations: str,
+                        intermediate_steps: list[str] = None) -> AIResearcherEvalInput:
         '''Convert research results to AIRAResearchOutput object.'''
-        return AIResearcherEvalOutput(
-            id=aira_input.id,
-            generated_queries=generated_queries,
-            final_report=final_report,
-            citations=citations,
-            intermediate_steps=intermediate_steps or []
-        )
+        return AIResearcherEvalOutput(id=aira_input.id,
+                                      generated_queries=generated_queries,
+                                      final_report=final_report,
+                                      citations=citations,
+                                      intermediate_steps=intermediate_steps or [])
 
     def _get_generator() -> AIRAGeneratorBase:
         '''Fetch the generator based on the generation type such as gold, full etc.'''

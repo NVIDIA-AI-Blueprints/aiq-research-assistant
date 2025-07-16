@@ -12,17 +12,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Extraction utilities for AIRA evaluation workflow."""
 
-from typing import List, Dict, Any, Tuple, Optional
-import re
 import json
-import os
 import logging
+import os
+import re
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+
 import requests
-from pydantic import BaseModel, Field
-from joblib import Parallel, delayed
+from joblib import Parallel
+from joblib import delayed
+from pydantic import BaseModel
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -33,20 +39,18 @@ def get_bear_token():
     """
     client_id = os.environ.get("NV_CLIENT_ID")
     secret = os.environ.get("NV_CLIENT_SECRET")
-    
+
     if not client_id or not secret:
         raise ValueError("NV_CLIENT_ID and NV_CLIENT_SECRET environment variables must be set for LLM Gateway usage.")
 
     url = "https://prod.api.nvidia.com/oauth/api/v1/ssa/default/token"
 
-    payload = json.dumps(
-        {
-            "client_id": client_id,
-            "client_secret": secret,
-            "scope": "openai-readwrite azureopenai-readwrite",
-            "grant_type": "client_credentials",
-        }
-    )
+    payload = json.dumps({
+        "client_id": client_id,
+        "client_secret": secret,
+        "scope": "openai-readwrite azureopenai-readwrite",
+        "grant_type": "client_credentials",
+    })
     headers = {"Content-Type": "application/json"}
 
     response = requests.request("POST", url, headers=headers, data=payload)
@@ -144,22 +148,17 @@ class FactsResponse(BaseModel):
 
 class CitationsResponse(BaseModel):
     """Pydantic model for structured citation extraction"""
-    citations: List[int] = Field(
-        default_factory=list,
-        description="Citation numbers; empty list means no citations."
-    )
-    
+    citations: List[int] = Field(default_factory=list, description="Citation numbers; empty list means no citations.")
+
+
 def _get_llm_client():
     """Initialize NVIDIA API client for LLM calls"""
     api_key = os.environ.get("NVIDIA_API_KEY")
     if not api_key:
         raise ValueError("NVIDIA_API_KEY environment variable not set. Please set it to use LLM extraction features.")
-    
+
     from openai import OpenAI
-    return OpenAI(
-        base_url="https://integrate.api.nvidia.com/v1",
-        api_key=api_key
-    )
+    return OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=api_key)
 
 
 async def _get_llm_response_structured(
@@ -172,34 +171,36 @@ async def _get_llm_response_structured(
     top_p: float = 1.0,
 ) -> Any:
     """Get structured response from LLM"""
-    
+
     # Use LLM Gateway with GPT-4o for citation pairing if model is a GPT model
     if model.startswith("gpt-"):
         try:
             from openai import AzureOpenAI
-            
+
             api_key = get_bear_token()
             api_base = "https://prod.api.nvidia.com/llm/v1/azure"
-            
+
             client = AzureOpenAI(
                 api_version="2025-03-01-preview",
                 azure_endpoint=api_base,
                 api_key=api_key,
             )
-            
+
             for attempt in range(max_retries):
                 try:
                     response = client.beta.chat.completions.parse(
                         model="gpt-4o",  # Use simple model name for LLM Gateway
-                        messages=[{"role": "user", "content": prompt}],
+                        messages=[{
+                            "role": "user", "content": prompt
+                        }],
                         temperature=temperature,
                         top_p=top_p,
                         max_tokens=max_tokens,
                         response_format=response_format,
                     )
-                    
+
                     result = response.choices[0].message.parsed.model_dump()
-                    
+
                     # Handle CitationsResponse format
                     if isinstance(result, dict) and "citations" in result:
                         return result
@@ -207,18 +208,18 @@ async def _get_llm_response_structured(
                         return {"citations": result}
                     else:
                         return result
-                        
+
                 except Exception as e:
                     logger.error(f"LLM Gateway attempt {attempt + 1} failed: {str(e)}")
                     if attempt == max_retries - 1:
                         raise Exception(f"Failed after {max_retries} attempts: {str(e)}")
-                        
+
         except ImportError:
             raise ImportError("AzureOpenAI is required for LLM Gateway usage. Please install: pip install openai")
         except Exception as e:
             logger.error(f"LLM Gateway error: {str(e)}")
             raise
-    
+
     # Original NVIDIA API logic for all other models
     client = _get_llm_client()
     for attempt in range(max_retries):
@@ -227,7 +228,9 @@ async def _get_llm_response_structured(
             try:
                 response = client.beta.chat.completions.parse(
                     model=model,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[{
+                        "role": "user", "content": prompt
+                    }],
                     temperature=temperature,
                     max_tokens=max_tokens,
                     top_p=top_p,
@@ -240,16 +243,18 @@ async def _get_llm_response_structured(
                 try:
                     response = client.chat.completions.create(
                         model=model,
-                        messages=[{"role": "user", "content": prompt}],
+                        messages=[{
+                            "role": "user", "content": prompt
+                        }],
                         temperature=temperature,
                         top_p=top_p,
                         max_tokens=max_tokens,
                         response_format={"type": "json_object"},
-                    ) 
+                    )
                     content = response.choices[0].message.content
-                    
+
                     result = json.loads(content)
-                    
+
                     # Handle different response formats
                     if isinstance(result, dict):
                         if "facts" in result:
@@ -267,11 +272,11 @@ async def _get_llm_response_structured(
                         return result
                     else:
                         return []
-                        
+
                 except Exception as fallback_error:
                     logger.error(f"Fallback also failed: {fallback_error}")
                     raise e  # Re-raise the original error
-                    
+
         except Exception as e:
             logger.error(f"Attempt {attempt + 1} failed: {str(e)}")
             if attempt == max_retries - 1:
@@ -282,125 +287,120 @@ def extract_rag_contexts(intermediate_steps: List[Dict]) -> List[Dict]:
     """Extract RAG contexts from intermediate steps."""
     contexts = []
     seen = set()
-    
+
     for step in intermediate_steps:
         if isinstance(step, dict) and "rag_answer" in step:
             # Extract questions and contexts from rag_answer
             rag_text = step["rag_answer"]
-            
+
             # Split by section separator
             sections = rag_text.split("\n---\n")
-            
+
             for section in sections:
                 if "QUERY:" in section and "ANSWER:" in section:
                     # Extract query
                     query_match = re.search(r"QUERY:\s*\n([^\n]+(?:\n(?!ANSWER:)[^\n]+)*)", section, re.DOTALL)
                     # Extract answer
                     answer_match = re.search(r"ANSWER:\s*\n(.*?)(?:\nCITATION:|$)", section, re.DOTALL)
-                    
+
                     if query_match and answer_match:
                         question = query_match.group(1).strip()
                         context = answer_match.group(1).strip()
-                        
+
                         # Create unique key to avoid duplicates
                         key = f"{question}||{context[:100]}"  # Use first 100 chars of context for uniqueness
-                        
+
                         if key not in seen and question and context:
                             seen.add(key)
-                            contexts.append({
-                                "question": question,
-                                "context": context
-                            })
-    
+                            contexts.append({"question": question, "context": context})
+
     return contexts
 
 
 def extract_relevancy_judgements(intermediate_steps: List[Dict]) -> List[Dict]:
     """Extract relevancy judgements from intermediate steps."""
     judgements = []
-    
+
     for step in intermediate_steps:
         if isinstance(step, dict) and "relevancy_checker" in step:
             relevancy_text = step["relevancy_checker"]
-            
+
             # Parse relevancy scores from the text
             # Looking for patterns like "Relevancy score: no" or "Relevancy score: yes"
             score_pattern = r"Relevancy score:\s*(yes|no)"
             query_pattern = r"Query:\s*([^\n]+)"
             answer_pattern = r"Answer:\s*([^\n]+)"
-            
+
             scores = re.findall(score_pattern, relevancy_text, re.IGNORECASE)
             queries = re.findall(query_pattern, relevancy_text)
             answers = re.findall(answer_pattern, relevancy_text)
-            
+
             # Combine them into judgements
             for i in range(len(scores)):
-                judgement = {
-                    "score": scores[i].lower() == "yes",
-                    "relevant": scores[i].lower() == "yes"
-                }
+                judgement = {"score": scores[i].lower() == "yes", "relevant": scores[i].lower() == "yes"}
                 if i < len(queries):
                     judgement["query"] = queries[i].strip()
                 if i < len(answers):
                     judgement["answer"] = answers[i].strip()
                 judgements.append(judgement)
-                
+
     return judgements
 
 
 def extract_web_answers(intermediate_steps: List[Dict]) -> List[str]:
     """Extract web answers from intermediate steps."""
     web_answers = []
-    
+
     for step in intermediate_steps:
         if isinstance(step, dict) and "web_research_results" in step:
             web_results = step["web_research_results"]
-            
+
             # Extract individual answers from the web research results
             # The format appears to be XML-like with <source> tags
             answer_pattern = r"<answer>([^<]+)</answer>"
             matches = re.findall(answer_pattern, web_results)
-            
+
             for match in matches:
                 if match.strip() and not match.startswith("Error"):
                     web_answers.append(match.strip())
-            
+
     return web_answers
 
 
 def extract_reflections_and_queries(intermediate_steps: List[Dict]) -> Tuple[List[str], List[str]]:
     """Extract reflections and queries from reflections."""
     reflection_tokens = []
-    
+
     # Collect all reflection tokens
     for step in intermediate_steps:
         if isinstance(step, dict) and "reflect_on_summary" in step:
             reflection_text = step["reflect_on_summary"]
             if reflection_text:
                 reflection_tokens.append(reflection_text)
-    
+
     # Join all tokens and process
     if not reflection_tokens:
         return [], []
-    
+
     # Join all reflection content
     full_reflection_text = "".join(reflection_tokens)
-    
+
     # Remove "Starting reflection" and split by <think>
-    full_reflection_text = full_reflection_text.replace(" Starting reflection", "").replace("\n Starting reflection \n", "")
-    
+    full_reflection_text = full_reflection_text.replace(" Starting reflection",
+                                                        "").replace("\n Starting reflection \n", "")
+
     # Split by <think> to get individual reflections
     parts = full_reflection_text.split("<think>")
-    
+
     reflections = []
     queries_from_reflection = []
-    
+
     for part in parts:
         if part.strip():
             # Reconstruct the reflection with <think> tag
             reflection = f"<think>{part}"
             reflections.append(reflection)
-            
+
             # Extract everything after </think> as the query
             if "</think>" in part:
                 additional_q = part.split("</think>")[-1].strip()
@@ -408,7 +408,7 @@ def extract_reflections_and_queries(intermediate_steps: List[Dict]) -> Tuple[Lis
             else:
                 # If no closing tag, the whole thing might be after the think section
                 queries_from_reflection.append("")
-    
+
     return reflections, queries_from_reflection
 
 
@@ -416,7 +416,7 @@ def split_report_and_citations(final_report: str) -> Tuple[str, str]:
     """Split final report into summary and citation sections."""
     # Try multiple citation prefixes
     citation_prefixes = ["## Sources", "### Sources", "## Citations", "### Citations"]
-    
+
     for prefix in citation_prefixes:
         if prefix in final_report:
             parts = final_report.split(prefix)
@@ -424,12 +424,12 @@ def split_report_and_citations(final_report: str) -> Tuple[str, str]:
                 citation_section = prefix + parts[-1].strip()
                 summary_section = "\n\n".join(parts[:-1]).strip()
                 return summary_section, citation_section
-    
+
     # If no citation section found, check if the report ends with "Sources" section
     if final_report.strip().endswith("## Sources") or final_report.strip().endswith("### Sources"):
         # Empty sources section
         return final_report.replace("## Sources", "").replace("### Sources", "").strip(), ""
-    
+
     return final_report, ""
 
 
@@ -440,21 +440,21 @@ async def extract_groundness_facts(final_report: str, llm: str, verbose: bool = 
         final_report: The generated research report
         llm: The LLM instance to use (if None, will create default client)
         verbose: Whether to enable verbose logging
-    """    
+    """
     if verbose:
         logger.info("Starting fact/claim extraction from report")
-    
+
     try:
         prompt = FACT_CLAIM_EXTRACTION_PROMPT.format(final_report=final_report)
-        
+
         raw_result = await _get_llm_response_structured(
-            prompt, 
+            prompt,
             response_format=FactsResponse,
             model=llm,
             temperature=0.0,
             max_tokens=4096,
         )
-        
+
         # Handle both dict and list returns
         if isinstance(raw_result, list):
             facts = raw_result
@@ -463,7 +463,7 @@ async def extract_groundness_facts(final_report: str, llm: str, verbose: bool = 
         else:
             logger.warning(f"Unexpected result format for facts extraction: {type(raw_result)}")
             facts = []
-        
+
         if verbose:
             logger.info(f"Successfully extracted {len(facts)} groundness facts/claims")
             if facts and len(facts) <= 3:
@@ -472,9 +472,9 @@ async def extract_groundness_facts(final_report: str, llm: str, verbose: bool = 
                     logger.debug("  %d. %s", i, fact[:150] + "..." if len(fact) > 150 else fact)
         else:
             logger.info(f"Extracted {len(facts)} groundness facts/claims")
-        
+
         return facts
-        
+
     except Exception as e:
         logger.error(f"Failed to extract groundness facts: {str(e)}")
         if verbose:
@@ -493,35 +493,32 @@ def parse_aira_sources(citation_section: str) -> Dict[int, str]:
         Dict mapping source numbers to their content
     """
     sources = {}
-    
+
     # Match patterns like "**Source** 1" or "**Source** 2"
     pattern = re.compile(
         r"\*\*Source\*\*\s*(\d+).*?"  # capture source number
-        r"\*\*Answer:\*\*\s*"         # locate the Answer header
-        r"(.*?)"                      # non-greedy capture of answer content
+        r"\*\*Answer:\*\*\s*"  # locate the Answer header
+        r"(.*?)"  # non-greedy capture of answer content
         r"(?=\n---|\*\*Source\*\*|\Z)",  # stop at next source or end
-        flags=re.S | re.M
-    )
-    
+        flags=re.S | re.M)
+
     for match in pattern.finditer(citation_section):
         source_num = int(match.group(1))
         answer_content = match.group(2).strip()
-        
+
         # Clean up the answer content by removing CITATION: section
         if "CITATION:" in answer_content:
             answer_content = answer_content.split("CITATION:")[0].strip()
-        
+
         sources[source_num] = answer_content
-    
+
     return sources
 
 
-async def pair_facts_with_aira_sources(
-    facts: List[str],
-    citation_section: str,
-    llm: str,
-    verbose: bool = False
-) -> List[Tuple[str, List[int]]]:
+async def pair_facts_with_aira_sources(facts: List[str],
+                                       citation_section: str,
+                                       llm: str,
+                                       verbose: bool = False) -> List[Tuple[str, List[int]]]:
     """
     Pair facts with AIRA sources when no inline citations exist.
     
@@ -536,28 +533,25 @@ async def pair_facts_with_aira_sources(
     """
     if not facts:
         return []
-    
+
     # Parse sources from citation section
     sources = parse_aira_sources(citation_section)
-    
+
     if not sources:
         if verbose:
             logger.warning("No sources found in citation section")
         return [(fact, []) for fact in facts]
-    
+
     if verbose:
         logger.info(f"Found {len(sources)} sources in citation section")
-    
+
     # Use LLM to match facts with sources
     fact_source_pairs = []
-    
+
     for fact in facts:
         # Create prompt to match fact with relevant sources
-        sources_text = "\n\n".join([
-            f"**Source {num}:**\n{content}" 
-            for num, content in sources.items()
-        ])
-        
+        sources_text = "\n\n".join([f"**Source {num}:**\n{content}" for num, content in sources.items()])
+
         prompt = f"""You are analyzing a research fact and determining which sources support it.
 
 **Fact to analyze:**
@@ -576,7 +570,7 @@ async def pair_facts_with_aira_sources(
 
 **Output format:** Return only a JSON list of source numbers, e.g., [1, 3] or [] if no sources support the fact.
 """
-        
+
         try:
             raw_result = await _get_llm_response_structured(
                 prompt,
@@ -585,7 +579,7 @@ async def pair_facts_with_aira_sources(
                 temperature=0.0,
                 max_tokens=100,
             )
-            
+
             # Handle response format
             if isinstance(raw_result, dict) and "citations" in raw_result:
                 matched_sources = raw_result["citations"]
@@ -593,29 +587,27 @@ async def pair_facts_with_aira_sources(
                 matched_sources = raw_result
             else:
                 matched_sources = []
-                
+
             # Validate source numbers exist
             valid_sources = [s for s in matched_sources if s in sources]
-            
+
             if verbose and matched_sources:
                 logger.info(f"Fact matched to sources {valid_sources}: {fact[:50]}...")
-            
+
             fact_source_pairs.append((fact, valid_sources))
-            
+
         except Exception as e:
             if verbose:
                 logger.error(f"Error matching fact to sources: {e}")
             fact_source_pairs.append((fact, []))
-    
+
     return fact_source_pairs
 
 
-async def pair_facts_with_citations(
-    final_report: str, 
-    facts: List[str], 
-    llm: str,
-    verbose: bool = False
-) -> List[Tuple[str, List[int]]]:
+async def pair_facts_with_citations(final_report: str,
+                                    facts: List[str],
+                                    llm: str,
+                                    verbose: bool = False) -> List[Tuple[str, List[int]]]:
     """
     Pair facts with their citations using LLM.
     
@@ -630,23 +622,23 @@ async def pair_facts_with_citations(
     """
     if not facts:
         return []
-        
+
     if verbose:
         logger.info("Starting fact-citation pairing")
         logger.info("  - Number of facts to process: %d", len(facts))
-    
+
     # Check if the final_report actually contains inline citations
     citation_pattern = re.compile(r'\([0-9]+\)|\[[0-9]+\]')
     citation_matches = citation_pattern.findall(final_report)
-    
+
     if not citation_matches:
         if verbose:
             logger.warning("No inline citations found in final_report!")
             logger.warning("Attempting to use AIRA source format instead...")
-        
+
         # Try to extract citation section and use AIRA format
         summary_section, citation_section = split_report_and_citations(final_report)
-        
+
         if citation_section:
             if verbose:
                 logger.info("Found citation section, using AIRA source matching")
@@ -655,28 +647,25 @@ async def pair_facts_with_citations(
             if verbose:
                 logger.warning("No citation section found either. All facts will be marked as having no citations.")
             return [(fact, []) for fact in facts]
-    
+
     if verbose:
         logger.info(f"Found {len(citation_matches)} inline citations in report: {set(citation_matches)}")
-    
+
     # If we have inline citations, proceed with the original logic
     async def _pair_single_fact(fact: str, fact_idx: int) -> List[int]:
         """Helper function for parallel processing"""
         try:
-            prompt = FACT_CITATION_MAPPING_PROMPT.format(
-                final_report=final_report, 
-                fact=fact
-            )
-            
+            prompt = FACT_CITATION_MAPPING_PROMPT.format(final_report=final_report, fact=fact)
+
             # Use GPT-4o specifically for citation pairing instead of the passed llm parameter
             raw_result = await _get_llm_response_structured(
-                prompt, 
+                prompt,
                 response_format=CitationsResponse,
                 model=llm,
                 temperature=0.0,
                 max_tokens=5000,
             )
-            
+
             # Handle both dict and list returns
             if isinstance(raw_result, list):
                 citations = raw_result
@@ -684,10 +673,10 @@ async def pair_facts_with_citations(
                 citations = raw_result["citations"]
             else:
                 citations = []
-            
+
             # Ensure citations are integers
             citations = [int(c) for c in citations if isinstance(c, (int, str)) and str(c).isdigit()]
-            
+
             # Validate that citations actually exist in the report
             valid_citations = []
             for citation in citations:
@@ -695,38 +684,39 @@ async def pair_facts_with_citations(
                     valid_citations.append(citation)
                 elif verbose:
                     logger.warning(f"Citation {citation} not found in report for fact: {fact[:50]}...")
-            
+
             citations = valid_citations
-            
+
             return citations
-            
+
         except Exception as e:
             logger.error(f"Failed to pair fact with citations: {str(e)}")
             if verbose:
                 logger.debug("Failed fact: %s", fact[:100] + "..." if len(fact) > 100 else fact)
             return []
-    
+
     # Process facts one by one (async doesn't benefit from joblib parallel)
     paired_results = []
     for idx, fact in enumerate(facts):
         if verbose and idx > 0 and idx % 10 == 0:
             logger.info("  - Progress: %d/%d facts processed", idx, len(facts))
-        
+
         citations = await _pair_single_fact(fact, idx)
         paired_results.append((fact, citations))
-    
+
     if verbose:
         facts_with_citations = sum(1 for _, citations in paired_results if citations)
         logger.info("Fact-citation pairing complete:")
         logger.info("  - Total facts processed: %d", len(paired_results))
-        logger.info("  - Facts with citations: %d (%.1f%%)", 
-                   facts_with_citations, 
-                   100.0 * facts_with_citations / len(paired_results) if paired_results else 0)
+        logger.info("  - Facts with citations: %d (%.1f%%)",
+                    facts_with_citations,
+                    100.0 * facts_with_citations / len(paired_results) if paired_results else 0)
         logger.info("  - Facts without citations: %d", len(paired_results) - facts_with_citations)
     else:
         logger.info(f"Paired {len(paired_results)} facts with citations")
-    
+
     return paired_results
+
 
 # Prompt templates for preprocessing
 QG_TEMPLATE = """# Evaluation Question Generator
@@ -849,12 +839,10 @@ class FactsResponse(BaseModel):
     facts: List[str] = Field(description="A list of key facts/claims extracted from the ground truth")
 
 
-async def generate_context_relevance_questions(
-    topic: str,
-    ground_truth: str,
-    llm: str = "nvdev/meta/llama-3.1-70b-instruct",
-    verbose: bool = False
-) -> List[Dict[str, str]]:
+async def generate_context_relevance_questions(topic: str,
+                                               ground_truth: str,
+                                               llm: str = "nvdev/meta/llama-3.1-70b-instruct",
+                                               verbose: bool = False) -> List[Dict[str, str]]:
     """Generate evaluation questions using the ground truth report.
     
     Args:
@@ -870,18 +858,18 @@ async def generate_context_relevance_questions(
         logger.info("Starting context relevance questions generation")
         logger.info("  - Topic: %s", topic[:100] + "..." if len(topic) > 100 else topic)
         logger.info("  - Ground truth length: %d characters", len(ground_truth))
-    
+
     try:
         prompt = QG_TEMPLATE.format(topic=topic, ground_truth=ground_truth)
-        
+
         raw_result = await _get_llm_response_structured(
-            prompt, 
+            prompt,
             response_format=QuestionsResponse,
             model=llm,
             temperature=0.0,
             max_tokens=4096,
         )
-        
+
         # Handle both dict and list returns
         if isinstance(raw_result, list):
             questions = raw_result
@@ -890,24 +878,26 @@ async def generate_context_relevance_questions(
         else:
             logger.warning(f"Unexpected result format for questions generation: {type(raw_result)}")
             questions = []
-        
+
         # Validate question format
         validated_questions = []
         for q in questions:
             if isinstance(q, dict) and all(k in q for k in ['question', 'rationale', 'aspect']):
                 validated_questions.append(q)
-        
+
         if verbose:
             logger.info(f"Successfully generated {len(validated_questions)} context relevance questions")
             if validated_questions and len(validated_questions) <= 3:
                 logger.debug("Sample questions:")
                 for i, q in enumerate(validated_questions[:3], 1):
-                    logger.debug("  %d. %s", i, q['question'][:100] + "..." if len(q['question']) > 100 else q['question'])
+                    logger.debug("  %d. %s",
+                                 i,
+                                 q['question'][:100] + "..." if len(q['question']) > 100 else q['question'])
         else:
             logger.info(f"Generated {len(validated_questions)} context relevance questions")
-        
+
         return validated_questions
-        
+
     except Exception as e:
         logger.error(f"Failed to generate context relevance questions: {str(e)}")
         if verbose:
@@ -915,11 +905,9 @@ async def generate_context_relevance_questions(
         return []
 
 
-async def generate_coverage_facts_claims(
-    ground_truth: str,
-    llm: str = "nvdev/meta/llama-3.1-70b-instruct",
-    verbose: bool = False
-) -> List[str]:
+async def generate_coverage_facts_claims(ground_truth: str,
+                                         llm: str = "nvdev/meta/llama-3.1-70b-instruct",
+                                         verbose: bool = False) -> List[str]:
     """Extract key facts from the ground truth report for coverage evaluation.
     
     Args:
@@ -933,18 +921,18 @@ async def generate_coverage_facts_claims(
     if verbose:
         logger.info("Starting coverage facts/claims generation")
         logger.info("  - Ground truth length: %d characters", len(ground_truth))
-    
+
     try:
         prompt = FACT_EXTRACTION_TEMPLATE.format(ground_truth=ground_truth)
-        
+
         raw_result = await _get_llm_response_structured(
-            prompt, 
+            prompt,
             response_format=FactsResponse,
             model=llm,
             temperature=0.0,
             max_tokens=4096,
         )
-        
+
         # Handle both dict and list returns
         if isinstance(raw_result, list):
             facts = raw_result
@@ -953,14 +941,14 @@ async def generate_coverage_facts_claims(
         else:
             logger.warning(f"Unexpected result format for facts extraction: {type(raw_result)}")
             facts = []
-        
+
         # Ensure we have a list of strings
         if isinstance(facts, list):
             facts = [str(fact) for fact in facts]
         else:
             logger.warning(f"Unexpected facts format: {type(facts)}")
             facts = []
-        
+
         if verbose:
             logger.info(f"Successfully generated {len(facts)} coverage facts/claims")
             if facts and len(facts) <= 3:
@@ -969,11 +957,11 @@ async def generate_coverage_facts_claims(
                     logger.debug("  %d. %s", i, fact[:100] + "..." if len(fact) > 100 else fact)
         else:
             logger.info(f"Generated {len(facts)} coverage facts/claims")
-        
+
         return facts
-        
+
     except Exception as e:
         logger.error(f"Failed to generate coverage facts/claims: {str(e)}")
         if verbose:
             logger.exception("Full exception details:")
-        return [] 
+        return []

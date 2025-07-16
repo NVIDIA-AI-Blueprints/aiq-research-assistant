@@ -13,25 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import json
 import logging
-import typing as t
-from dataclasses import dataclass, field
-import asyncio
-import re
 import os
+import re
+import typing as t
+from dataclasses import dataclass
+from dataclasses import field
 
-
-from langchain_core.prompt_values import StringPromptValue
-from pydantic import BaseModel, Field
-from ragas.metrics.base import MetricWithLLM, SingleTurnMetric, MetricType
-from ragas.dataset_schema import SingleTurnSample
+from aiq.data_models.component_ref import LLMRef
+from aiq.data_models.evaluator import EvaluatorBaseConfig
+from aiq.eval.evaluator.evaluator_model import EvalInput
+from aiq.eval.evaluator.evaluator_model import EvalInputItem
+from aiq.eval.evaluator.evaluator_model import EvalOutput
+from aiq.eval.evaluator.evaluator_model import EvalOutputItem
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.language_models.base import BaseLanguageModel
-
-from aiq.data_models.evaluator import EvaluatorBaseConfig
-from aiq.eval.evaluator.evaluator_model import EvalInputItem, EvalOutputItem, EvalInput, EvalOutput
-from aiq.data_models.component_ref import LLMRef
+from langchain_core.prompt_values import StringPromptValue
+from pydantic import BaseModel
+from pydantic import Field
+from ragas.dataset_schema import SingleTurnSample
+from ragas.metrics.base import MetricType
+from ragas.metrics.base import MetricWithLLM
+from ragas.metrics.base import SingleTurnMetric
 
 from aiq_aira.eval.schema import AIResearcherEvalOutput
 
@@ -59,15 +64,11 @@ class AIRAHallucination(MetricWithLLM, SingleTurnMetric):
     It calculates if a given report contains hallucinations.
     """
     name: str = "hallucination_score"
-    _required_columns: t.Dict[MetricType, t.Set[str]] = field(
-        default_factory=lambda: {
-            MetricType.SINGLE_TURN: {
-                "response",
-                "retrieved_contexts",
-                "user_input",
-            },
-        }
-    )
+    _required_columns: t.Dict[MetricType, t.Set[str]] = field(default_factory=lambda: {
+        MetricType.SINGLE_TURN: {
+            "response",
+            "retrieved_contexts",
+            "user_input", }, })
     rationale_a: str = ""
     rationale_b: str = ""
 
@@ -169,11 +170,8 @@ Your response should follow this format:
         # Rationale stored in self.rationale_a
         for retry in range(self.retry):
             try:
-                formatted_prompt = StringPromptValue(
-                    text=self.template_hallucination_a.format(
-                        question=sample.user_input, answer=sample.response, passage=sources
-                    )
-                )
+                formatted_prompt = StringPromptValue(text=self.template_hallucination_a.format(
+                    question=sample.user_input, answer=sample.response, passage=sources))
 
                 try:
                     llm_with_so = self.llm.with_structured_output(HallucinationJudgment)
@@ -187,17 +185,17 @@ Your response should follow this format:
                     from langchain_core.messages import HumanMessage
                     raw = await self.llm.ainvoke([HumanMessage(content=formatted_prompt.text)])
                     raw_text = raw.content if hasattr(raw, 'content') else str(raw)
-                    
+
                     logger.info(f"Template A raw LLM response (attempt {retry + 1}):\n{raw_text}")
 
                     # Enhanced JSON extraction with multiple patterns
                     patterns = [
                         r'```json\s*(\{.*?\})\s*```',  # ```json {...} ```
-                        r'```\s*(\{.*?\})\s*```',     # ``` {...} ```
+                        r'```\s*(\{.*?\})\s*```',  # ``` {...} ```
                         r'(\{[^{}]*"rationale"[^{}]*"score"[^{}]*\})',  # Simple JSON with required fields
                         r'(\{.*?\})',  # Any JSON-like object
                     ]
-                    
+
                     parsed = None
                     for i, pattern in enumerate(patterns):
                         matches = re.findall(pattern, raw_text, re.DOTALL | re.IGNORECASE)
@@ -207,12 +205,12 @@ Your response should follow this format:
                                 if isinstance(match, tuple):
                                     match = match[0] if match else ""
                                 logger.info(f"Template A trying to parse match: {match}")
-                                
+
                                 # Clean up the JSON string - remove trailing commas and fix formatting
                                 cleaned_match = match.strip()
                                 # Remove trailing comma before closing brace
                                 cleaned_match = re.sub(r',(\s*})', r'\1', cleaned_match)
-                                
+
                                 parsed = json.loads(cleaned_match)
                                 if "score" in parsed:  # Verify it has the required field
                                     logger.info(f"Template A successfully parsed: {parsed}")
@@ -222,7 +220,7 @@ Your response should follow this format:
                                 continue
                         if parsed:
                             break
-                    
+
                     # If regex patterns fail, try to extract JSON more aggressively
                     if not parsed:
                         # Look for any text that starts with { and ends with }
@@ -257,11 +255,8 @@ Your response should follow this format:
         # Rationale stored in self.rationale_b
         for retry in range(self.retry):
             try:
-                formatted_prompt = StringPromptValue(
-                    text=self.template_hallucination_b.format(
-                        question=sample.user_input, answer=sample.response, passage=sources
-                    )
-                )
+                formatted_prompt = StringPromptValue(text=self.template_hallucination_b.format(
+                    question=sample.user_input, answer=sample.response, passage=sources))
 
                 try:
                     llm_with_so = self.llm.with_structured_output(HallucinationJudgment)
@@ -281,11 +276,11 @@ Your response should follow this format:
                     # Enhanced JSON extraction with multiple patterns
                     patterns = [
                         r'```json\s*(\{.*?\})\s*```',  # ```json {...} ```
-                        r'```\s*(\{.*?\})\s*```',     # ``` {...} ```
+                        r'```\s*(\{.*?\})\s*```',  # ``` {...} ```
                         r'(\{[^{}]*"rationale"[^{}]*"score"[^{}]*\})',  # Simple JSON with required fields
                         r'(\{.*?\})',  # Any JSON-like object
                     ]
-                    
+
                     parsed = None
                     for i, pattern in enumerate(patterns):
                         matches = re.findall(pattern, raw_text, re.DOTALL | re.IGNORECASE)
@@ -295,12 +290,12 @@ Your response should follow this format:
                                 if isinstance(match, tuple):
                                     match = match[0] if match else ""
                                 logger.info(f"Template B trying to parse match: {match}")
-                                
+
                                 # Clean up the JSON string - remove trailing commas and fix formatting
                                 cleaned_match = match.strip()
                                 # Remove trailing comma before closing brace
                                 cleaned_match = re.sub(r',(\s*})', r'\1', cleaned_match)
-                                
+
                                 parsed = json.loads(cleaned_match)
                                 if "score" in parsed:  # Verify it has the required field
                                     logger.info(f"Template B successfully parsed: {parsed}")
@@ -310,7 +305,7 @@ Your response should follow this format:
                                 continue
                         if parsed:
                             break
-                    
+
                     # If regex patterns fail, try to extract JSON more aggressively
                     if not parsed:
                         # Look for any text that starts with { and ends with }
@@ -345,7 +340,7 @@ Your response should follow this format:
             print("Hallucination rationale (Template A):\n", self.rationale_a)
         if score_b > 0:
             print("Hallucination rationale (Template B):\n", self.rationale_b)
-        
+
         # Return average of both template scores
         return (score_a + score_b) / 2.0
 
@@ -365,10 +360,10 @@ def prepare_hallucination_data_from_aira_example(example_data: dict) -> tuple:
     # `report_organization` string because the hallucination metric should
     # evaluate faithfulness strictly against the original user question.
     query = example_data.get("query") or example_data.get("topic", "")
-    
+
     # Prepare contexts exactly like the notebook
     contexts = []
-    
+
     # Add RAG contexts - extract "context" field from each context dict
     rag_contexts = example_data.get("rag_contexts", [])
     for context_item in rag_contexts:
@@ -376,7 +371,7 @@ def prepare_hallucination_data_from_aira_example(example_data: dict) -> tuple:
             contexts.append(context_item["context"])
         elif isinstance(context_item, str):
             contexts.append(context_item)
-    
+
     # Add web answers - extract answer content after "ANSWER:"
     web_answers = example_data.get("web_answers", [])
     for web_answer in web_answers:
@@ -385,7 +380,7 @@ def prepare_hallucination_data_from_aira_example(example_data: dict) -> tuple:
             contexts.append(answer_content)
         elif isinstance(web_answer, str):
             contexts.append(web_answer)
-    
+
     return query, contexts
 
 
@@ -409,21 +404,23 @@ class HallucinationEvaluator:
         # Extract the report
         if not isinstance(report, str) or not report.strip():
             return EvalOutputItem(
-                id=item.id, 
-                score=0.0, 
+                id=item.id,
+                score=0.0,
                 reasoning={
                     "error": "Generated report (finalized_summary) is empty or not a string.",
                     "debug_info": {
-                        "has_finalized_summary": data_source.finalized_summary is not None,
-                        "keys_in_item": list(data_source.model_dump().keys()) if isinstance(data_source, dict) else None,
-                        "item_id": item.id,
+                        "has_finalized_summary":
+                            data_source.finalized_summary is not None,
+                        "keys_in_item":
+                            list(data_source.model_dump().keys()) if isinstance(data_source, dict) else None,
+                        "item_id":
+                            item.id,
                     }
-                }
-            )
+                })
 
         # The 'topic' field from the dataset is the most direct representation of the user's original query.
         query = data_source.topic
-        
+
         # Prepare contexts from RAG and web search results
         contexts = []
         rag_contexts = data_source.rag_contexts
@@ -433,12 +430,12 @@ class HallucinationEvaluator:
                     contexts.append(context_item["context"])
                 elif isinstance(context_item, str):
                     contexts.append(context_item)
-        
+
         web_answers = data_source.web_answers
         if isinstance(web_answers, list):
             for web_answer in web_answers:
                 if isinstance(web_answer, str):
-                     # Handle cases where web_answer might be a simple string or contain "ANSWER:"
+                    # Handle cases where web_answer might be a simple string or contain "ANSWER:"
                     answer_content = web_answer.split("ANSWER:")[-1].strip()
                     if answer_content:
                         contexts.append(answer_content)
@@ -449,20 +446,20 @@ class HallucinationEvaluator:
 
         if not contexts:
             # Without contexts, we cannot judge hallucination, so we return a neutral score of 0.
-            return EvalOutputItem(id=item.id, score=0.0, reasoning={"error": "No contexts were available to evaluate for hallucination."})
+            return EvalOutputItem(id=item.id,
+                                  score=0.0,
+                                  reasoning={"error": "No contexts were available to evaluate for hallucination."})
 
-        logger.info(f"Hallucination evaluation for item {item.id}: Query='{query[:50]}...', Contexts={len(contexts)}, Report Length={len(report)}")
-        
-        # Evaluate hallucination
-        sample = SingleTurnSample(
-            user_input=query,
-            response=report,
-            retrieved_contexts=contexts
+        logger.info(
+            f"Hallucination evaluation for item {item.id}: Query='{query[:50]}...', Contexts={len(contexts)}, Report Length={len(report)}"
         )
+
+        # Evaluate hallucination
+        sample = SingleTurnSample(user_input=query, response=report, retrieved_contexts=contexts)
 
         scorer = AIRAHallucination(llm=self.llm)
         score = await scorer._single_turn_ascore(sample=sample, callbacks=None)
-        
+
         reasoning = {
             "hallucination_score": score,
             "report_snippet": report[:200] + ("..." if len(report) > 200 else ""),
@@ -479,16 +476,14 @@ class HallucinationEvaluator:
         Evaluate function that processes all items in the evaluation input.
         """
         semaphore = asyncio.Semaphore(self.max_concurrency)
-        
+
         async def wrapped_evaluate_item(item: EvalInputItem) -> EvalOutputItem:
             async with semaphore:
                 return await self.evaluate_item(item)
-        
-        eval_output_items = await asyncio.gather(
-            *[wrapped_evaluate_item(item) for item in eval_input.eval_input_items]
-        )
-        
+
+        eval_output_items = await asyncio.gather(*[wrapped_evaluate_item(item) for item in eval_input.eval_input_items])
+
         scores = [item.score for item in eval_output_items if item.score is not None]
         avg_score = sum(scores) / len(scores) if scores else 0.0
-        
-        return EvalOutput(average_score=avg_score, eval_output_items=eval_output_items) 
+
+        return EvalOutput(average_score=avg_score, eval_output_items=eval_output_items)

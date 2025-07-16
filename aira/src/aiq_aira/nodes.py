@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ET
 from typing import List
 
 import aiohttp
+from aiq.profiler.decorators.function_tracking import track_function
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableConfig
@@ -38,14 +39,13 @@ from aiq_aira.schema import AIRAState
 from aiq_aira.schema import GeneratedQuery
 from aiq_aira.search_utils import deduplicate_and_format_sources
 from aiq_aira.search_utils import process_single_query
+from aiq_aira.utils import async_gen
 from aiq_aira.utils import format_sources
 from aiq_aira.utils import update_system_prompt
-from aiq_aira.utils import async_gen
-from aiq.profiler.decorators.function_tracking import track_function
-
 
 logger = logging.getLogger(__name__)
 store = InMemoryByteStore()
+
 
 @track_function(metadata={"source": "generate_queries"})
 async def generate_query(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
@@ -92,7 +92,6 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     # Check if LLM has streaming disabled
     llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
     logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
-    
 
     try:
         async with asyncio.timeout(ASYNC_TIMEOUT):
@@ -100,7 +99,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
                 # Use streaming for LLMs that support it
                 async for chunk in chain.astream(input):
                     answer_agg += chunk.content
-                    
+
                     # Track if we're in a think section to avoid showing reasoning to users
                     if "<think>" in chunk.content:
                         in_think_section = True
@@ -108,7 +107,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
                         in_think_section = False
                         # Don't stream the closing think tag
                         continue
-                    
+
                     # Only stream content that's not in think sections
                     if not in_think_section:
                         writer({"generating_questions": chunk.content})
@@ -117,7 +116,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
                 logger.debug("Using non-streaming mode for LLM")
                 response = await chain.ainvoke(input)
                 answer_agg = response.content
-                
+
                 # For non-streaming, we need to filter out think sections before showing to user
                 if "<think>" in answer_agg and "</think>" in answer_agg:
                     # Show everything after </think>
@@ -129,8 +128,10 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
                 else:
                     # No think tags, show everything
                     writer({"generating_questions": answer_agg})
-    except asyncio.TimeoutError as e: 
-        writer({"generating_questions": " \n \n ---------------- \n \n Timeout error from reasoning LLM, please try again"})
+    except asyncio.TimeoutError as e:
+        writer({
+            "generating_questions": " \n \n ---------------- \n \n Timeout error from reasoning LLM, please try again"
+        })
         queries = []
         return {"queries": queries}
 
@@ -138,7 +139,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     logger.info(f"Full response length: {len(answer_agg)}")
     logger.info(f"Response contains <think>: {'<think>' in answer_agg}")
     logger.info(f"Response contains </think>: {'</think>' in answer_agg}")
-    
+
     # Try to parse with </think> tags first (for nemotron models)
     if "</think>" in answer_agg:
         splitted = answer_agg.split("</think>")
@@ -162,7 +163,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
 
     try:
         queries = parse_json_markdown(json_str)
-        
+
         # Validate that we have a list of properly formatted queries
         if not isinstance(queries, list):
             logger.error(f"Expected list of queries, got {type(queries)}")
@@ -171,14 +172,15 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
             # Validate each query has required fields
             validated_queries = []
             for i, query in enumerate(queries):
-                if isinstance(query, dict) and all(field in query for field in ["query", "report_section", "rationale"]):
+                if isinstance(query, dict) and all(field in query
+                                                   for field in ["query", "report_section", "rationale"]):
                     validated_queries.append(query)
                 else:
                     logger.warning(f"Query {i} missing required fields: {query}")
             queries = validated_queries
-            
+
             logger.info(f"Successfully parsed {len(queries)} queries")
-            
+
     except Exception as e:
         logger.error(f"Error parsing queries as JSON: {e}")
         logger.info(f"Raw response: {answer_agg}")
@@ -223,12 +225,9 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
     citation_str = "\n".join(unique_citations)
     return {"citations": citation_str, "web_research_results": [search_str]}
 
+
 @track_function(metadata={"source": "write_report"})
-async def summarize_sources(
-        state: AIRAState,
-        config: RunnableConfig,
-        writer: StreamWriter
-):
+async def summarize_sources(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
     Node for summarizing or extending an existing summary. Takes the web research report and writes a report draft.
     """
@@ -251,6 +250,7 @@ async def summarize_sources(
 
     writer({"running_summary": updated_report})
     return {"running_summary": updated_report}
+
 
 @track_function(metadata={"source": "reflection"})
 async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
@@ -293,16 +293,16 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
         async for i in async_gen(1):
             result = ""
             in_think_section = False
-            
+
             # Check if LLM has streaming disabled
             llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
             logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
-            
+
             if llm_stream_enabled:
                 # Use streaming for LLMs that support it
                 async for chunk in chain.astream(input):
                     result = result + chunk.content
-                    
+
                     # Track if we're in a think section to avoid showing reasoning to users
                     if "<think>" in chunk.content:
                         in_think_section = True
@@ -310,7 +310,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
                         in_think_section = False
                         # Don't stream the closing think tag
                         continue
-                    
+
                     # Only stream content that's not in think sections
                     if not in_think_section:
                         writer({"reflect_on_summary": chunk.content})
@@ -319,7 +319,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
                 logger.debug("Using non-streaming mode for reflection LLM")
                 response = await chain.ainvoke(input)
                 result = response.content
-                
+
                 # For non-streaming, we need to filter out think sections before showing to user
                 if "<think>" in result and "</think>" in result:
                     # Show everything after </think>
@@ -406,6 +406,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
     writer({"running_summary": running_summary})
     return {"running_summary": running_summary, "citations": state.citations}
 
+
 @track_function(metadata={"source": "finalize_summary"})
 async def finalize_summary(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
@@ -423,18 +424,18 @@ async def finalize_summary(state: AIRAState, config: RunnableConfig, writer: Str
     # Final report creation, used to remove any remaing model commentary from the report draft
     finalizer = PromptTemplate.from_template(finalize_report) | llm
     final_buf = ""
-    
+
     # Check if LLM has streaming disabled
     llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
     logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
-    
+
     try:
-        async with asyncio.timeout(ASYNC_TIMEOUT*3):
+        async with asyncio.timeout(ASYNC_TIMEOUT * 3):
             if llm_stream_enabled:
                 # Use streaming for LLMs that support it
                 async for chunk in finalizer.astream({
-                    "report": state.running_summary,
-                    "report_organization": report_organization,
+                        "report": state.running_summary,
+                        "report_organization": report_organization,
                 }):
                     final_buf += chunk.content
                     writer({"final_report": chunk.content})

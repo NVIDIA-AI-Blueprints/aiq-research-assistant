@@ -10,13 +10,12 @@ root = ".."
 name = "aiq_aira"
 dynamic = ["version"]
 dependencies = [
-  "agentiq>=1.2.0a20250703",
-  "agentiq-langchain>=1.2.0a20250703",
-  "aiqtoolkit-weave==1.2.0a20250703",
-  "aiqtoolkit-langchain==1.2.0a20250703",
   "aiohappyeyeballs==2.4.4",
   "aiohttp",
   "aiosignal==1.3.2",
+  "aiqtoolkit-langchain>=1.2.0a20250703",
+  "aiqtoolkit-weave>=1.2.0a20250703",
+  "aiqtoolkit>=1.2.0a20250703",
   "annotated-types==0.7.0",
   "anyio==4.8.0",
   "arize-phoenix~=6.1",
@@ -28,6 +27,7 @@ dependencies = [
   "distro==1.9.0",
   "exceptiongroup==1.2.2",
   "frozenlist==1.5.0",
+  "gql<4",  # keep GraphQL client version compatible
   "h11>=0.16.0",
   "httpcore",
   "httpx",
@@ -65,9 +65,8 @@ dependencies = [
   "tqdm==4.67.1",
   "typing_extensions==4.12.2",
   "urllib3==2.3.0",
-  "weave==0.51.55",
   "wandb<0.21.0",  # pin for compatibility with weave 0.51.x (uses gql 3.x)
-  "gql<4",  # keep GraphQL client version compatible
+  "weave==0.51.55",
   "xmltodict==0.14.2",
   "yarl==1.18.3",
   "zstandard==0.23.0",
@@ -91,8 +90,8 @@ dev = [
   "yapf==0.43.*",
 ]
 weave = [
-    "wandb<0.21.0",
-    "gql<4"
+  "wandb<0.21.0",
+  "gql<4"
 ]
 
 

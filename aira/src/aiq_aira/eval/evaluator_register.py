@@ -15,15 +15,21 @@
 
 from aiq.builder.builder import EvalBuilder
 from aiq.builder.evaluator import EvaluatorInfo
-from aiq.cli.register_workflow import register_evaluator
 from aiq.builder.framework_enum import LLMFrameworkEnum
+from aiq.cli.register_workflow import register_evaluator
 
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluatorConfig
 # Import evaluator classes and configs
-from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluator, CoverageEvaluatorConfig
-from aiq_aira.eval.evaluators.synthesis_evaluator import SynthesisEvaluator, SynthesisEvaluatorConfig
-from aiq_aira.eval.evaluators.hallucination_evaluator import HallucinationEvaluator, HallucinationEvaluatorConfig
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluator, CitationQualityEvaluatorConfig
-from aiq_aira.eval.evaluators.ragas_wrapper_evaluator import RagasWrapperEvaluator, RagasWrapperEvaluatorConfig
+from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluator
+from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluatorConfig
+from aiq_aira.eval.evaluators.hallucination_evaluator import HallucinationEvaluator
+from aiq_aira.eval.evaluators.hallucination_evaluator import HallucinationEvaluatorConfig
+from aiq_aira.eval.evaluators.ragas_wrapper_evaluator import RagasWrapperEvaluator
+from aiq_aira.eval.evaluators.ragas_wrapper_evaluator import RagasWrapperEvaluatorConfig
+from aiq_aira.eval.evaluators.synthesis_evaluator import SynthesisEvaluator
+from aiq_aira.eval.evaluators.synthesis_evaluator import SynthesisEvaluatorConfig
+
 # from aiq_aira.eval.evaluators.weave_evaluator import WeaveEvaluator, WeaveEvaluatorConfig
 # from aiq_aira.eval.evaluators.artifact_uploader import ArtifactUploader, ArtifactUploaderConfig  # Commented out to avoid duplicate registration
 
@@ -32,7 +38,7 @@ from aiq_aira.eval.evaluators.ragas_wrapper_evaluator import RagasWrapperEvaluat
 async def register_coverage_evaluator(config: CoverageEvaluatorConfig, builder: EvalBuilder):
     """This function creates an instance of the CoverageEvaluator."""
     llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    
+
     evaluator = CoverageEvaluator(
         llm=llm,
         max_concurrency=config.max_concurrency,
@@ -45,7 +51,7 @@ async def register_coverage_evaluator(config: CoverageEvaluatorConfig, builder: 
 async def register_hallucination_evaluator(config: HallucinationEvaluatorConfig, builder: EvalBuilder):
     """This function creates an instance of the HallucinationEvaluator."""
     llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    
+
     evaluator = HallucinationEvaluator(
         llm=llm,
         output_dir=builder.eval_general_config.output_dir,
@@ -57,7 +63,7 @@ async def register_hallucination_evaluator(config: HallucinationEvaluatorConfig,
 async def register_synthesis_evaluator(config: SynthesisEvaluatorConfig, builder: EvalBuilder):
     """This function creates an instance of the SynthesisEvaluator."""
     llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    
+
     evaluator = SynthesisEvaluator(
         llm=llm,
         output_dir=builder.eval_general_config.output_dir,
@@ -69,8 +75,7 @@ async def register_synthesis_evaluator(config: SynthesisEvaluatorConfig, builder
 async def register_citation_quality_evaluator(config: CitationQualityEvaluatorConfig, builder: EvalBuilder):
     """This function creates an instance of the CitationQualityEvaluator."""
     llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    
-    
+
     evaluator = CitationQualityEvaluator(
         llm=llm,
         output_dir=builder.eval_general_config.output_dir,
@@ -82,19 +87,15 @@ async def register_citation_quality_evaluator(config: CitationQualityEvaluatorCo
 async def register_ragas_wrapper_evaluator(config: RagasWrapperEvaluatorConfig, builder: EvalBuilder):
     """This function creates an instance of the RagasWrapperEvaluator."""
     llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    
-    
-    evaluator = RagasWrapperEvaluator(
-        llm=llm,
-        metric=config.metric
-    )
+
+    evaluator = RagasWrapperEvaluator(llm=llm, metric=config.metric)
     yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate, description="Ragas Wrapper Evaluator")
 
 
 # @register_evaluator(config_type=WeaveEvaluatorConfig)
 # async def register_weave_evaluator(config: WeaveEvaluatorConfig, builder: EvalBuilder):
 #     """This function creates an instance of the WeaveEvaluator."""
-    
+
 #     evaluator = WeaveEvaluator(
 #         config=config,
 #         builder=builder
@@ -113,4 +114,4 @@ async def register_ragas_wrapper_evaluator(config: RagasWrapperEvaluatorConfig, 
 #         max_wait_time=config.max_wait_time,
 #         output_dir=builder.eval_general_config.output_dir
 #     )
-#     yield EvaluatorInfo(config=config, evaluate_fn=uploader.evaluate, description="Artifact Uploader") 
+#     yield EvaluatorInfo(config=config, evaluate_fn=uploader.evaluate, description="Artifact Uploader")
