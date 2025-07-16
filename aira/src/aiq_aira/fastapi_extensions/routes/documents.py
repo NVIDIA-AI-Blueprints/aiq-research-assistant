@@ -15,10 +15,18 @@
 
 import json
 import logging
-from typing import List, Optional, Dict, Any
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import httpx
-from fastapi import FastAPI, File, Form, UploadFile, Query, HTTPException
+from fastapi import FastAPI
+from fastapi import File
+from fastapi import Form
+from fastapi import HTTPException
+from fastapi import Query
+from fastapi import UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -30,19 +38,21 @@ class DocumentRequest(BaseModel):
     collection_name: str
     documents: List[Dict[str, Any]]
 
+
 async def add_document_routes(app: FastAPI, rag_ingest_url: str):
     """Add document-related routes to the FastAPI app"""
-    
+
     # POST /documents - Upload documents
     @app.post("/documents", tags=["rag-endpoints"])
     async def upload_documents(
-        documents: List[UploadFile] = File(...),
-        data: str = Form(
+            documents: List[UploadFile] = File(...),
+            data:
+        str = Form(
             ...,
             description="JSON string containing metadata for document upload",
-            example='{"collection_name": "multimodal_data", "blocking": false, "split_options": {"chunk_size": 512, "chunk_overlap": 150}}'
-        )
-    ):
+            example=
+            '{"collection_name": "multimodal_data", "blocking": false, "split_options": {"chunk_size": 512, "chunk_overlap": 150}}'
+        )):
         """
         Upload documents to RAG with metadata.
         
@@ -59,34 +69,30 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
         try:
             # Parse metadata from form data
             metadata = json.loads(data)
-            
+
             # Set default blocking if not specified
             if "blocking" not in metadata:
                 metadata["blocking"] = False
-                
+
             logger.info(f"Document upload request - Metadata: {metadata}")
-            
+
             # Create multipart form data for upstream request
             files = []
             for doc in documents:
                 content = await doc.read()
                 files.append(('documents', (doc.filename, content, doc.content_type)))
-            
+
             form_data = {'data': json.dumps(metadata)}
-            
+
             # Forward to RAG ingest service
             async with httpx.AsyncClient(timeout=3600.0) as client:
-                response = await client.post(
-                    f"{rag_ingest_url}/documents",
-                    files=files,
-                    data=form_data
-                )
-                
+                response = await client.post(f"{rag_ingest_url}/documents", files=files, data=form_data)
+
                 if response.status_code not in [200, 201]:
                     raise HTTPException(status_code=response.status_code, detail=response.json())
-                
+
                 return response.json()
-                
+
         except json.JSONDecodeError:
             raise HTTPException(status_code=400, detail="Invalid JSON in data field")
         except Exception as e:
@@ -94,51 +100,43 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
             if isinstance(e, HTTPException):
                 raise
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     # GET /documents - List documents
     @app.get("/documents", tags=["rag-endpoints"])
     async def list_documents(collection_name: str = Query(...)):
         """List documents in a collection"""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{rag_ingest_url}/documents",
-                    params={"collection_name": collection_name}
-                )
-                
+                response = await client.get(f"{rag_ingest_url}/documents", params={"collection_name": collection_name})
+
                 if response.status_code != 200:
                     raise HTTPException(status_code=response.status_code, detail=response.json())
-                
+
                 return response.json()
-                
+
         except Exception as e:
             logger.error(f"Error fetching documents: {e}")
             if isinstance(e, HTTPException):
                 raise
             raise HTTPException(status_code=500, detail=str(e))
-    
+
     # DELETE /documents - Delete documents
     @app.delete("/documents", tags=["rag-endpoints"])
-    async def delete_documents(
-        document_names: List[str],
-        collection_name: str = Query(...)
-    ):
+    async def delete_documents(document_names: List[str], collection_name: str = Query(...)):
         """Delete documents from a collection"""
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.request(
-                    "DELETE",
-                    f"{rag_ingest_url}/documents",
-                    params={"collection_name": collection_name},
-                    json=document_names
-                )
-                
+                response = await client.request("DELETE",
+                                                f"{rag_ingest_url}/documents",
+                                                params={"collection_name": collection_name},
+                                                json=document_names)
+
                 if response.status_code != 200:
                     raise HTTPException(status_code=response.status_code, detail=response.json())
-                
+
                 logger.info(f"Documents deleted: {response.json()}")
                 return response.json()
-                
+
         except Exception as e:
             logger.error(f"Error deleting documents: {e}")
             if isinstance(e, HTTPException):

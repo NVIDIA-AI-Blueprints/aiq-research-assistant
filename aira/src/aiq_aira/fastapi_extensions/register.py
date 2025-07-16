@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 FastAPI Extensions Module
 
@@ -31,8 +30,9 @@ from aiq.builder.workflow_builder import WorkflowBuilder
 from aiq.cli.register_workflow import register_front_end
 from aiq.data_models.config import AIQConfig
 from aiq.front_ends.fastapi.fastapi_front_end_config import FastApiFrontEndConfig
-from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorker, FastApiFrontEndPluginWorkerBase
 from aiq.front_ends.fastapi.fastapi_front_end_plugin import FastApiFrontEndPlugin
+from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorker
+from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorkerBase
 from fastapi import FastAPI
 
 from .routes.collections import add_collection_routes
@@ -55,7 +55,7 @@ class APIExtensionsWorker(FastApiFrontEndPluginWorker):
 
         # Add collection routes with Redis session tracking
         await add_collection_routes(app, rag_ingest_url)
-        
+
         # Add document routes
         await add_document_routes(app, rag_ingest_url)
 

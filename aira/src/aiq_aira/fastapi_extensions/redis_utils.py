@@ -16,7 +16,8 @@
 import asyncio
 import logging
 import os
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 import httpx
 import redis.asyncio as redis

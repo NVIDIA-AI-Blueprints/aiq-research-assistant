@@ -31,13 +31,13 @@ from aiq.data_models.function import FunctionBaseConfig
 from aiq.plugins.langchain import register
 from pydantic import BaseModel
 
+from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 from aiq_aira.functions import artifact_qa
 from aiq_aira.functions import generate_queries
 from aiq_aira.functions import generate_summary
 from aiq_aira.functions.eci import eci_search_fn
 from aiq_aira.functions.eci.eci_search_fn import ECISearchConfig
 from aiq_aira.functions.eci.eci_search_fn import eci_search_fn
-from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 
 logger = logging.getLogger(__name__)
 
