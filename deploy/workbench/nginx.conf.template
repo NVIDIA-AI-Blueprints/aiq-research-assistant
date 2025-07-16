@@ -27,14 +27,34 @@ server {
     proxy_buffers 100 1M;
     proxy_busy_buffers_size 2M;
 
-    # Original routes
-    location ~ ^/v1/(status|documents|collections) {
+    # Original routes - Collections go to AIRA (POST only), documents and status go directly to RAG
+    location ~ ^/v1/collections {        
+        # Allow only POST
+        limit_except POST {
+            deny all;
+        }
+        
+        proxy_pass ${AIRA_BASE_URL}$request_uri;
+        proxy_set_header Host $http_host;
+    }
+    
+    location ~ ^/v1/(status|documents) {
         proxy_pass ${RAG_INGEST_URL}/$1$is_args$args;
         proxy_set_header Host ${RAG_INGEST_URL};
     }
 
-    # Protected routes
-    location ~ ^/v2/protected/aiq/v1/(status|documents|collections) {
+    # Protected routes - Collections go to AIRA (POST only), documents and status go directly to RAG
+    location ~ ^/v2/protected/aiq/v1/collections {      
+        # Allow only POST
+        limit_except POST {
+            deny all;
+        }
+        
+        proxy_pass ${AIRA_BASE_URL}/collections;
+        proxy_set_header Host $http_host;
+    }
+    
+    location ~ ^/v2/protected/aiq/v1/(status|documents) {
         proxy_pass ${RAG_INGEST_URL}/$1$is_args$args;
         proxy_set_header Host ${RAG_INGEST_URL};
     }
