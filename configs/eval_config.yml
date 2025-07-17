@@ -152,8 +152,8 @@ workflow:
   generator:
     _type: full
     verbose: true
-    fact_extraction_llm: nvdev/meta/llama-3.1-70b-instruct
-    citation_pairing_llm: nvdev/mistralai/mixtral-8x22b-instruct-v0.1 #gpt-4o-20241120 # Configurable LLM for citation pairing use gpt for best results (high chance of rate limiting), would recommend mistral for efficiency for now
+    fact_extraction_llm_name: eval_llm  # Reference to configured LLM
+    citation_pairing_llm_name: ragas_llm  # Reference to configured LLM (mistral is good for this)
 
 
 # Evaluation configuration
