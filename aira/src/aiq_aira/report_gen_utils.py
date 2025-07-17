@@ -23,8 +23,8 @@ from langgraph.types import StreamWriter
 from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.prompts import report_extender
 from aiq_aira.prompts import summarizer_instructions
-from aiq_aira.utils import update_system_prompt
 from aiq_aira.utils import handle_stream_and_think_tags
+from aiq_aira.utils import update_system_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ async def summarize_report(existing_summary: str,
     ])
     chain = prompt | llm
     input_payload = {"input": user_input}
-    
+
     writer({"summarize_sources": "\n Starting summary \n"})
     result = await handle_stream_and_think_tags(chain, input_payload, writer, "summarize_sources")
 
@@ -65,7 +65,7 @@ async def summarize_report(existing_summary: str,
             start = result.find("<think>")
             end = result.find("</think>") + len("</think>")
             result = result[:start] + result[end:]
-        
+
         # Handle case where opening <think> tag might be missing
         while "</think>" in result:
             end = result.find("</think>") + len("</think>")

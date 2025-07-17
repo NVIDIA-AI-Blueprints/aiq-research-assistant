@@ -285,8 +285,12 @@ def _main():
             continue
         try:
             errors.extend(
-                check_copyright(f, args.update_current_year, args.verify_apache_v2, args.update_start_year,
-                                args.insert_license, args.git_add))
+                check_copyright(f,
+                                args.update_current_year,
+                                args.verify_apache_v2,
+                                args.update_start_year,
+                                args.insert_license,
+                                args.git_add))
         except Exception as e:  # pylint: disable=broad-except
             ret_val = 1
             logger.error("Error when checking file %s: %s", f, e)

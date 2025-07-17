@@ -19,8 +19,8 @@ import re
 import time
 
 import httpx
-from langchain_openai import ChatOpenAI
 from langchain_core.utils.json import parse_json_markdown
+from langchain_openai import ChatOpenAI
 from langgraph.types import StreamWriter
 
 from aiq_aira.constants import ASYNC_TIMEOUT
