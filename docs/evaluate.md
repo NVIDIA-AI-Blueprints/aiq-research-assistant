@@ -66,7 +66,7 @@ uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 Activate with: source .venv/bin/activate
 # Install AIRA package in development mode
-uv pip install -e "./aira[dev]" --prerelease=allow
+uv pip install -e ".[dev]" --prerelease=allow
 ```
 
 

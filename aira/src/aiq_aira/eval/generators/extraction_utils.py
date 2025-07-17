@@ -443,24 +443,10 @@ async def extract_groundness_facts(final_report: str, llm: str, verbose: bool = 
     """
     if verbose:
         logger.info("Starting fact/claim extraction from report")
-<<<<<<< HEAD
-<<<<<<< HEAD
 
     try:
         prompt = FACT_CLAIM_EXTRACTION_PROMPT.format(final_report=final_report)
 
-=======
-    
-    try:
-        prompt = FACT_CLAIM_EXTRACTION_PROMPT.format(final_report=final_report)
-        
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-
-    try:
-        prompt = FACT_CLAIM_EXTRACTION_PROMPT.format(final_report=final_report)
-
->>>>>>> 6ed8f35 (Formatting and linting)
         raw_result = await _get_llm_response_structured(
             prompt,
             response_format=FactsResponse,
@@ -558,15 +544,7 @@ async def pair_facts_with_aira_sources(facts: List[str],
 
     if verbose:
         logger.info(f"Found {len(sources)} sources in citation section")
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-
->>>>>>> 6ed8f35 (Formatting and linting)
     # Use LLM to match facts with sources
     fact_source_pairs = []
 
@@ -648,15 +626,7 @@ async def pair_facts_with_citations(final_report: str,
     if verbose:
         logger.info("Starting fact-citation pairing")
         logger.info("  - Number of facts to process: %d", len(facts))
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-
->>>>>>> 6ed8f35 (Formatting and linting)
     # Check if the final_report actually contains inline citations
     citation_pattern = re.compile(r'\([0-9]+\)|\[[0-9]+\]')
     citation_matches = citation_pattern.findall(final_report)
@@ -685,21 +655,8 @@ async def pair_facts_with_citations(final_report: str,
     async def _pair_single_fact(fact: str, fact_idx: int) -> List[int]:
         """Helper function for parallel processing"""
         try:
-<<<<<<< HEAD
-<<<<<<< HEAD
             prompt = FACT_CITATION_MAPPING_PROMPT.format(final_report=final_report, fact=fact)
 
-=======
-            prompt = FACT_CITATION_MAPPING_PROMPT.format(
-                final_report=final_report, 
-                fact=fact
-            )
-            
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-            prompt = FACT_CITATION_MAPPING_PROMPT.format(final_report=final_report, fact=fact)
-
->>>>>>> 6ed8f35 (Formatting and linting)
             # Use GPT-4o specifically for citation pairing instead of the passed llm parameter
             raw_result = await _get_llm_response_structured(
                 prompt,
@@ -729,15 +686,7 @@ async def pair_facts_with_citations(final_report: str,
                     logger.warning(f"Citation {citation} not found in report for fact: {fact[:50]}...")
 
             citations = valid_citations
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-
->>>>>>> 6ed8f35 (Formatting and linting)
             return citations
 
         except Exception as e:
@@ -912,15 +861,7 @@ async def generate_context_relevance_questions(topic: str,
 
     try:
         prompt = QG_TEMPLATE.format(topic=topic, ground_truth=ground_truth)
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-
->>>>>>> 6ed8f35 (Formatting and linting)
         raw_result = await _get_llm_response_structured(
             prompt,
             response_format=QuestionsResponse,
@@ -983,15 +924,7 @@ async def generate_coverage_facts_claims(ground_truth: str,
 
     try:
         prompt = FACT_EXTRACTION_TEMPLATE.format(ground_truth=ground_truth)
-<<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 44fc47d (Cleaned up verbose logging statements)
-=======
-
->>>>>>> 6ed8f35 (Formatting and linting)
         raw_result = await _get_llm_response_structured(
             prompt,
             response_format=FactsResponse,

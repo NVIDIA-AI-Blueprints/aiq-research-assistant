@@ -36,14 +36,5 @@ __all__ = [
     "CitationQualityEvaluator",
     "CitationQualityEvaluatorConfig",
     "RagasWrapperEvaluator",
-    "RagasWrapperEvaluatorConfig",  # "WeaveEvaluator",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    # "WeaveEvaluatorConfig",
-=======
-  # "WeaveEvaluatorConfig",
->>>>>>> 6ed8f35 (Formatting and linting)
-=======
-    # "WeaveEvaluatorConfig",
->>>>>>> bae846e (Updated so CI will pass)
+    "RagasWrapperEvaluatorConfig",
 ]
