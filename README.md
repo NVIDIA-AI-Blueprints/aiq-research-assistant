@@ -43,7 +43,7 @@ The AI-Q Research Assistant blueprint provides these components:
 
 Additionally, the blueprint uses these components:
 
-- [**NVIDIA Agent Intelligence Toolkit**](https://github.com/NVIDIA/AIQToolkit)
+- [**NVIDIA NeMo Agent Toolkit**](https://github.com/NVIDIA/NeMo-Agent-Toolkit)
   Provides a toolkit for managing a LangGraph codebase. Provides observability, API services and documentation, and easy configuration of different LLMs.
 - [**NVIDIA RAG Blueprint**](https://github.com/NVIDIA-AI-Blueprints/rag)
   Provides a solution for querying large sets of on-premise multi-modal documents.
