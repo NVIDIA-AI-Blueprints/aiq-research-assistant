@@ -69,7 +69,7 @@ The main driver of report length is the number of queries in the report plan. Ad
 
 ## Has the Tool Been Evaluated?
 
-The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundness, and context relevance. For more information about evaluations, see the [evaluation page](./evaluation.md).
+The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundness, and context relevance. For more information about evaluations, see the [evaluation page](./evaluate.md).
 
 ## How are the REST Endpoints Served?
 
