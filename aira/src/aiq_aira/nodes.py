@@ -48,9 +48,9 @@ store = InMemoryByteStore()
 
 async def generate_query(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
-    Node for generating a research plan as a list of queries. 
-    Takes in a topic and desired report organization. 
-    Returns the list of query objects. 
+    Node for generating a research plan as a list of queries.
+    Takes in a topic and desired report organization.
+    Returns the list of query objects.
     """
     logger.info("GENERATE QUERY")
     writer({"generating_questions": "\n Generating queries \n"
@@ -135,6 +135,7 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
     llm = config["configurable"].get("llm")
     eci_search_tool = config["configurable"].get("eci_search_tool")
     search_web = config["configurable"].get("search_web")
+    search_eci = config["configurable"].get("search_eci")
     collection = config["configurable"].get("collection")
 
     # Determine the queries and state queries based on the type of state.
@@ -144,7 +145,8 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
 
     # Process each query concurrently.
     results = await asyncio.gather(*[
-        process_single_query(query, config, writer, collection, llm, eci_search_tool, search_web) for query in queries
+        process_single_query(query, config, writer, collection, llm, eci_search_tool, search_web, search_eci)
+        for query in queries
     ])
 
     # Unpack results.
@@ -186,7 +188,7 @@ async def summarize_sources(state: AIRAState, config: RunnableConfig, writer: St
 
 async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
-    Node for reflecting on the summary to find knowledge gaps. 
+    Node for reflecting on the summary to find knowledge gaps.
     Identified gaps are added as new queries.
     Number of new queries is determined by the num_reflections parameter.
     For each new query, the node performs web research and report extension.
@@ -198,6 +200,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
     num_reflections = config["configurable"].get("num_reflections")
     report_organization = config["configurable"].get("report_organization")
     search_web = config["configurable"].get("search_web")
+    search_eci = config["configurable"].get("search_eci")
     collection = config["configurable"].get("collection")
 
     logger.info(f"REFLECTING {num_reflections} TIMES")
@@ -258,7 +261,8 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             collection=collection,
             llm=llm,
             eci_search_tool=eci_search_tool,
-            search_web=search_web
+            search_web=search_web,
+            search_eci=search_eci
         )
 
         search_str = deduplicate_and_format_sources([rag_citation], [rag_answer], [gen_query])

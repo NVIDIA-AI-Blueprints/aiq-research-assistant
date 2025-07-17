@@ -55,7 +55,7 @@ class AIRAGenerateSummaryConfig(FunctionBaseConfig, name="generate_summaries"):
     Configuration for the generate_summary function/endpoint
     """
     rag_url: str = ""
-    eci_search_tool_name: FunctionRef
+    eci_search_tool_name: FunctionRef | None = None
 
 
 def serialize_pydantic(obj):
@@ -102,7 +102,11 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+        if message.search_eci and config.eci_search_tool_name is None:
+            raise ValueError("ECI search is enabled but no ECI search tool is provided")
+
+        eci_search_tool = aiq_builder.get_function(
+            name=config.eci_search_tool_name) if config.eci_search_tool_name else None
 
         response: AIRAState = await graph.ainvoke(input={
             "queries": message.queries, "web_research_results": [], "running_summary": ""
@@ -114,6 +118,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
                                                       "rag_url": config.rag_url,
                                                       "collection": message.rag_collection,
                                                       "search_web": message.search_web,
+                                                      "search_eci": message.search_eci,
                                                       "num_reflections": message.reflection_count,
                                                       "topic": message.topic,
                                                   })
@@ -129,7 +134,12 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-        eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+
+        if message.search_eci and config.eci_search_tool_name is None:
+            raise ValueError("ECI search is enabled but no ECI search tool is provided")
+
+        eci_search_tool = aiq_builder.get_function(
+            name=config.eci_search_tool_name) if config.eci_search_tool_name else None
 
         async for _t, val in graph.astream(
                 input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
@@ -142,6 +152,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
                     "collection": message.rag_collection,
                     "topic": message.topic,
                     "search_web": message.search_web,
+                    "search_eci": message.search_eci,
                     "num_reflections": message.reflection_count,
                 }
         ):

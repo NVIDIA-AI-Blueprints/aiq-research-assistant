@@ -21,6 +21,7 @@ import xml.etree.ElementTree as ET
 from typing import List
 
 import aiohttp
+from aiq.data_models.component_ref import FunctionRef
 from langchain_core.runnables import RunnableConfig
 from langchain_core.utils.json import parse_json_markdown
 from langchain_openai import ChatOpenAI
@@ -55,7 +56,7 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
                 "relevancy_checker":
                     f""" =
     ---
-    Relevancy score: {score.get("score")}  
+    Relevancy score: {score.get("score")}
     Query: {query}
     Answer: {processed_answer_for_display}
     """
@@ -66,9 +67,9 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
     except asyncio.TimeoutError as e:
         writer({
             "relevancy_checker":
-                f""" 
-----------                
-LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
+                f"""
+----------
+LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answer_for_display}
 ----------
 """
         })
@@ -77,7 +78,7 @@ LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answe
             "relevancy_checker":
                 f"""
 ---------
-Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
+Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display}
 ---------
 """
         })
@@ -129,8 +130,9 @@ async def process_single_query(
     writer: StreamWriter,
     collection,
     llm,
-    eci_search_tool,
+    eci_search_tool: FunctionRef | None,
     search_web: bool,
+    eci_search_bool: bool,
 ):
     """
     Process a single query:
@@ -152,10 +154,12 @@ async def process_single_query(
     if rag_relevancy["score"] == "no":
         eci_answer, eci_citation = "", ""
         web_answer, web_citation = "", ""
-        logger.info("RAG NOT RELEVANT, SEARCHING ECI and WEB")
-        eci_answer, eci_citation = await search_eci(query, writer, eci_search_tool)
-        writer({"eci_answer": eci_citation})
-        logger.info(f"ECI ANSWER: {eci_citation}")
+        logger.info("RAG NOT RELEVANT, SEARCHING ECI and WEB if enabled")
+
+        if eci_search_tool is not None and eci_search_bool:
+            eci_answer, eci_citation = await search_eci(query, writer, eci_search_tool)
+            writer({"eci_answer": eci_citation})
+            logger.info(f"ECI ANSWER: {eci_citation}")
 
         if search_web:
             web_answer, web_citation = await search_tavily(query, writer)

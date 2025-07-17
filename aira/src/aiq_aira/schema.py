@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import operator
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
@@ -23,7 +22,6 @@ from typing import Dict
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 from pydantic import Field
-from typing_extensions import Annotated
 from typing_extensions import TypedDict
 
 
@@ -57,6 +55,7 @@ class GenerateSummaryStateInput(BaseModel):
     report_organization: str = Field(..., description="Desired structure or constraints for the final report")
     queries: list[GeneratedQuery] = Field(..., description="Queries previously generated in Stage 1")
     search_web: bool = Field(..., description="Whether to search the web or not")
+    search_eci: bool = Field(default=False, description="Whether to search ECI or not")
     rag_collection: str = Field(..., description="Collection to search for information from")
     reflection_count: int = Field(2, description="Number of reflection loops to run")
     llm_name: str = Field(..., description="LLM model to use")
@@ -89,7 +88,8 @@ class ArtifactQAInput(BaseModel):
                           description="Previously generated artifact (e.g. a report or queries) to reference for Q&A")
     question: str = Field(..., description="User's question about the artifact")
     chat_history: list[str] = Field(default_factory=list, description="Prior conversation turns or context")
-    use_internet: bool = Field(False, description="If true, the agent can do additional web or RAG lookups")
+    use_internet: bool = Field(default=False, description="If true, the agent can do additional web or RAG lookups")
+    use_eci: bool = Field(default=False, description="If true, the agent can do additional ECI lookups")
     rewrite_mode: ArtifactRewriteMode | None = Field(None, description="Rewrite mode for the LLM")
     additional_context: str | None = Field(None, description="Additional context to provide to the LLM")
     rag_collection: str = Field(..., description="Collection to search for information from")
@@ -125,4 +125,5 @@ class ConfigSchema(TypedDict):
     rag_url: str
     num_reflections: int
     search_web: bool
+    search_eci: bool
     topic: str
