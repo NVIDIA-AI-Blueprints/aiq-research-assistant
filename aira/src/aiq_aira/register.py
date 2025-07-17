@@ -33,6 +33,7 @@ from pydantic import BaseModel
 # Import evaluation components
 from aiq_aira.eval import evaluator_register
 from aiq_aira.eval import generator_register
+from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 from aiq_aira.functions import artifact_qa
 from aiq_aira.functions import generate_queries
 from aiq_aira.functions import generate_summary
