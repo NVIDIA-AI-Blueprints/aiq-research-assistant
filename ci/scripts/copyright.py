@@ -244,169 +244,139 @@ def _main():
 
     argparser = argparse.ArgumentParser("Checks for a consistent copyright header in git's modified files")
     argparser.add_argument("--update-start-year",
-                           dest="update_start_year",
+                           dest='update_start_year',
                            action="store_true",
-                           help="Forces the start year to be the one from 'git log'")
+                           required=False,
+                           help="If set, "
+                           "update the start year based on a start date parsed "
+                           "on the earliest entry from `git log --follow` will "
+                           "only set the year if it is less than the current "
+                           "copyright year")
     argparser.add_argument("--update-current-year",
-                           dest="update_current_year",
+                           dest='update_current_year',
                            action="store_true",
-                           help="Forces the current year to be this year")
-    argparser.add_argument("--insert-license",
-                           dest="insert_license",
+                           required=False,
+                           help="If set, "
+                           "update the current year if a header is already "
+                           "present and well formatted.")
+
+    argparser.add_argument("--insert",
+                           dest='insert',
                            action="store_true",
-                           help="Inserts a license block if one is not found")
+                           required=False,
+                           help="If set, "
+                           "inserts an Apache v2.0 license into a files "
+                           "without a license, implies --verify-apache-v2")
+
+    argparser.add_argument("--fix-all",
+                           dest='fix_all',
+                           action="store_true",
+                           required=False,
+                           help="Shortcut for setting --update-start-year --update-current-year and --insert")
+
+    git_group = argparser.add_mutually_exclusive_group()
+    git_group.add_argument("--git-modified-only",
+                           dest='git_modified_only',
+                           action="store_true",
+                           required=False,
+                           help="If set, "
+                           "only files seen as modified by git will be "
+                           "processed. Cannot be combined with --git-diff-commits or --git-diff-staged")
+    git_group.add_argument("--git-diff-commits",
+                           dest='git_diff_commits',
+                           required=False,
+                           nargs=2,
+                           metavar='hash',
+                           help="If set, "
+                           "only files modified between the two given commit hashes. "
+                           "Cannot be combined with --git-modified-only or --git-diff-staged")
+    git_group.add_argument("--git-diff-staged",
+                           dest='git_diff_staged',
+                           required=False,
+                           nargs="?",
+                           metavar='HEAD',
+                           default=None,
+                           const='HEAD',
+                           help="If set, "
+                           "only files staged for commit. "
+                           "Cannot be combined with --git-modified-only or --git-diff-commits")
+
     argparser.add_argument("--git-add",
                            dest='git_add',
-                           action='store_true',
-                           help="Runs 'git add' on any files that are modified by this script")
-    argparser.add_argument("--exempt-files-list",
-                           nargs='*',
-                           dest="exempt_files_list",
-                           help="Exempts a list of files from the copyright check")
-    argparser.add_argument("--verify-apache-v2",
-                           dest="verify_apache_v2",
                            action="store_true",
-                           help="Verifies that the file contains the Apache v2 license boilerplate text")
-    args = argparser.parse_args()
+                           required=False,
+                           help="If set, "
+                           "any files auto-fixed will have `git add` run on them. ")
 
-    # if a list of files is passed, this will be used instead of git
-    if args.exempt_files_list:
-        logger.info("Adding %s to the exempt list", ', '.join(args.exempt_files_list))
-        ExemptFiles.extend([re.compile(x) for x in args.exempt_files_list])
+    argparser.add_argument("--verify-apache-v2",
+                           dest='verify_apache_v2',
+                           action="store_true",
+                           required=False,
+                           help="If set, "
+                           "verifies all files contain the Apache license "
+                           "in their header")
+    argparser.add_argument("--exclude",
+                           dest='exclude',
+                           action="append",
+                           required=False,
+                           default=["_version\\.py"],
+                           help=("Exclude the paths specified (regexp). "
+                                 "Can be specified multiple times."))
 
-    files = gitutils.modified_files()
-    if not files:
-        logger.info("No files to check")
-        sys.exit(ret_val)
+    (args, dirs) = argparser.parse_known_args()
+    try:
+        ExemptFiles = ExemptFiles + [re.compile(pathName) for pathName in args.exclude]
+    except re.error as re_exception:
+        logger.exception("Regular expression error: %s", re_exception, exc_info=True)
+        return 1
+
+    if args.git_modified_only:
+        files = gitutils.modified_files()
+    elif args.git_diff_commits:
+        files = gitutils.changed_files(*args.git_diff_commits)
+    elif args.git_diff_staged:
+        files = gitutils.staged_files(args.git_diff_staged)
+    else:
+        files = gitutils.all_files(*dirs)
+
+    logger.debug("File count before filter(): %s", len(files))
+
+    # Now filter the files down based on the exclude/include
+    files = gitutils.filter_files(files, path_filter=check_this_file)
+
+    logger.info("Checking files (%s):\n   %s", len(files), "\n   ".join(files))
 
     errors = []
     for f in files:
-        if not check_this_file(f):
-            continue
-        try:
-            errors.extend(
-                check_copyright(f,
-                                args.update_current_year,
-                                args.verify_apache_v2,
-                                args.update_start_year,
-                                args.insert_license,
-                                args.git_add))
-        except Exception as e:  # pylint: disable=broad-except
-            ret_val = 1
-            logger.error("Error when checking file %s: %s", f, e)
+        errors += check_copyright(f,
+                                  args.update_current_year,
+                                  verify_apache_v2=(args.verify_apache_v2 or args.insert or args.fix_all),
+                                  update_start_year=(args.update_start_year or args.fix_all),
+                                  do_insert_license=(args.insert or args.fix_all),
+                                  git_add=args.git_add)
 
     if len(errors) > 0:
-        ret_val = 1
-        print("Copyright check failed for the following files:")
+        logger.info("Copyright headers incomplete in some of the files!")
         for e in errors:
-            print("  %s:%d -- %s" % (e[0], e[1], e[2]))
-
+            logger.error("  %s:%d Issue: %s", e[0], e[1], e[2])
+        logger.info("")
+        n_fixable = sum(1 for e in errors if e[-1] is not None)
+        path_parts = os.path.abspath(__file__).split(os.sep)
+        file_from_repo = os.sep.join(path_parts[path_parts.index("ci"):])
+        if n_fixable > 0:
+            logger.info(("You can run `python %s --git-modified-only "
+                         "--update-current-year --insert` to fix %s of these "
+                         "errors.\n"),
+                        file_from_repo,
+                        n_fixable)
+        ret_val = 1
     else:
-        print("Copyright check passed")
+        logger.info("Copyright check passed")
 
-    sys.exit(ret_val)
+    return ret_val
 
 
-# Maps the file extension to the license header
-# Key is the extension, value is a tuple of (header, footer)
-# We use a tuple to allow for future use of footers
-# Note: Python and Shell scripts use a program invocation line
-# (e.g. #!/usr/bin/env python) which should not be replaced.
-# The logic in 'insert_license_header' is aware of this.
-EXT_LIC_MAPPING = {
-    "c":
-        """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-""",
-    "cmake":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law of or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
-    "cpp":
-        """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-""",
-    "cu":
-        """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-""",
-    "cuh":
-        """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-""",
-    "Dockerfile":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+A2_LIC_HASH = """# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -420,66 +390,27 @@ EXT_LIC_MAPPING = {
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-""",
-    "h":
-        """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
-a *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-""",
-    "hpp":
-        """/*
- * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
+"""
 
+A2_LIC_C = """/*
+ * SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-""",
-    "in":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
-    "md":
-        """<!--
+"""
+
+A2_LIC_MD = """<!--
 SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
@@ -495,115 +426,47 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-""",
-    "pxd":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law of or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
-    "py":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
-    "pyx":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
-    "rst":
-        """..
-  SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-  SPDX-License-Identifier: Apache-2.0
+"""
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+A2_LIC_RST = """..
+   SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+   SPDX-License-Identifier: Apache-2.0
 
-  http://www.apache.org/licenses/LICENSE-2.0
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-""",
-    "sh":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
-    "yaml":
-        """#
-# SPDX-FileCopyrightText: Copyright (c) {YEAR}, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-""",
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+"""
+
+# FilesToCheck list will allow us to assume Cmake for the txt extension
+EXT_LIC_MAPPING = {
+    'c': A2_LIC_C,
+    'cc': A2_LIC_C,
+    'cmake': A2_LIC_HASH,
+    'cpp': A2_LIC_C,
+    'cu': A2_LIC_C,
+    'cuh': A2_LIC_C,
+    'Dockerfile': A2_LIC_HASH,
+    'h': A2_LIC_C,
+    'hpp': A2_LIC_C,
+    'md': A2_LIC_MD,
+    'pxd': A2_LIC_HASH,
+    'py': A2_LIC_HASH,
+    'pyx': A2_LIC_HASH,
+    'rst': A2_LIC_RST,
+    'sh': A2_LIC_HASH,
+    'txt': A2_LIC_HASH,
+    'yaml': A2_LIC_HASH,
+    'yml': A2_LIC_HASH,
 }
 
 if __name__ == "__main__":
-    _main()
+    sys.exit(_main())
