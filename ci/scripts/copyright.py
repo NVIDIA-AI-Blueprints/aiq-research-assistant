@@ -274,7 +274,7 @@ def _main():
         logger.info("Adding %s to the exempt list", ', '.join(args.exempt_files_list))
         ExemptFiles.extend([re.compile(x) for x in args.exempt_files_list])
 
-    files = gitutils.get_git_modified_files()
+    files = gitutils.modified_files()
     if not files:
         logger.info("No files to check")
         sys.exit(ret_val)
