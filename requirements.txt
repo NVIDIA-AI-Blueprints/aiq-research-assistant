@@ -16,6 +16,7 @@ aiohttp==3.11.18
     #   aiobotocore
     #   datasets
     #   fsspec
+    #   gql
     #   langchain-community
     #   langchain-nvidia-ai-endpoints
     #   litellm
@@ -33,7 +34,10 @@ aiqtoolkit==1.2.0a20250707
     # via
     #   aiq-aira (pyproject.toml)
     #   aiqtoolkit-langchain
+    #   aiqtoolkit-weave
 aiqtoolkit-langchain==1.2.0a20250707
+    # via aiq-aira (pyproject.toml)
+aiqtoolkit-weave==1.2.0a20250707
     # via aiq-aira (pyproject.toml)
 alembic==1.16.4
     # via arize-phoenix
@@ -44,6 +48,7 @@ annotated-types==0.7.0
 anyio==4.8.0
     # via
     #   aiq-aira (pyproject.toml)
+    #   gql
     #   httpx
     #   mcp
     #   openai
@@ -70,6 +75,8 @@ attrs==25.1.0
     #   referencing
 authlib==1.6.0
     # via arize-phoenix
+backoff==2.2.1
+    # via gql
 beautifulsoup4==4.13.4
     # via wikipedia
 boto3==1.38.27
@@ -89,6 +96,7 @@ certifi==2025.1.31
     #   httpcore
     #   httpx
     #   requests
+    #   sentry-sdk
 cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.1
@@ -101,6 +109,8 @@ click==8.2.1
     #   aiqtoolkit
     #   litellm
     #   uvicorn
+    #   wandb
+    #   weave
 colorama==0.4.6
     # via
     #   aiq-aira (pyproject.toml)
@@ -116,7 +126,9 @@ dill==0.4.0
     #   datasets
     #   multiprocess
 diskcache==5.6.3
-    # via ragas
+    # via
+    #   ragas
+    #   weave
 distro==1.9.0
     # via
     #   aiq-aira (pyproject.toml)
@@ -146,12 +158,22 @@ fsspec==2025.5.1
     # via
     #   datasets
     #   huggingface-hub
+gitdb==4.0.12
+    # via gitpython
+gitpython==3.1.44
+    # via wandb
 googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
+gql==3.5.3
+    # via
+    #   aiq-aira (pyproject.toml)
+    #   weave
 graphql-core==3.2.6
-    # via strawberry-graphql
+    # via
+    #   gql
+    #   strawberry-graphql
 greenlet==3.2.3
     # via sqlalchemy
 grpc-interceptor==0.15.4
@@ -234,6 +256,7 @@ jsonschema==4.24.0
     # via
     #   litellm
     #   mcp
+    #   weave
 jsonschema-specifications==2025.4.1
     # via jsonschema
 langchain==0.3.25
@@ -322,7 +345,9 @@ multiprocess==0.70.18
 mypy-extensions==1.1.0
     # via typing-inspect
 nest-asyncio==1.6.0
-    # via ragas
+    # via
+    #   ragas
+    #   weave
 networkx==3.5
     # via aiqtoolkit
 numpy==1.26.4
@@ -423,6 +448,8 @@ packaging==24.2
     #   langchain-core
     #   marshmallow
     #   opentelemetry-instrumentation
+    #   wandb
+    #   weave
 pandas==2.3.1
     # via
     #   arize-phoenix
@@ -432,7 +459,9 @@ pandas==2.3.1
 pkginfo==1.12.1.2
     # via aiqtoolkit
 platformdirs==4.3.8
-    # via aiqtoolkit
+    # via
+    #   aiqtoolkit
+    #   wandb
 ply==3.11
     # via jsonpath-ng
 propcache==0.2.1
@@ -446,10 +475,14 @@ protobuf==5.29.5
     #   googleapis-common-protos
     #   opentelemetry-proto
     #   pymilvus
+    #   wandb
 psutil==7.0.0
-    # via arize-phoenix
+    # via
+    #   arize-phoenix
+    #   wandb
 pyarrow==20.0.0
     # via
+    #   aiq-aira (pyproject.toml)
     #   arize-phoenix
     #   datasets
 pycparser==2.22
@@ -469,6 +502,8 @@ pydantic==2.10.6
     #   openai
     #   pydantic-settings
     #   ragas
+    #   wandb
+    #   weave
 pydantic-core==2.27.2
     # via
     #   aiq-aira (pyproject.toml)
@@ -513,8 +548,11 @@ pyyaml==6.0.2
     #   langchain-community
     #   langchain-core
     #   uvicorn
+    #   wandb
 ragas==0.2.15
-    # via aiqtoolkit
+    # via
+    #   aiq-aira (pyproject.toml)
+    #   aiqtoolkit
 redis==5.2.1
     # via aiq-aira (pyproject.toml)
 referencing==0.36.2
@@ -529,6 +567,7 @@ requests==2.32.3
     # via
     #   aiq-aira (pyproject.toml)
     #   datasets
+    #   gql
     #   huggingface-hub
     #   langchain
     #   langchain-community
@@ -537,15 +576,19 @@ requests==2.32.3
     #   requests-toolbelt
     #   responses
     #   tiktoken
+    #   wandb
     #   wikipedia
 requests-toolbelt==1.0.0
     # via
     #   aiq-aira (pyproject.toml)
+    #   gql
     #   langsmith
 responses==0.18.0
     # via datasets
 rich==13.9.4
-    # via aiqtoolkit
+    # via
+    #   aiqtoolkit
+    #   weave
 rpds-py==0.26.0
     # via
     #   jsonschema
@@ -558,10 +601,18 @@ scipy==1.16.0
     # via
     #   arize-phoenix
     #   scikit-learn
+sentry-sdk==2.33.0
+    # via
+    #   wandb
+    #   weave
+setproctitle==1.3.6
+    # via wandb
 setuptools==80.9.0
     # via pymilvus
 six==1.17.0
     # via python-dateutil
+smmap==5.0.2
+    # via gitdb
 sniffio==1.3.1
     # via
     #   aiq-aira (pyproject.toml)
@@ -591,6 +642,7 @@ tenacity==9.0.0
     #   aiq-aira (pyproject.toml)
     #   langchain-community
     #   langchain-core
+    #   weave
 threadpoolctl==3.6.0
     # via scikit-learn
 tiktoken==0.8.0
@@ -637,6 +689,7 @@ typing-extensions==4.12.2
     #   strawberry-graphql
     #   typing-inspect
     #   typing-inspection
+    #   wandb
 typing-inspect==0.9.0
     # via dataclasses-json
 typing-inspection==0.4.1
@@ -651,6 +704,7 @@ urllib3==2.3.0
     #   botocore
     #   requests
     #   responses
+    #   sentry-sdk
 uvicorn==0.32.1
     # via
     #   aiqtoolkit
@@ -658,8 +712,14 @@ uvicorn==0.32.1
     #   mcp
 uvloop==0.21.0
     # via uvicorn
+wandb==0.20.1
+    # via aiq-aira (pyproject.toml)
 watchfiles==1.1.0
     # via uvicorn
+weave==0.51.55
+    # via
+    #   aiq-aira (pyproject.toml)
+    #   aiqtoolkit-weave
 websockets==15.0.1
     # via
     #   arize-phoenix
@@ -682,6 +742,7 @@ yarl==1.18.3
     # via
     #   aiq-aira (pyproject.toml)
     #   aiohttp
+    #   gql
 zipp==3.23.0
     # via importlib-metadata
 zstandard==0.23.0
