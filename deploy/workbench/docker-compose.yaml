@@ -61,10 +61,17 @@ services:
       AIRA_APPLY_GUARDRAIL: "false"
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-true}
+      # Redis configuration for session management
+      REDIS_HOST: aira-redis
+      REDIS_PORT: 6380
+      SESSION_TIMEOUT_HOURS: ${SESSION_TIMEOUT_HOURS:-24}
     volumes:
       - ../../configs:/app/configs
     networks:
       - nvidia-rag
+    depends_on:
+      aira-redis:
+        condition: service_healthy
     profiles: ["aira-no-gpu"]
 
   aira-backend-gpu:
@@ -72,24 +79,6 @@ services:
     environment:
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
     profiles: ["aira-gpu"]
-
-  aira-nginx:
-    image: nginx:latest
-    container_name: aira-nginx
-    ports:
-      - "8051:8051"
-    expose:
-      - "8051"
-    environment:
-      # If you are deploying RAG separately,
-      # update to match the URL for the Ingestor Server in your RAG deployment
-      - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082/v1}
-      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
-    volumes:
-      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
-    networks:
-      - nvidia-rag
-    profiles: ["aira-no-gpu", "aira-gpu"]
     
   aira-frontend:
     container_name: aira-frontend
@@ -100,11 +89,9 @@ services:
       - "3001"
     networks:
       - nvidia-rag
-    depends_on:
-      - aira-nginx
     environment:
       NVWB_TRIM_PREFIX: true
-      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
+      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-backend:3838}
     profiles: ["aira-no-gpu", "aira-gpu"]
 
   aira-load-files:
@@ -118,6 +105,26 @@ services:
       - nvidia-rag
     profiles: ["load-default-files"]
 
+  # Redis for session TTL tracking
+  aira-redis:
+    image: redis:7-alpine
+    container_name: aira-redis
+    ports:
+      - "6380:6380"
+    # Enable persistence: save every 60s if 1+ keys changed, AOF enabled
+    # Run Redis on port 6380 internally to avoid conflicts
+    command: redis-server --port 6380 --save 60 1 --appendonly yes
+    volumes:
+      - aira-redis-data:/data
+    networks:
+      - nvidia-rag
+    profiles: ["aira-no-gpu", "aira-gpu"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6380", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 # Use the nvidia-rag network created by the 
 # RAG docker compose deployment
 # If you are deploying RAG separately
@@ -126,3 +133,7 @@ networks:
   nvidia-rag:
     external: true
     name: nvidia-rag
+
+# Persistent volumes
+volumes:
+  aira-redis-data:

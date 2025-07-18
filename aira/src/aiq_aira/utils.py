@@ -19,11 +19,7 @@ import re
 import time
 
 import httpx
-from langchain_core.utils.json import parse_json_markdown
 from langchain_openai import ChatOpenAI
-from langgraph.types import StreamWriter
-
-from aiq_aira.constants import ASYNC_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
@@ -70,34 +66,13 @@ def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
-    logger.debug("--- [DEBUG] ENTERING update_system_prompt ---")
+
     if hasattr(llm, "model") and "nemotron" in llm.model:
         system_prompt = "detailed thinking on"
 
     if hasattr(llm, "model_name") and "nemotron" in llm.model_name:
         system_prompt = "detailed thinking on"
 
-    logger.debug(f"--- [DEBUG] Initial system_prompt: '{system_prompt}'")
-
-    # Log llm attributes for debugging
-    llm_model = getattr(llm, 'model', 'N/A')
-    llm_model_name = getattr(llm, 'model_name', 'N/A')
-    logger.debug(f"--- [DEBUG] LLM details: model='{llm_model}', model_name='{llm_model_name}'")
-
-    has_model = hasattr(llm, "model") and "nemotron" in llm.model
-    has_model_name = hasattr(llm, "model_name") and "nemotron" in llm.model_name
-    logger.debug(f"--- [DEBUG] Checking for 'nemotron': in llm.model? {has_model}, in llm.model_name? {has_model_name}")
-
-    if has_model:
-        logger.debug("--- [DEBUG] Overwriting system_prompt because 'nemotron' was found in llm.model.")
-        system_prompt = "detailed thinking on"
-    else:
-        # For non-nemotron models, provide clear JSON format instructions
-        logger.debug("--- [DEBUG] Using JSON format instructions for non-nemotron model.")
-        system_prompt = """You are a helpful assistant. When asked to generate structured data, you must respond with valid JSON format exactly as specified in the instructions. Follow the format requirements precisely and ensure all required fields are included."""
-
-    logger.debug(f"--- [DEBUG] Final system_prompt being returned: '{system_prompt}'")
-    logger.debug("--- [DEBUG] LEAVING update_system_prompt ---")
     return system_prompt
 
 
@@ -183,42 +158,3 @@ def _escape_markdown(text: str) -> str:
     text = text.replace("|", "\\|")
     text = text.replace("\n", "\\n")
     return text
-
-
-async def handle_stream_and_think_tags(chain, input_payload, writer, writer_key):
-    """
-    Handles streaming responses from an LLM, filtering out content within <think> tags.
-    """
-    llm = chain.last
-    llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
-    logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
-
-    full_response = ""
-    in_think_section = False
-
-    try:
-        async with asyncio.timeout(ASYNC_TIMEOUT):
-            if llm_stream_enabled:
-                async for chunk in chain.astream(input_payload):
-                    full_response += chunk.content
-                    if "<think>" in chunk.content:
-                        in_think_section = True
-                    if "</think>" in chunk.content:
-                        in_think_section = False
-                        continue
-                    if not in_think_section:
-                        writer({writer_key: chunk.content})
-            else:
-                response = await chain.ainvoke(input_payload)
-                full_response = response.content
-                if "<think>" in full_response and "</think>" in full_response:
-                    think_end = full_response.find("</think>")
-                    user_content = full_response[think_end + len("</think>"):].strip()
-                    if user_content:
-                        writer({writer_key: user_content})
-                else:
-                    writer({writer_key: full_response})
-    except asyncio.TimeoutError:
-        writer({writer_key: " \n \n ---------------- \n \n Timeout error from reasoning LLM. \n \n "})
-
-    return full_response

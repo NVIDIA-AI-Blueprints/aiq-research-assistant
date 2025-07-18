@@ -223,8 +223,6 @@ examples/rag/compose/volumes
 # End of https://www.gitignore.io/api/vim,c++,cmake,python,synology
 /.idea
 
-**/uv.lock
-
 # Helm
 deploy/helm/**/*.tgz
 

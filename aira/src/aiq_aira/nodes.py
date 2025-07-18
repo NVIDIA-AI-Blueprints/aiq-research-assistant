@@ -40,7 +40,6 @@ from aiq_aira.search_utils import deduplicate_and_format_sources
 from aiq_aira.search_utils import process_single_query
 from aiq_aira.utils import async_gen
 from aiq_aira.utils import format_sources
-from aiq_aira.utils import handle_stream_and_think_tags
 from aiq_aira.utils import update_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -63,7 +62,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     report_organization = config["configurable"].get("report_organization")
     topic = config["configurable"].get("topic")
 
-    system_prompt = ""
+    system_prompt = "you are a helpful assistant"
     system_prompt = update_system_prompt(system_prompt, llm)
 
     prompt = ChatPromptTemplate.from_messages([
@@ -85,57 +84,39 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
                                              number_of_queries=number_of_queries)
     }
 
-    answer_agg = await handle_stream_and_think_tags(chain, input, writer, "generating_questions")
-
-    # Log the full response for debugging
-    logger.info(f"Full response length: {len(answer_agg)}")
-    logger.info(f"Response contains <think>: {'<think>' in answer_agg}")
-    logger.info(f"Response contains </think>: {'</think>' in answer_agg}")
-
-    # Try to parse with </think> tags first (for nemotron models)
-    if "</think>" in answer_agg:
-        splitted = answer_agg.split("</think>")
-        if len(splitted) >= 2:
-            json_str = splitted[1].strip()
-        else:
-            # If splitting fails, the response is malformed
-            logger.error("Found <think> but failed to properly split on </think>")
-            queries = []
-            return {"queries": queries}
-    else:
-        # For instruct models that don't use think tags, use the full response
-        # But for nemotron models, this indicates an incomplete response
-        if "nemotron" in str(type(llm)).lower() or (hasattr(llm, 'model_name') and "nemotron" in llm.model_name):
-            logger.error("Nemotron model response missing </think> tag - response incomplete")
-            queries = []
-            return {"queries": queries}
-        else:
-            # Direct JSON parsing (for instruct models)
-            json_str = answer_agg
+    answer_agg = ""
+    stop = False
 
     try:
+        async with asyncio.timeout(ASYNC_TIMEOUT):
+            async for chunk in chain.astream(input, stream_usage=True):
+                answer_agg += chunk.content
+                if "</think>" in chunk.content:
+                    stop = True
+                if not stop:
+                    writer({"generating_questions": chunk.content})
+    except asyncio.TimeoutError as e:
+        writer({
+            "generating_questions": " \n \n ---------------- \n \n Timeout error from reasoning LLM, please try again"
+        })
+        queries = []
+        return {"queries": queries}
+
+    # Split to get the final JSON after </think>
+    splitted = answer_agg.split("</think>")
+    if len(splitted) < 2:
+        writer({
+            "generating_questions": " \n \n ---------------- \n \n Timeout error from reasoning LLM, please try again"
+        })
+        logger.info(f"Error processing query response. No </think> tag. Response: {answer_agg}")
+        queries = []
+        return {"queries": queries}
+
+    json_str = splitted[1].strip()
+    try:
         queries = parse_json_markdown(json_str)
-
-        # Validate that we have a list of properly formatted queries
-        if not isinstance(queries, list):
-            logger.error(f"Expected list of queries, got {type(queries)}")
-            queries = []
-        else:
-            # Validate each query has required fields
-            validated_queries = []
-            for i, query in enumerate(queries):
-                if isinstance(query, dict) and all(field in query
-                                                   for field in ["query", "report_section", "rationale"]):
-                    validated_queries.append(query)
-                else:
-                    logger.warning(f"Query {i} missing required fields: {query}")
-            queries = validated_queries
-
-            logger.info(f"Successfully parsed {len(queries)} queries")
-
     except Exception as e:
         logger.error(f"Error parsing queries as JSON: {e}")
-        logger.info(f"Raw response: {answer_agg}")
         queries = []
 
     return {"queries": queries}
@@ -231,7 +212,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
                                                topic=config["configurable"].get("topic"),
                                                report=state.running_summary)
         }
-        system_prompt = "You are a helpful assistant"
+        system_prompt = ""
         system_prompt = update_system_prompt(system_prompt, llm)
 
         prompt = ChatPromptTemplate.from_messages([
@@ -243,37 +224,24 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
         chain = prompt | llm
 
         writer({"reflect_on_summary": "\n Starting reflection \n"})
-        result = await handle_stream_and_think_tags(chain, input, writer, "reflect_on_summary")
+        async for i in async_gen(1):
+            result = ""
+            stop = False
+            async for chunk in chain.astream(input, stream_usage=True):
+                result = result + chunk.content
+                if chunk.content == "</think>":
+                    stop = True
+                if not stop:
+                    writer({"reflect_on_summary": chunk.content})
 
-        # Try to parse with </think> tags first (for nemotron models)
-        if "</think>" in result:
-            splitted = result.split("</think>")
-            if len(splitted) >= 2:
-                reflection_json = splitted[1].strip()
-            else:
-                # If splitting fails, the response is malformed
-                logger.error("Found <think> but failed to properly split on </think> in reflection")
-                running_summary = state.running_summary
-                writer({"running_summary": running_summary})
-                return {"running_summary": running_summary}
-        else:
-            # For instruct models that don't use think tags, use the full response
-            # But for nemotron models, this indicates an incomplete response
-            if "nemotron" in str(type(llm)).lower() or (hasattr(llm, 'model_name') and "nemotron" in llm.model_name):
-                logger.error("Nemotron model reflection response missing </think> tag - response incomplete")
-                running_summary = state.running_summary
-                writer({"running_summary": running_summary})
-                return {"running_summary": running_summary}
-            else:
-                # Direct JSON parsing (for instruct models)
-                reflection_json = result
-
-        if not reflection_json.strip():
-            # If we can't parse anything, return current state
+        splitted = result.split("</think>")
+        if len(splitted) < 2:
+            # If we can't parse anything, just fallback
             running_summary = state.running_summary
             writer({"running_summary": running_summary})
             return {"running_summary": running_summary}
 
+        reflection_json = splitted[1].strip()
         try:
             reflection_obj = parse_json_markdown(reflection_json)
             gen_query = GeneratedQuery(
@@ -337,30 +305,15 @@ async def finalize_summary(state: AIRAState, config: RunnableConfig, writer: Str
     # Final report creation, used to remove any remaing model commentary from the report draft
     finalizer = PromptTemplate.from_template(finalize_report) | llm
     final_buf = ""
-
-    # Check if LLM has streaming disabled
-    llm_stream_enabled = not getattr(llm, 'disable_streaming', False)
-    logger.debug(f"LLM streaming enabled: {llm_stream_enabled}")
-
     try:
         async with asyncio.timeout(ASYNC_TIMEOUT * 3):
-            if llm_stream_enabled:
-                # Use streaming for LLMs that support it
-                async for chunk in finalizer.astream({
-                        "report": state.running_summary,
-                        "report_organization": report_organization,
-                }):
-                    final_buf += chunk.content
-                    writer({"final_report": chunk.content})
-            else:
-                # Use non-streaming for LLMs with streaming disabled (like nemotron)
-                logger.debug("Using non-streaming mode for finalize LLM")
-                response = await finalizer.ainvoke({
+            async for chunk in finalizer.astream(
+                {
                     "report": state.running_summary,
                     "report_organization": report_organization,
-                })
-                final_buf = response.content
-                writer({"final_report": final_buf})
+                }, stream_usage=True):
+                final_buf += chunk.content
+                writer({"final_report": chunk.content})
     except asyncio.TimeoutError as e:
         writer({
             "final_report":

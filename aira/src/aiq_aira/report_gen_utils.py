@@ -23,7 +23,6 @@ from langgraph.types import StreamWriter
 from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.prompts import report_extender
 from aiq_aira.prompts import summarizer_instructions
-from aiq_aira.utils import handle_stream_and_think_tags
 from aiq_aira.utils import update_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -53,32 +52,38 @@ async def summarize_report(existing_summary: str,
         ("human", "{input}"),
     ])
     chain = prompt | llm
+
+    # Stream the result
+    result = ""
+    stop = False
     input_payload = {"input": user_input}
+    try:
+        writer({"summarize_sources": "\n Starting summary \n"})
+        async with asyncio.timeout(ASYNC_TIMEOUT):
+            async for chunk in chain.astream(input_payload, stream_usage=True):
+                result += chunk.content
+                if chunk.content == "</think>":
+                    stop = True
+                if not stop:
+                    writer({"summarize_sources": chunk.content})
+    except asyncio.TimeoutError as e:
+        writer({
+            "summarize_sources":
+                " \n \n ---------------- \n \n Timeout error from reasoning LLM. Consider running report generation again. \n \n "
+        })
 
-    writer({"summarize_sources": "\n Starting summary \n"})
-    result = await handle_stream_and_think_tags(chain, input_payload, writer, "summarize_sources")
+        return user_input
 
-    # Handle both think tag and direct text responses properly
-    if "<think>" in result and "</think>" in result:
-        # Remove <think>...</think> sections for nemotron models
-        while "<think>" in result and "</think>" in result:
-            start = result.find("<think>")
-            end = result.find("</think>") + len("</think>")
-            result = result[:start] + result[end:]
+    # Remove <think>...</think> sections
+    while "<think>" in result and "</think>" in result:
+        start = result.find("<think>")
+        end = result.find("</think>") + len("</think>")
+        result = result[:start] + result[end:]
 
-        # Handle case where opening <think> tag might be missing
-        while "</think>" in result:
-            end = result.find("</think>") + len("</think>")
-            result = result[end:]
-    elif "<think>" in result and "</think>" not in result:
-        # Incomplete think response - this is an error something has gone wrong
-        if "nemotron" in str(type(llm)).lower() or (hasattr(llm, 'model_name') and "nemotron" in llm.model_name):
-            logger.error("Nemotron model response has <think> but missing </think> tag - response incomplete")
-            return user_input  # Return original input as fallback
-        else:
-            # For instruct models, just remove the incomplete think tag
-            result = result.replace("<think>", "")
-    # If no think tags at all, use the response as-is (normal for instruct models)
+    # Handle case where opening <think> tag might be missing
+    while "</think>" in result:
+        end = result.find("</think>") + len("</think>")
+        result = result[end:]
 
     # Return the final updated summary
     return result
