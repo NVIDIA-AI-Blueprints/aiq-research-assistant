@@ -22,7 +22,6 @@ import xml.etree.ElementTree as ET
 from typing import List
 
 import aiohttp
-from aiq.profiler.decorators.function_tracking import track_function
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableConfig
@@ -48,7 +47,6 @@ logger = logging.getLogger(__name__)
 store = InMemoryByteStore()
 
 
-@track_function(metadata={"source": "generate_queries"})
 async def generate_query(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
     Node for generating a research plan as a list of queries.
@@ -182,7 +180,6 @@ async def web_research(state: AIRAState, config: RunnableConfig, writer: StreamW
     return {"citations": citation_str, "web_research_results": [search_str]}
 
 
-@track_function(metadata={"source": "write_report"})
 async def summarize_sources(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
     Node for summarizing or extending an existing summary. Takes the web research report and writes a report draft.
@@ -208,7 +205,6 @@ async def summarize_sources(state: AIRAState, config: RunnableConfig, writer: St
     return {"running_summary": updated_report}
 
 
-@track_function(metadata={"source": "reflection"})
 async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
     Node for reflecting on the summary to find knowledge gaps.
@@ -325,7 +321,6 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
     return {"running_summary": running_summary, "citations": state.citations}
 
 
-@track_function(metadata={"source": "finalize_summary"})
 async def finalize_summary(state: AIRAState, config: RunnableConfig, writer: StreamWriter):
     """
     Node for double checking the final summary is valid markdown
