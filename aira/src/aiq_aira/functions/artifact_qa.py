@@ -42,7 +42,7 @@ class ArtifactQAConfig(FunctionBaseConfig, name="artifact_qa"):
     """
     llm_name: LLMRef = "instruct_llm"
     rag_url: str = ""
-    eci_search_tool_name: FunctionRef
+    eci_search_tool_name: FunctionRef | None = None
 
 
 @register_function(config_type=ArtifactQAConfig)
@@ -60,12 +60,16 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
 
     # Acquire the LLM from the builder
     llm = await aiq_builder.get_llm(llm_name=config.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-    eci_search_tool = aiq_builder.get_function(name=config.eci_search_tool_name)
+    eci_search_tool = aiq_builder.get_function(
+        name=config.eci_search_tool_name) if config.eci_search_tool_name else None
 
     async def _artifact_qa(query_message: ArtifactQAInput) -> ArtifactQAOutput:
         """
         Run the Q&A logic for a single user question about an artifact.
         """
+
+        if eci_search_tool is None and query_message.use_eci:
+            raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
         apply_guardrail = os.getenv("AIRA_APPLY_GUARDRAIL", "false")
 
@@ -98,7 +102,8 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             collection=query_message.rag_collection,
             llm=llm,
             eci_search_tool=eci_search_tool,
-            search_web=query_message.use_internet
+            search_web=query_message.use_internet,
+            search_eci=query_message.use_eci
         )
 
         gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
@@ -114,6 +119,9 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         """
         Run the Q&A logic for a single user question about an artifact, streaming the response.
         """
+
+        if eci_search_tool is None and query_message.use_eci:
+            raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
         apply_guardrail = os.getenv("AIRA_APPLY_GUARDRAIL", "false")
 
@@ -147,7 +155,8 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             collection=query_message.rag_collection,
             llm=llm,
             eci_search_tool=eci_search_tool,
-            search_web=query_message.use_internet
+            search_web=query_message.use_internet,
+            search_eci=query_message.use_eci
         )
 
         gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
