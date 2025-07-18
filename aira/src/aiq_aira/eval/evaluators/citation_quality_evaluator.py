@@ -133,23 +133,23 @@ def parse_sources(citation_section: str) -> Dict[int, str]:
 
     sources = {}
     matches = list(pattern.finditer(citation_section))
-    
+
     logger.debug(f"Found {len(matches)} source matches in citation section")
-    
+
     for match in matches:
         try:
             num = int(match.group(1))
             answer = match.group(2).strip()
-            
+
             # Clean up the answer content by removing CITATION: section
             if "CITATION:" in answer:
                 answer = answer.split("CITATION:")[0].strip()
-            
+
             sources[num] = answer
         except (ValueError, IndexError) as e:
             logger.warning(f"Failed to parse source from match: {e}")
             continue
-    
+
     logger.info(f"Successfully parsed {len(sources)} sources from citation section")
     return sources
 
@@ -203,7 +203,7 @@ async def verify_citations(fact_citation_pairs: List[Tuple[str, List[int]]],
             continue
 
     logger.info(f"Created {len(tasks)} LLM evaluation tasks")
-    
+
     if tasks:
         scores = await asyncio.gather(*tasks)
         for i, score in enumerate(scores):
@@ -241,21 +241,22 @@ class CitationQualityEvaluator:
         if item.output_obj == "":
             # incase workflow is skipped (using --skip_workflow), input_obj contains the data source, as it contains the ground truth
             item.output_obj = item.input_obj
-        
+
         try:
             data_source = AIResearcherEvalOutput.model_validate_json(item.output_obj)
         except Exception as e:
             logger.error(f"Failed to parse data source for item {item.id}: {str(e)}")
-            return EvalOutputItem(id=item.id,
-                                  score=0.0,
-                                  reasoning={
-                                      "error": f"Failed to parse data source: {str(e)}",
-                                      "debug_info": {
-                                          "output_obj_type": type(item.output_obj).__name__,
-                                          "output_obj_length": len(item.output_obj) if isinstance(item.output_obj, str) else "N/A",
-                                      }
-                                  })
-        
+            return EvalOutputItem(
+                id=item.id,
+                score=0.0,
+                reasoning={
+                    "error": f"Failed to parse data source: {str(e)}",
+                    "debug_info": {
+                        "output_obj_type": type(item.output_obj).__name__,
+                        "output_obj_length": len(item.output_obj) if isinstance(item.output_obj, str) else "N/A",
+                    }
+                })
+
         logger.info(f"Processing item {data_source.id}")
 
         fact_citation_pairs = data_source.fact_citation_pairs
@@ -270,20 +271,26 @@ class CitationQualityEvaluator:
                 error_msg += f" fact_citation_pairs is {type(fact_citation_pairs)}, expected list."
             elif len(fact_citation_pairs) == 0:
                 error_msg += " fact_citation_pairs is empty list."
-            
+
             logger.warning(error_msg)
-            return EvalOutputItem(id=item.id,
-                                  score=0.0,
-                                  reasoning={
-                                      "error": error_msg,
-                                      "debug_info": {
-                                          "has_fact_citation_pairs": data_source.fact_citation_pairs is not None,
-                                          "fact_citation_pairs_type": type(data_source.fact_citation_pairs).__name__,
-                                          "fact_citation_pairs_length": len(data_source.fact_citation_pairs) if data_source.fact_citation_pairs else 0,
-                                          "has_citation_section": data_source.citation_section is not None,
-                                          "keys_in_item": list(data_source.model_dump().keys()),
-                                      }
-                                  })
+            return EvalOutputItem(
+                id=item.id,
+                score=0.0,
+                reasoning={
+                    "error": error_msg,
+                    "debug_info": {
+                        "has_fact_citation_pairs":
+                            data_source.fact_citation_pairs is not None,
+                        "fact_citation_pairs_type":
+                            type(data_source.fact_citation_pairs).__name__,
+                        "fact_citation_pairs_length":
+                            len(data_source.fact_citation_pairs) if data_source.fact_citation_pairs else 0,
+                        "has_citation_section":
+                            data_source.citation_section is not None,
+                        "keys_in_item":
+                            list(data_source.model_dump().keys()),
+                    }
+                })
 
         if not citation_section:
             logger.warning("No citation_section found in the input.")
@@ -312,7 +319,7 @@ class CitationQualityEvaluator:
 
         # Parse citation sources from the citation section
         parsed_sources = parse_sources(citation_section)
-        
+
         if not parsed_sources:
             logger.warning(f"No sources could be parsed from citation section for item {item.id}")
             return EvalOutputItem(id=item.id,
@@ -320,9 +327,13 @@ class CitationQualityEvaluator:
                                   reasoning={
                                       "error": "No sources could be parsed from citation section.",
                                       "debug_info": {
-                                          "citation_section_length": len(citation_section),
-                                          "citation_section_preview": citation_section[:200] + "..." if len(citation_section) > 200 else citation_section,
-                                          "total_facts": len(fact_citation_pairs),
+                                          "citation_section_length":
+                                              len(citation_section),
+                                          "citation_section_preview":
+                                              citation_section[:200] +
+                                              "..." if len(citation_section) > 200 else citation_section,
+                                          "total_facts":
+                                              len(fact_citation_pairs),
                                       }
                                   })
 
@@ -353,7 +364,9 @@ class CitationQualityEvaluator:
         facts_with_citations = sum(1 for fact, citations in fact_citation_pairs if citations and len(citations) > 0)
         parsed_sources_count = len(parsed_sources)
 
-        logger.info(f"Item {item.id} results: total_facts={total_facts}, facts_with_citations={facts_with_citations}, parsed_sources={parsed_sources_count}")
+        logger.info(
+            f"Item {item.id} results: total_facts={total_facts}, facts_with_citations={facts_with_citations}, parsed_sources={parsed_sources_count}"
+        )
 
         reasoning = {
             "precision": precision,

@@ -32,6 +32,7 @@ from aiq_aira.eval.schema import AIResearcherEvalOutput
 from aiq_aira.schema import GenerateQueryStateInput
 from aiq_aira.schema import GenerateSummaryStateInput
 
+from .extraction_utils import batch_pair_facts_with_citations
 from .extraction_utils import extract_groundness_facts
 from .extraction_utils import extract_rag_contexts
 from .extraction_utils import extract_reflections_and_queries
@@ -39,7 +40,6 @@ from .extraction_utils import extract_relevancy_judgements
 from .extraction_utils import extract_web_answers
 from .extraction_utils import generate_context_relevance_questions
 from .extraction_utils import generate_coverage_facts_claims
-from .extraction_utils import batch_pair_facts_with_citations
 from .extraction_utils import split_report_and_citations
 
 logger = logging.getLogger(__name__)

@@ -20,12 +20,16 @@ import logging
 import os
 import re
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 import requests
 from joblib import Parallel
 from joblib import delayed
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -419,10 +423,10 @@ def split_report_and_citations(final_report: str) -> Tuple[str, str]:
     # Try multiple citation prefixes, including AIRA format with dashes
     citation_prefixes = [
         "## Sources---",  # AIRA format with dashes
-        "## Sources",     # Standard format
-        "### Sources---", # Alternative with dashes
-        "### Sources",    # Alternative format
-        "## Citations", 
+        "## Sources",  # Standard format
+        "### Sources---",  # Alternative with dashes
+        "### Sources",  # Alternative format
+        "## Citations",
         "### Citations"
     ]
 
@@ -615,7 +619,7 @@ async def pair_facts_with_aira_sources(facts: List[str],
 
             # Validate source numbers exist
             valid_sources = [s for s in matched_sources if s in sources]
-            
+
             if matched_sources != valid_sources:
                 invalid_sources = [s for s in matched_sources if s not in sources]
                 if verbose:
@@ -643,7 +647,9 @@ async def pair_facts_with_aira_sources(facts: List[str],
         logger.info(f"  - Total facts processed: {len(fact_source_pairs)}")
         logger.info(f"  - Successful matches: {successful_matches}")
         logger.info(f"  - Failed matches: {failed_matches}")
-        logger.info(f"  - Facts with sources: {successful_matches}/{len(fact_source_pairs)} ({100.0 * successful_matches / len(fact_source_pairs):.1f}%)")
+        logger.info(
+            f"  - Facts with sources: {successful_matches}/{len(fact_source_pairs)} ({100.0 * successful_matches / len(fact_source_pairs):.1f}%)"
+        )
 
     return fact_source_pairs
 
@@ -846,7 +852,7 @@ async def batch_pair_facts_with_citations(final_report: str,
 
         # Try to extract citation section and use AIRA format
         summary_section, citation_section = split_report_and_citations(final_report)
-        
+
         if verbose:
             logger.info(f"Split report: summary_length={len(summary_section)}, citation_length={len(citation_section)}")
 
@@ -854,13 +860,14 @@ async def batch_pair_facts_with_citations(final_report: str,
             if verbose:
                 logger.info("Found citation section, using AIRA source matching")
                 logger.info(f"Citation section preview: {citation_section[:200]}...")
-            
+
             # Use AIRA source matching
             try:
                 result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
                 if verbose:
                     facts_with_citations = sum(1 for _, citations in result if citations)
-                    logger.info(f"AIRA source matching completed: {facts_with_citations}/{len(result)} facts have citations")
+                    logger.info(
+                        f"AIRA source matching completed: {facts_with_citations}/{len(result)} facts have citations")
                 return result
             except Exception as e:
                 if verbose:
@@ -885,11 +892,8 @@ async def batch_pair_facts_with_citations(final_report: str,
     try:
         # Create JSON representation of facts for the prompt
         facts_json = json.dumps(facts, indent=2)
-        
-        prompt = BATCH_FACT_CITATION_MAPPING_PROMPT.format(
-            final_report=final_report, 
-            facts_json=facts_json
-        )
+
+        prompt = BATCH_FACT_CITATION_MAPPING_PROMPT.format(final_report=final_report, facts_json=facts_json)
 
         if verbose:
             logger.info("Sending batch citation pairing request to LLM...")
@@ -910,20 +914,22 @@ async def batch_pair_facts_with_citations(final_report: str,
                 logger.warning(f"Unexpected response format: {type(raw_result)}")
                 logger.warning(f"Raw result: {raw_result}")
                 logger.warning("Falling back to AIRA source matching...")
-            
+
             # Fallback to AIRA source matching when inline citation processing fails
             summary_section, citation_section = split_report_and_citations(final_report)
-            
+
             if citation_section:
                 if verbose:
                     logger.info("Found citation section, using AIRA source matching as fallback")
                     logger.info(f"Citation section preview: {citation_section[:200]}...")
-                
+
                 try:
                     result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
                     if verbose:
                         facts_with_citations = sum(1 for _, citations in result if citations)
-                        logger.info(f"AIRA source matching fallback completed: {facts_with_citations}/{len(result)} facts have citations")
+                        logger.info(
+                            f"AIRA source matching fallback completed: {facts_with_citations}/{len(result)} facts have citations"
+                        )
                     return result
                 except Exception as e:
                     if verbose:
@@ -933,14 +939,15 @@ async def batch_pair_facts_with_citations(final_report: str,
                     return [(fact, []) for fact in facts]
             else:
                 if verbose:
-                    logger.warning("No citation section found for fallback. All facts will be marked as having no citations.")
+                    logger.warning(
+                        "No citation section found for fallback. All facts will be marked as having no citations.")
                 return [(fact, []) for fact in facts]
 
         # Convert back to list of tuples, preserving order
         paired_results = []
         for fact in facts:
             citations = fact_citations_dict.get(fact, [])
-            
+
             # Ensure citations are integers
             citations = [int(c) for c in citations if isinstance(c, (int, str)) and str(c).isdigit()]
 
@@ -956,7 +963,7 @@ async def batch_pair_facts_with_citations(final_report: str,
 
         # Check if citation pairing was successful
         facts_with_citations = sum(1 for _, citations in paired_results if citations)
-        
+
         if verbose:
             logger.info("Batch fact-citation pairing complete:")
             logger.info("  - Total facts processed: %d", len(paired_results))
@@ -964,30 +971,34 @@ async def batch_pair_facts_with_citations(final_report: str,
                         facts_with_citations,
                         100.0 * facts_with_citations / len(paired_results) if paired_results else 0)
             logger.info("  - Facts without citations: %d", len(paired_results) - facts_with_citations)
-        
+
         # If no facts have citations despite finding inline citations, try AIRA fallback
         if facts_with_citations == 0 and citation_matches:
             if verbose:
-                logger.warning("No facts were successfully paired with inline citations. Trying AIRA source matching as fallback...")
-            
+                logger.warning(
+                    "No facts were successfully paired with inline citations. Trying AIRA source matching as fallback..."
+                )
+
             summary_section, citation_section = split_report_and_citations(final_report)
-            
+
             if citation_section:
                 if verbose:
                     logger.info("Found citation section, using AIRA source matching as secondary fallback")
                     logger.info(f"Citation section preview: {citation_section[:200]}...")
-                
+
                 try:
                     result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
                     if verbose:
                         facts_with_citations_fallback = sum(1 for _, citations in result if citations)
-                        logger.info(f"AIRA source matching secondary fallback completed: {facts_with_citations_fallback}/{len(result)} facts have citations")
+                        logger.info(
+                            f"AIRA source matching secondary fallback completed: {facts_with_citations_fallback}/{len(result)} facts have citations"
+                        )
                     return result
                 except Exception as e:
                     if verbose:
                         logger.error(f"AIRA source matching secondary fallback failed: {str(e)}")
                         logger.exception("Full exception details:")
-        
+
         if not verbose:
             logger.info(f"Batch paired {len(paired_results)} facts with citations")
 
@@ -997,29 +1008,31 @@ async def batch_pair_facts_with_citations(final_report: str,
         logger.error(f"Batch fact-citation pairing failed: {str(e)}")
         if verbose:
             logger.exception("Full exception details:")
-        
+
         # Try AIRA source matching as fallback before individual processing
         if verbose:
             logger.info("Trying AIRA source matching as exception fallback...")
-        
+
         summary_section, citation_section = split_report_and_citations(final_report)
-        
+
         if citation_section:
             if verbose:
                 logger.info("Found citation section, using AIRA source matching as exception fallback")
                 logger.info(f"Citation section preview: {citation_section[:200]}...")
-            
+
             try:
                 result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
                 if verbose:
                     facts_with_citations = sum(1 for _, citations in result if citations)
-                    logger.info(f"AIRA source matching exception fallback completed: {facts_with_citations}/{len(result)} facts have citations")
+                    logger.info(
+                        f"AIRA source matching exception fallback completed: {facts_with_citations}/{len(result)} facts have citations"
+                    )
                 return result
             except Exception as e2:
                 if verbose:
                     logger.error(f"AIRA source matching exception fallback failed: {str(e2)}")
                     logger.exception("Full exception details:")
-        
+
         # Final fallback to individual processing
         if verbose:
             logger.info("Falling back to individual fact processing...")
@@ -1288,23 +1301,23 @@ def resolve_llm_to_model_name(builder, llm_ref: str) -> str:
     """
     import logging
     logger = logging.getLogger(__name__)
-    
+
     try:
         # Check if this is already a model name (contains "/" or starts with known prefixes)
         if "/" in llm_ref or llm_ref.startswith(("gpt-", "nvdev/", "meta/", "mistralai/")):
             return llm_ref
-        
+
         # Try to get the LLM configuration from the builder
         if hasattr(builder, 'config') and hasattr(builder.config, 'llms'):
             llm_config = builder.config.llms.get(llm_ref)
             if llm_config and hasattr(llm_config, 'model_name'):
                 logger.info(f"Resolved LLM reference '{llm_ref}' to model name '{llm_config.model_name}'")
                 return llm_config.model_name
-        
+
         # If we can't resolve it, log a warning and return as-is
         logger.warning(f"Could not resolve LLM reference '{llm_ref}' to model name, using as-is")
         return llm_ref
-        
+
     except Exception as e:
         logger.error(f"Error resolving LLM reference '{llm_ref}': {str(e)}")
         return llm_ref
