@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import json
-import logging
 import typing
 from typing import AsyncGenerator
 
@@ -37,8 +36,6 @@ from aiq_aira.schema import AIRAState
 from aiq_aira.schema import ConfigSchema
 from aiq_aira.schema import GenerateSummaryStateInput
 from aiq_aira.schema import GenerateSummaryStateOutput
-
-logger = logging.getLogger(__name__)
 
 
 def serialize_pydantic(obj):

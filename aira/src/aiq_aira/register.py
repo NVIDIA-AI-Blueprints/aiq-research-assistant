@@ -28,6 +28,7 @@ from aiq.data_models.api_server import AIQChatResponseChunk
 from aiq.data_models.component_ref import FunctionRef
 from aiq.data_models.component_ref import LLMRef
 from aiq.data_models.function import FunctionBaseConfig
+from aiq.plugins.langchain import register
 from pydantic import BaseModel
 
 # Import evaluation components
