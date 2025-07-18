@@ -1,36 +1,19 @@
-<!--
-SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-SPDX-License-Identifier: Apache-2.0
+# Get Started with NVIDIA AI Workbench 
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
--->
-
-# Get Started with NVIDIA AI Workbench
-
-The AI-Q NVIDIA Research Assistant Blueprint allows you to create a deep research assistant that can run on-premise, allowing anyone to create detailed research reports using on-premise data and web search.
+The AI-Q NVIDIA Research Assistant Blueprint allows you to create a deep research assistant that can run on-premise, allowing anyone to create detailed research reports using on-premise data and web search. 
 
 > **Note**
-> This Blueprint runs in [NVIDIA AI Workbench](https://docs.nvidia.com/ai-workbench/user-guide/latest/overview/introduction.html). It is a free, lightweight developer platform that you can run on your own systems to get up and running with complex AI applications and workloads quickly.
+> This Blueprint runs in [NVIDIA AI Workbench](https://docs.nvidia.com/ai-workbench/user-guide/latest/overview/introduction.html). It is a free, lightweight developer platform that you can run on your own systems to get up and running with complex AI applications and workloads quickly. 
 
 > You may want to [**fork**](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo#forking-a-repository) this repository into your own account before proceeding. Otherwise you won't be able to fully push any changes you make because this NVIDIA-owned repository is **read-only**.
 
-*Navigating the README*: [Project Overview](#project-overview) | [Get Started](#start-using-the-deep-research-agent-with-nvidia-ai-workbench) | [Customize](#customization) | [License](#license)
+*Navigating the README*: [Project Overview](#project-overview) | [Get Started](#get-started) | [Customize](#customization) | [License](#license)
 
 *Other Resources*: [:arrow_down: Download AI Workbench](https://www.nvidia.com/en-us/deep-learning-ai/solutions/data-science/workbench/) | [:book: User Guide](https://docs.nvidia.com/ai-workbench/) |[:open_file_folder: Other Projects](https://docs.nvidia.com/ai-workbench/user-guide/latest/quickstart/example-projects.html) | [:rotating_light: Developer Forum](https://forums.developer.nvidia.com/t/support-workbench-example-blueprint-ai-q-research-assistant/336538)
 
 ## Project Overview
 
-The main research agent is written in LangGraph and managed using NVIDIA Agent Intelligence Toolkit (AIQ). The research agent provides a unique deep research capability with these features:
+The main research agent is written in LangGraph and managed using NVIDIA NeMo Agent Toolkit (AIQ). The research agent provides a unique deep research capability with these features:
 
 - **Deep Research**: Given a report topic and desired report structure, an agent will do the following:
   1. Create a report plan
@@ -48,13 +31,13 @@ The main research agent is written in LangGraph and managed using NVIDIA Agent I
 
 ## Start Using the Deep Research Agent With NVIDIA AI Workbench
 
-Ensure you meet the prerequisites for this Blueprint ([details](../../README.md)).
+Ensure you meet the prerequisites for this Blueprint ([details](../../README.md)). 
 
-Before you begin, run the  [RAG Blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). This deep researcher will wrap around your RAG pipeline.
+Before you begin, run the  [RAG Blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). This deep researcher will wrap around your RAG pipeline. 
 
 1. Open NVIDIA AI Workbench. Select a **Location** to work in.
 
-1. **Clone** the project using the repository URL: https://github.com/NVIDIA-AI-Blueprints/aiq-research-assistant.
+1. **Clone** the project using the repository URL: https://github.com/NVIDIA-AI-Blueprints/aiq-research-assistant. 
 
 1. On the **Project Dashboard**, resolve the yellow unconfigured secrets warning:
 
@@ -83,13 +66,13 @@ There are many ways you can customize the blueprint, including the following:
 * Swap models names or endpoints
 * Adjust default report organization prompts
 
-To customize this blueprint, adjust the config files under ``configs/`` in a code editor and save your changes. Note that ``config.yml`` refers to local deployment configurations and ``hosted-config.yml`` refers to deployments using NVIDIA-hosted model endpoints.
+To customize this blueprint, adjust the config files under ``aira/configs/`` in a code editor and save your changes. Note that ``config.yml`` refers to local deployment configurations and ``hosted-config.yml`` refers to deployments using NVIDIA-hosted model endpoints. 
 
-When restarting the compose, any configuration changes you make will take effect.
+When restarting the compose, any configuration changes you make will take effect. 
 
 ## License
 
-This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use, found in [License-3rd-party.txt](../../LICENSE-3rd-party.txt).
+This project will download and install additional third-party open source software projects. Review the license terms of these open source projects before use, found in [License-3rd-party.txt](../../LICENSE-3rd-party.txt). 
 
 GOVERNING TERMS: The software and materials are governed by [NVIDIA Software License Agreement](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-software-license-agreement/) and [Product Specific Terms for AI Product](https://www.nvidia.com/en-us/agreements/enterprise-software/product-specific-terms-for-ai-products/); except as follows: (a) the models, other than the Llama-3.3-Nemotron-Super-49B-v1 model, are governed by the [NVIDIA Community Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-community-models-license/); (b) the Llama-3.3-Nemotron-Super-49B-v1 model is governed by the [NVIDIA Open Model License Agreement](https://developer.download.nvidia.com/licenses/nvidia-open-model-license-agreement-june-2024.pdf), and (c) the NeMo Retriever extraction is released under the [Apache-2.0 license](https://github.com/NVIDIA/nv-ingest/blob/main/LICENSE).
 
