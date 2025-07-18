@@ -82,7 +82,7 @@ cd ..
 ### 2. Set Environment Variables
 
 ```bash
-export NVIDIA_API_KEY="your_nvidia_api_key"
+export NVIDIA_API_KEY="your_nvidia_api_key" # Preferably one from nvidia build
 export TAVILY_API_KEY="your_tavily_api_key"  # Optional for web search
 export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instructions below if you want to set up tracing to w&b weave
 ```

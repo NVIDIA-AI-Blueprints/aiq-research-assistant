@@ -152,8 +152,8 @@ workflow:
   generator:
     _type: full
     verbose: true
-    fact_extraction_llm_name: eval_llm  # Reference to configured LLM
-    citation_pairing_llm_name: ragas_llm  # Reference to configured LLM (mistral is good for this)
+    fact_extraction_llm: meta/llama-3.1-70b-instruct  # Use actual NIM model name
+    citation_pairing_llm: mistralai/mixtral-8x22b-instruct-v0.1  # Use actual NIM model name
 
 
 # Evaluation configuration
@@ -165,7 +165,7 @@ eval:
 
     dataset:
       _type: json
-      file_path: data/eval_dataset_processed.json
+      file_path: data/eval_dataset.json
       id_key: id
       structure:
         disable: true
