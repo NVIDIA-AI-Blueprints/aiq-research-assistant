@@ -27,11 +27,11 @@ from aiq.data_models.function import FunctionBaseConfig
 
 from aiq_aira.artifact_utils import artifact_chat_handler
 from aiq_aira.artifact_utils import check_relevant
-from aiq_aira.search_utils import deduplicate_and_format_sources
-from aiq_aira.search_utils import process_single_query
 from aiq_aira.schema import ArtifactQAInput
 from aiq_aira.schema import ArtifactQAOutput
 from aiq_aira.schema import GeneratedQuery
+from aiq_aira.search_utils import deduplicate_and_format_sources
+from aiq_aira.search_utils import process_single_query
 
 logger = logging.getLogger(__name__)
 
