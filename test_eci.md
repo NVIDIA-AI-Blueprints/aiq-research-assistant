@@ -17,14 +17,14 @@ limitations under the License.
 
 # Testing with ECI 
 
-1. Checkout git repo 
+1. Checkout git repo
 
 ```
 git clone ssh://git@gitlab-master.nvidia.com:12051/chat-labs/OpenSource/agentiq-blueprint/aiq-bp-internal.git
 git fetch origin eci-search && git checkout eci-search
 ```
 
-2. Create a virtualenv 
+2. Create a virtualenv
 
 ```
 uv venv --python 3.12
@@ -40,7 +40,7 @@ AIQ_STARFLEET_CLIENT_ID="get-this-from-lopp-or-demoret"
 4. Create starfleet token
 
 ```
-uv sync --all-groups --all-extras
+uv sync --all-groups --all-extras --prerelease=allow
 uv run --env-file test.env aira auth --prod starfleet
 ```
 

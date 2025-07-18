@@ -24,6 +24,6 @@ The following sections are covered:
     - [Get started with AI-Q NVIDIA Research Assistant Blueprint Using Docker Compose](./get-started/get-started-docker-compose.md)
 - [Local Development Guide](./local-development.md)
 - [Phoenix Tracing Configuration for Docker Deployment](./phoenix-tracing.md)
-- [Evaluation](./evaluation.md)
+- [Evaluation](./evaluate.md)
 - [Frequently Asked Questions](./FAQ.md)
 - [Troubleshooting](./troubleshooting.md)

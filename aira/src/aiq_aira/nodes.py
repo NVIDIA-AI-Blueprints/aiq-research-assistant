@@ -262,7 +262,7 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             llm=llm,
             eci_search_tool=eci_search_tool,
             search_web=search_web,
-            search_eci=search_eci
+            eci_search_bool=search_eci
         )
 
         search_str = deduplicate_and_format_sources([rag_citation], [rag_answer], [gen_query])
