@@ -29,7 +29,9 @@ The main research agent is written in LangGraph and managed using NVIDIA NeMo Ag
 
 [Read More](../../README.md)
 
-## Start Using the Deep Research Agent With NVIDIA AI Workbench
+## Get Started
+
+### Start Using the Deep Research Agent With NVIDIA AI Workbench
 
 Ensure you meet the prerequisites for this Blueprint ([details](../../README.md)). 
 
