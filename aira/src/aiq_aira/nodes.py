@@ -63,7 +63,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     report_organization = config["configurable"].get("report_organization")
     topic = config["configurable"].get("topic")
 
-    system_prompt = "you are a helpful assistant"
+    system_prompt = ""
     system_prompt = update_system_prompt(system_prompt, llm)
 
     prompt = ChatPromptTemplate.from_messages([
