@@ -39,7 +39,7 @@ from .extraction_utils import extract_relevancy_judgements
 from .extraction_utils import extract_web_answers
 from .extraction_utils import generate_context_relevance_questions
 from .extraction_utils import generate_coverage_facts_claims
-from .extraction_utils import pair_facts_with_citations
+from .extraction_utils import batch_pair_facts_with_citations
 from .extraction_utils import split_report_and_citations
 
 logger = logging.getLogger(__name__)
@@ -281,7 +281,7 @@ class AIRAFullGenerator(AIRAGeneratorBase):
             logger.info(f"Finalized summary length: {len(finalized_summary)} characters")
             logger.info(f"Citation section length: {len(citation_section)} characters")
 
-        fact_citation_pairs = await pair_facts_with_citations(
+        fact_citation_pairs = await batch_pair_facts_with_citations(
             complete_report,  # Use complete report instead of just finalized_summary
             groundness_facts_claims,
             llm=self.citation_pairing_llm,

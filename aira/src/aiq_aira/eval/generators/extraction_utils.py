@@ -14,21 +14,18 @@
 # limitations under the License.
 """Extraction utilities for AIRA evaluation workflow."""
 
+import asyncio
 import json
 import logging
 import os
 import re
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+import time
+from typing import Any, Dict, List, Tuple
 
 import requests
 from joblib import Parallel
 from joblib import delayed
-from pydantic import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +146,11 @@ class FactsResponse(BaseModel):
 class CitationsResponse(BaseModel):
     """Pydantic model for structured citation extraction"""
     citations: List[int] = Field(default_factory=list, description="Citation numbers; empty list means no citations.")
+
+
+class BatchCitationsResponse(BaseModel):
+    """Pydantic model for batch citation extraction"""
+    fact_citations: Dict[str, List[int]] = Field(description="Mapping of facts to their citation numbers")
 
 
 def _get_llm_client():
@@ -414,8 +416,15 @@ def extract_reflections_and_queries(intermediate_steps: List[Dict]) -> Tuple[Lis
 
 def split_report_and_citations(final_report: str) -> Tuple[str, str]:
     """Split final report into summary and citation sections."""
-    # Try multiple citation prefixes
-    citation_prefixes = ["## Sources", "### Sources", "## Citations", "### Citations"]
+    # Try multiple citation prefixes, including AIRA format with dashes
+    citation_prefixes = [
+        "## Sources---",  # AIRA format with dashes
+        "## Sources",     # Standard format
+        "### Sources---", # Alternative with dashes
+        "### Sources",    # Alternative format
+        "## Citations", 
+        "### Citations"
+    ]
 
     for prefix in citation_prefixes:
         if prefix in final_report:
@@ -532,7 +541,13 @@ async def pair_facts_with_aira_sources(facts: List[str],
         List of tuples containing (fact, source_numbers)
     """
     if not facts:
+        if verbose:
+            logger.info("No facts provided for AIRA source matching")
         return []
+
+    if verbose:
+        logger.info(f"Starting AIRA source matching for {len(facts)} facts")
+        logger.info(f"Citation section length: {len(citation_section)} characters")
 
     # Parse sources from citation section
     sources = parse_aira_sources(citation_section)
@@ -540,15 +555,23 @@ async def pair_facts_with_aira_sources(facts: List[str],
     if not sources:
         if verbose:
             logger.warning("No sources found in citation section")
+            logger.warning(f"Citation section preview: {citation_section[:500]}...")
         return [(fact, []) for fact in facts]
 
     if verbose:
-        logger.info(f"Found {len(sources)} sources in citation section")
+        logger.info(f"Found {len(sources)} sources in citation section: {list(sources.keys())}")
+        for source_num, content in sources.items():
+            logger.debug(f"Source {source_num}: {content[:100]}...")
 
     # Use LLM to match facts with sources
     fact_source_pairs = []
+    successful_matches = 0
+    failed_matches = 0
 
-    for fact in facts:
+    for i, fact in enumerate(facts):
+        if verbose and i > 0 and i % 10 == 0:
+            logger.info(f"Progress: {i}/{len(facts)} facts processed")
+
         # Create prompt to match fact with relevant sources
         sources_text = "\n\n".join([f"**Source {num}:**\n{content}" for num, content in sources.items()])
 
@@ -587,19 +610,40 @@ async def pair_facts_with_aira_sources(facts: List[str],
                 matched_sources = raw_result
             else:
                 matched_sources = []
+                if verbose:
+                    logger.warning(f"Unexpected LLM response format for fact {i+1}: {type(raw_result)}")
 
             # Validate source numbers exist
             valid_sources = [s for s in matched_sources if s in sources]
+            
+            if matched_sources != valid_sources:
+                invalid_sources = [s for s in matched_sources if s not in sources]
+                if verbose:
+                    logger.warning(f"Fact {i+1}: Invalid source numbers {invalid_sources} ignored")
 
-            if verbose and matched_sources:
-                logger.info(f"Fact matched to sources {valid_sources}: {fact[:50]}...")
+            if valid_sources:
+                successful_matches += 1
+                if verbose:
+                    logger.debug(f"Fact {i+1} matched to sources {valid_sources}: {fact[:50]}...")
+            else:
+                if verbose:
+                    logger.debug(f"Fact {i+1} matched to no sources: {fact[:50]}...")
 
             fact_source_pairs.append((fact, valid_sources))
 
         except Exception as e:
+            failed_matches += 1
             if verbose:
-                logger.error(f"Error matching fact to sources: {e}")
+                logger.error(f"Error matching fact {i+1} to sources: {e}")
+                logger.debug(f"Failed fact: {fact[:100]}...")
             fact_source_pairs.append((fact, []))
+
+    if verbose:
+        logger.info(f"AIRA source matching completed:")
+        logger.info(f"  - Total facts processed: {len(fact_source_pairs)}")
+        logger.info(f"  - Successful matches: {successful_matches}")
+        logger.info(f"  - Failed matches: {failed_matches}")
+        logger.info(f"  - Facts with sources: {successful_matches}/{len(fact_source_pairs)} ({100.0 * successful_matches / len(fact_source_pairs):.1f}%)")
 
     return fact_source_pairs
 
@@ -628,7 +672,8 @@ async def pair_facts_with_citations(final_report: str,
         logger.info("  - Number of facts to process: %d", len(facts))
 
     # Check if the final_report actually contains inline citations
-    citation_pattern = re.compile(r'\([0-9]+\)|\[[0-9]+\]')
+    # Use a more specific pattern that excludes 4-digit years
+    citation_pattern = re.compile(r'\(([1-9][0-9]?)\)|\[([1-9][0-9]?)\]')  # Matches (1) to (99) but not (2023)
     citation_matches = citation_pattern.findall(final_report)
 
     if not citation_matches:
@@ -716,6 +761,269 @@ async def pair_facts_with_citations(final_report: str,
         logger.info(f"Paired {len(paired_results)} facts with citations")
 
     return paired_results
+
+
+# Add the batch citation pairing prompt and function before the existing pair_facts_with_citations function
+
+BATCH_FACT_CITATION_MAPPING_PROMPT = """You will be analyzing a research report to identify which citation numbers are associated with each fact or claim.
+
+<report>
+{final_report}
+</report>
+
+<facts>
+{facts_json}
+</facts>
+
+Your task is to process ALL facts at once and return which inline numeric citations appear directly with each fact in the report.
+
+## Citation Detection Rules
+
+1. **Look for inline citations** formatted as integers in parentheses or square brackets:
+   - `(3)` or `[3]` → citation number 3
+   - `(2, 7, 11)` or `[2, 7, 11]` → citation numbers 2, 7, and 11
+   - `(1, 5)` or `[1, 5]` → citation numbers 1 and 5
+
+2. **Only include citations that directly appear with the fact**:
+   - The citation must be in the same sentence as the fact OR immediately at the end of the sentence containing the fact
+   - Do NOT include citations from other sentences, even if they seem topically related
+   - Do NOT guess or infer citations based on topic similarity
+
+3. **Handle edge cases**:
+   - If no citation appears with the fact, return an empty list for that fact
+   - If citation formatting is malformed or missing numbers, treat as no citation
+   - Only count properly formatted numeric citations in parentheses or square brackets
+
+## Output Format
+
+Return a JSON object where each key is the fact text and the value is a list of citation numbers in ascending order. Example:
+
+```json
+{{
+  "Fact 1 text here": [1, 3],
+  "Fact 2 text here": [2],
+  "Fact 3 text here": []
+}}
+```
+
+Process all facts and return the complete mapping."""
+
+
+async def batch_pair_facts_with_citations(final_report: str,
+                                          facts: List[str],
+                                          llm: str,
+                                          verbose: bool = False) -> List[Tuple[str, List[int]]]:
+    """
+    Batch pair all facts with their citations using a single LLM call.
+    
+    Args:
+        final_report: The generated research report text
+        facts: List of facts to find citations for
+        llm: The LLM instance to use
+        verbose: Whether to enable verbose logging
+        
+    Returns:
+        List of tuples containing (fact, citations)
+    """
+    if not facts:
+        if verbose:
+            logger.info("No facts provided for citation pairing")
+        return []
+
+    if verbose:
+        logger.info("Starting batch fact-citation pairing")
+        logger.info("  - Number of facts to process: %d", len(facts))
+        logger.info("  - Final report length: %d characters", len(final_report))
+
+    # Check if the final_report actually contains inline citations
+    citation_pattern = re.compile(r'\(([1-9][0-9]?)\)|\[([1-9][0-9]?)\]')
+    citation_matches = citation_pattern.findall(final_report)
+
+    if not citation_matches:
+        if verbose:
+            logger.warning("No inline citations found in final_report!")
+            logger.warning("Attempting to use AIRA source format instead...")
+
+        # Try to extract citation section and use AIRA format
+        summary_section, citation_section = split_report_and_citations(final_report)
+        
+        if verbose:
+            logger.info(f"Split report: summary_length={len(summary_section)}, citation_length={len(citation_section)}")
+
+        if citation_section:
+            if verbose:
+                logger.info("Found citation section, using AIRA source matching")
+                logger.info(f"Citation section preview: {citation_section[:200]}...")
+            
+            # Use AIRA source matching
+            try:
+                result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
+                if verbose:
+                    facts_with_citations = sum(1 for _, citations in result if citations)
+                    logger.info(f"AIRA source matching completed: {facts_with_citations}/{len(result)} facts have citations")
+                return result
+            except Exception as e:
+                if verbose:
+                    logger.error(f"AIRA source matching failed: {str(e)}")
+                    logger.exception("Full exception details:")
+                # Fall back to empty citations
+                return [(fact, []) for fact in facts]
+        else:
+            if verbose:
+                logger.warning("No citation section found either. All facts will be marked as having no citations.")
+            return [(fact, []) for fact in facts]
+
+    if verbose:
+        logger.info(f"Found {len(citation_matches)} inline citations in report")
+        unique_citations = set()
+        for match in citation_matches:
+            for group in match:
+                if group:
+                    unique_citations.add(int(group))
+        logger.info(f"Unique citation numbers: {sorted(unique_citations)}")
+
+    try:
+        # Create JSON representation of facts for the prompt
+        facts_json = json.dumps(facts, indent=2)
+        
+        prompt = BATCH_FACT_CITATION_MAPPING_PROMPT.format(
+            final_report=final_report, 
+            facts_json=facts_json
+        )
+
+        if verbose:
+            logger.info("Sending batch citation pairing request to LLM...")
+
+        raw_result = await _get_llm_response_structured(
+            prompt,
+            response_format=BatchCitationsResponse,
+            model=llm,
+            temperature=0.0,
+            max_tokens=8192,  # Increased for batch processing
+        )
+
+        # Handle response format
+        if isinstance(raw_result, dict) and "fact_citations" in raw_result:
+            fact_citations_dict = raw_result["fact_citations"]
+        else:
+            if verbose:
+                logger.warning(f"Unexpected response format: {type(raw_result)}")
+                logger.warning(f"Raw result: {raw_result}")
+                logger.warning("Falling back to AIRA source matching...")
+            
+            # Fallback to AIRA source matching when inline citation processing fails
+            summary_section, citation_section = split_report_and_citations(final_report)
+            
+            if citation_section:
+                if verbose:
+                    logger.info("Found citation section, using AIRA source matching as fallback")
+                    logger.info(f"Citation section preview: {citation_section[:200]}...")
+                
+                try:
+                    result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
+                    if verbose:
+                        facts_with_citations = sum(1 for _, citations in result if citations)
+                        logger.info(f"AIRA source matching fallback completed: {facts_with_citations}/{len(result)} facts have citations")
+                    return result
+                except Exception as e:
+                    if verbose:
+                        logger.error(f"AIRA source matching fallback failed: {str(e)}")
+                        logger.exception("Full exception details:")
+                    # Fall back to empty citations
+                    return [(fact, []) for fact in facts]
+            else:
+                if verbose:
+                    logger.warning("No citation section found for fallback. All facts will be marked as having no citations.")
+                return [(fact, []) for fact in facts]
+
+        # Convert back to list of tuples, preserving order
+        paired_results = []
+        for fact in facts:
+            citations = fact_citations_dict.get(fact, [])
+            
+            # Ensure citations are integers
+            citations = [int(c) for c in citations if isinstance(c, (int, str)) and str(c).isdigit()]
+
+            # Validate that citations actually exist in the report
+            valid_citations = []
+            for citation in citations:
+                if f"({citation})" in final_report or f"[{citation}]" in final_report:
+                    valid_citations.append(citation)
+                elif verbose:
+                    logger.warning(f"Citation {citation} not found in report for fact: {fact[:50]}...")
+
+            paired_results.append((fact, valid_citations))
+
+        # Check if citation pairing was successful
+        facts_with_citations = sum(1 for _, citations in paired_results if citations)
+        
+        if verbose:
+            logger.info("Batch fact-citation pairing complete:")
+            logger.info("  - Total facts processed: %d", len(paired_results))
+            logger.info("  - Facts with citations: %d (%.1f%%)",
+                        facts_with_citations,
+                        100.0 * facts_with_citations / len(paired_results) if paired_results else 0)
+            logger.info("  - Facts without citations: %d", len(paired_results) - facts_with_citations)
+        
+        # If no facts have citations despite finding inline citations, try AIRA fallback
+        if facts_with_citations == 0 and citation_matches:
+            if verbose:
+                logger.warning("No facts were successfully paired with inline citations. Trying AIRA source matching as fallback...")
+            
+            summary_section, citation_section = split_report_and_citations(final_report)
+            
+            if citation_section:
+                if verbose:
+                    logger.info("Found citation section, using AIRA source matching as secondary fallback")
+                    logger.info(f"Citation section preview: {citation_section[:200]}...")
+                
+                try:
+                    result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
+                    if verbose:
+                        facts_with_citations_fallback = sum(1 for _, citations in result if citations)
+                        logger.info(f"AIRA source matching secondary fallback completed: {facts_with_citations_fallback}/{len(result)} facts have citations")
+                    return result
+                except Exception as e:
+                    if verbose:
+                        logger.error(f"AIRA source matching secondary fallback failed: {str(e)}")
+                        logger.exception("Full exception details:")
+        
+        if not verbose:
+            logger.info(f"Batch paired {len(paired_results)} facts with citations")
+
+        return paired_results
+
+    except Exception as e:
+        logger.error(f"Batch fact-citation pairing failed: {str(e)}")
+        if verbose:
+            logger.exception("Full exception details:")
+        
+        # Try AIRA source matching as fallback before individual processing
+        if verbose:
+            logger.info("Trying AIRA source matching as exception fallback...")
+        
+        summary_section, citation_section = split_report_and_citations(final_report)
+        
+        if citation_section:
+            if verbose:
+                logger.info("Found citation section, using AIRA source matching as exception fallback")
+                logger.info(f"Citation section preview: {citation_section[:200]}...")
+            
+            try:
+                result = await pair_facts_with_aira_sources(facts, citation_section, llm, verbose)
+                if verbose:
+                    facts_with_citations = sum(1 for _, citations in result if citations)
+                    logger.info(f"AIRA source matching exception fallback completed: {facts_with_citations}/{len(result)} facts have citations")
+                return result
+            except Exception as e2:
+                if verbose:
+                    logger.error(f"AIRA source matching exception fallback failed: {str(e2)}")
+                    logger.exception("Full exception details:")
+        
+        # Final fallback to individual processing
+        if verbose:
+            logger.info("Falling back to individual fact processing...")
+        return await pair_facts_with_citations(final_report, facts, llm, verbose)
 
 
 # Prompt templates for preprocessing
@@ -965,3 +1273,38 @@ async def generate_coverage_facts_claims(ground_truth: str,
         if verbose:
             logger.exception("Full exception details:")
         return []
+
+
+def resolve_llm_to_model_name(builder, llm_ref: str) -> str:
+    """
+    Resolve LLM reference to actual model name for extraction utilities.
+    
+    Args:
+        builder: The AIQ builder instance
+        llm_ref: LLM reference (e.g., 'eval_llm') or actual model name (e.g., 'meta/llama-3.1-70b-instruct')
+        
+    Returns:
+        str: The actual model name that can be used with extraction utilities
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Check if this is already a model name (contains "/" or starts with known prefixes)
+        if "/" in llm_ref or llm_ref.startswith(("gpt-", "nvdev/", "meta/", "mistralai/")):
+            return llm_ref
+        
+        # Try to get the LLM configuration from the builder
+        if hasattr(builder, 'config') and hasattr(builder.config, 'llms'):
+            llm_config = builder.config.llms.get(llm_ref)
+            if llm_config and hasattr(llm_config, 'model_name'):
+                logger.info(f"Resolved LLM reference '{llm_ref}' to model name '{llm_config.model_name}'")
+                return llm_config.model_name
+        
+        # If we can't resolve it, log a warning and return as-is
+        logger.warning(f"Could not resolve LLM reference '{llm_ref}' to model name, using as-is")
+        return llm_ref
+        
+    except Exception as e:
+        logger.error(f"Error resolving LLM reference '{llm_ref}': {str(e)}")
+        return llm_ref
