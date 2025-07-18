@@ -13,6 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+meta_prompt = """
+Deliver a publication‑ready report that can stand alone as an excellent reference on the provided topic.
+
+### Guidelines
+- Begin with a compelling introduction that establishes context, significance, scope, and the central questions.
+- Create logical flow with smooth transitions between sections.
+- Conclude each major section with synthesis or key takeaways.
+- Each section is a sequence of full paragraphs — not bullet lists.
+    - Introduce the sub‑theme.
+    - Unpack causes, mechanisms, and consequences.
+    - Compare alternative viewpoints or data where they diverge if any.
+    - Link back to earlier points so the argument feels cumulative.
+- Distill the most important insights and flag open questions or strategic implications.
+- Ensure no critical aspects are omitted.
+
+### Depth & Insight
+- For every major fact, explain the underlying *why* and *how* 
+- Analyze root causes, downstream impacts, and interconnected relationships
+- Discuss implications, trade-offs, and future trajectories
+- Connect specific details to broader patterns and principles
+
+### Prose Quality
+Write in clear, professional paragraphs (≈120‑180 words each). Tables or sidebars are allowed when they condense complex comparisons more clearly than prose.
+
+Remember: Your goal is not just to inform but to provide deep understanding. Every section should add meaningful value through analysis, synthesis, or novel insights rather than mere description.
+"""
+
 query_writer_instructions = """Generate {number_of_queries} search queries that will help with planning the sections of the final report.
 
 # Report topic
@@ -48,6 +75,7 @@ summarizer_instructions = """Generate a high-quality report from the given sourc
 
 # Report organization
 {report_organization}
+
 
 # Knowledge Sources
 {source}

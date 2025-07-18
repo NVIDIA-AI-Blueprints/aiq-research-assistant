@@ -31,6 +31,7 @@ from aiq_aira.nodes import finalize_summary
 from aiq_aira.nodes import reflect_on_summary
 from aiq_aira.nodes import summarize_sources
 from aiq_aira.nodes import web_research
+from aiq_aira.prompts import meta_prompt
 from aiq_aira.schema import AIRAState
 from aiq_aira.schema import ConfigSchema
 from aiq_aira.schema import GenerateSummaryStateInput
@@ -102,6 +103,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        msg = message.report_organization + "\n" + meta_prompt
         if message.search_eci and config.eci_search_tool_name is None:
             raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
@@ -114,7 +116,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
                                                   config={
                                                       "llm": llm,
                                                       "eci_search_tool": eci_search_tool,
-                                                      "report_organization": message.report_organization,
+                                                      "report_organization": msg,
                                                       "rag_url": config.rag_url,
                                                       "collection": message.rag_collection,
                                                       "search_web": message.search_web,
@@ -134,7 +136,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-
+        msg = message.report_organization + "\n" + meta_prompt
         if message.search_eci and config.eci_search_tool_name is None:
             raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
@@ -147,7 +149,7 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
                 config={
                     "llm": llm,
                     "eci_search_tool": eci_search_tool,
-                    "report_organization": message.report_organization,
+                    "report_organization": msg,
                     "rag_url": config.rag_url,
                     "collection": message.rag_collection,
                     "topic": message.topic,
