@@ -56,7 +56,7 @@ general:
     tracing:
       weave:
         _type: weave
-        project: "nat-evaluators-for-mr" # Name of the project in weave, runs will be grouped under this project name
+        project: "NAT-BP-Project" # Name of the project in weave, runs will be grouped under this project name
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -104,7 +104,7 @@ functions:
   generate_summary:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://10.185.119.221:8081/v1
+    rag_url: http://rag-server:8081/v1
     eci_search_tool_name: eci_search
 
   eci_search:
@@ -122,7 +122,7 @@ functions:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose (using one of our endpoints for now)
-    rag_url: http://10.185.119.221:8081/v1
+    rag_url: http://rag-server:8081/v1
     eci_search_tool_name: eci_search
     
   health_check:
