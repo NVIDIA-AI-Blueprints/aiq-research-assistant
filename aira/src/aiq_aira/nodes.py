@@ -40,6 +40,7 @@ from aiq_aira.search_utils import deduplicate_and_format_sources
 from aiq_aira.search_utils import process_single_query
 from aiq_aira.utils import async_gen
 from aiq_aira.utils import format_sources
+from aiq_aira.utils import redact_urls
 from aiq_aira.utils import update_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -333,6 +334,9 @@ async def finalize_summary(state: AIRAState, config: RunnableConfig, writer: Str
     while "</think>" in final_buf:
         end = final_buf.find("</think>") + len("</think>")
         final_buf = final_buf[end:]
+
+    # Redact URLs from the final buffer
+    final_buf = redact_urls(final_buf)
 
     state.running_summary = f"{final_buf} \n\n ## Sources \n\n{sources_formatted}"
     writer({"finalized_summary": state.running_summary})
