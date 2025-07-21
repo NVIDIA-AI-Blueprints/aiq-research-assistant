@@ -158,3 +158,48 @@ def _escape_markdown(text: str) -> str:
     text = text.replace("|", "\\|")
     text = text.replace("\n", "\\n")
     return text
+
+
+def redact_urls(text: str) -> str:
+    """
+    Redact URLs from markdown text and replace them with "link redacted".
+    
+    This function handles:
+    - Markdown links: [text](url)
+    - HTML links: <a href="url">text</a>
+    - Plain URLs: http://example.com or https://example.com
+    - URLs with various protocols and formats
+    
+    Args:
+        text: The markdown text containing URLs to redact
+        
+    Returns:
+        The text with all URLs replaced by "link redacted"
+    """
+    if not text:
+        return ""
+
+    # Pattern for markdown links: [text](url)
+    text = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'[\1](link redacted)', text)
+
+    # Pattern for HTML anchor tags: <a href="url">text</a>
+    # Handle both single and double quotes
+    text = re.sub(r'<a\s+href\s*=\s*["\']([^"\']*)["\']([^>]*)>([^<]*)</a>',
+                  r'<a href="link redacted"\2>\3</a>',
+                  text,
+                  flags=re.IGNORECASE)
+
+    # Pattern for plain URLs (http/https/ftp/etc.)
+    # Match URLs but don't include trailing punctuation that's likely sentence punctuation
+    url_pattern = r'\b(?:https?|ftp|ftps|file)://[^\s<>"{}|\\^`\[\]]+(?<![.,!?;:)])'
+    text = re.sub(url_pattern, 'link redacted', text, flags=re.IGNORECASE)
+
+    # Handle mailto URLs (both with and without ://)
+    mailto_pattern = r'\bmailto:(?://)?[^\s<>"{}|\\^`\[\]]+(?<![.,!?;:)])'
+    text = re.sub(mailto_pattern, 'link redacted', text, flags=re.IGNORECASE)
+
+    # Pattern for www. URLs without protocol
+    www_pattern = r'\bwww\.[^\s<>"{}|\\^`\[\]]+(?<![.,!?;:)])'
+    text = re.sub(www_pattern, 'link redacted', text, flags=re.IGNORECASE)
+
+    return text
