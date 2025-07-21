@@ -103,7 +103,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             llm=llm,
             eci_search_tool=eci_search_tool,
             search_web=query_message.use_internet,
-            search_eci=query_message.use_eci
+            eci_search_bool=query_message.use_eci
         )
 
         gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
@@ -156,7 +156,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             llm=llm,
             eci_search_tool=eci_search_tool,
             search_web=query_message.use_internet,
-            search_eci=query_message.use_eci
+            eci_search_bool=query_message.use_eci
         )
 
         gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
