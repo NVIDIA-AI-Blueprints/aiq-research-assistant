@@ -50,7 +50,6 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
-        llm.model_kwargs["stream_options"] = {"include_usage": True, "continuous_usage_stats": True}
 
         response = await graph.ainvoke(
             input={"queries": [], "web_research_results": [], "running_summary": ""},
