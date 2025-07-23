@@ -18,14 +18,14 @@ from aiq.builder.evaluator import EvaluatorInfo
 from aiq.builder.framework_enum import LLMFrameworkEnum
 from aiq.cli.register_workflow import register_evaluator
 
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluator
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluatorConfig
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationPrecisionEvaluator
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationPrecisionEvaluatorConfig
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationRecallEvaluator
-from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationRecallEvaluatorConfig
 from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationF1Evaluator
 from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationF1EvaluatorConfig
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationPrecisionEvaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationPrecisionEvaluatorConfig
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluatorConfig
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationRecallEvaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationRecallEvaluatorConfig
 # Import evaluator classes and configs
 from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluator
 from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluatorConfig

@@ -153,7 +153,7 @@ workflow:
     _type: full
     verbose: true
     fact_extraction_llm: meta/llama-3.1-70b-instruct  # Use actual NIM model name
-    citation_pairing_llm: mistralai/mixtral-8x22b-instruct-v0.1  # Use actual NIM model name
+    citation_pairing_llm: mistralai/mixtral-8x22b-instruct-v0.1  # Use actual NIM model name, would recommend using the mixtral model for citation to fact pairing
 
 
 # Evaluation configuration
@@ -161,17 +161,18 @@ eval:
   general:
     output_dir: ./.tmp/aiq_aira/
     cleanup: true
-    workflow_alias: "Test_evaluators_with_all_mistral_models" # This will set the run name in weave and where each individual run will be stored under this name
+    workflow_alias: "Test_Run_Name" # This will set the run name in weave and where each individual run will be stored under this name
 
     dataset:
       _type: json
-      file_path: data/eval_dataset_processed.json
+      file_path: data/eval_dataset.json
       id_key: id
       structure:
         disable: true
     profiler:
      base_metrics: true
 
+  # Currently using the mixtral model for all of the evaluators through the ragas_llm, feel free to change the model to your liking. However due to the current prompt structure, the mixtral model seems to be the best model for citation quality evaluation.
   evaluators:
     coverage:
       _type: coverage
