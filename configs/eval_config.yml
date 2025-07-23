@@ -56,7 +56,7 @@ general:
     tracing:
       weave:
         _type: weave
-        project: "New-NAT-BP-Project" # Name of the project in weave, runs will be grouped under this project name
+        project: "NAT-BP-Project-Default" # Name of the project in weave, runs will be grouped under this project name
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -145,7 +145,7 @@ functions:
       - name: "Financial_Dataset"
         topic: "Financial"
         report_organization: "You are a financial analyst who specializes in financial statement analysis. Write a financial report analyzing the 2023 financial performance of Amazon. Identify trends in revenue growth, net income, and total assets. Discuss how these trends affected Amazon's yearly financial performance for 2023. Your output should be organized into a brief introduction, as many sections as necessary to create a comprehensive report, and a conclusion. Format your answer in paragraphs. Use factual sources such as Amazon's quarterly meeting releases for 2023. Cross analyze the sources to draw original and sound conclusions and explain your reasoning for arriving at conclusions. Do not make any false or unverifiable claims. I want a factual report with cited sources."
-
+w
 
 workflow:
   _type: aira_evaluator_workflow
@@ -172,31 +172,31 @@ eval:
     profiler:
      base_metrics: true
 
-  # Currently using the mixtral model for all of the evaluators through the ragas_llm, feel free to change the model to your liking. However due to the current prompt structure, the mixtral model seems to be the best model for citation quality evaluation.
+  # Due to the current prompt structure, the mixtral model seems to be the best model for citation quality evaluation, feel free to change the model to your liking.
   evaluators:
     coverage:
       _type: coverage
-      llm: ragas_llm
+      llm: eval_llm
 
     hallucination:
       _type: hallucination 
-      llm: ragas_llm
+      llm: eval_llm
 
     synthesis:
       _type: synthesis
-      llm: ragas_llm
+      llm: eval_llm
     
     citation_precision:
       _type: citation_precision
-      llm: ragas_llm
+      llm: eval_llm
 
     citation_recall:
       _type: citation_recall
-      llm: ragas_llm
+      llm: eval_llm
 
     citation_f1:
       _type: citation_f1
-      llm: ragas_llm
+      llm: eval_llm
 
     rag_accuracy:
       _type: ragas_wrapper  
