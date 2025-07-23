@@ -20,6 +20,12 @@ from aiq.cli.register_workflow import register_evaluator
 
 from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluator
 from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationQualityEvaluatorConfig
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationPrecisionEvaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationPrecisionEvaluatorConfig
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationRecallEvaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationRecallEvaluatorConfig
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationF1Evaluator
+from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationF1EvaluatorConfig
 # Import evaluator classes and configs
 from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluator
 from aiq_aira.eval.evaluators.coverage_evaluator import CoverageEvaluatorConfig
@@ -29,9 +35,6 @@ from aiq_aira.eval.evaluators.ragas_wrapper_evaluator import RagasWrapperEvaluat
 from aiq_aira.eval.evaluators.ragas_wrapper_evaluator import RagasWrapperEvaluatorConfig
 from aiq_aira.eval.evaluators.synthesis_evaluator import SynthesisEvaluator
 from aiq_aira.eval.evaluators.synthesis_evaluator import SynthesisEvaluatorConfig
-
-# from aiq_aira.eval.evaluators.weave_evaluator import WeaveEvaluator, WeaveEvaluatorConfig
-# from aiq_aira.eval.evaluators.artifact_uploader import ArtifactUploader, ArtifactUploaderConfig  # Commented out to avoid duplicate registration
 
 
 @register_evaluator(config_type=CoverageEvaluatorConfig)
@@ -81,6 +84,42 @@ async def register_citation_quality_evaluator(config: CitationQualityEvaluatorCo
         output_dir=builder.eval_general_config.output_dir,
     )
     yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate, description="Citation Quality Evaluator")
+
+
+@register_evaluator(config_type=CitationPrecisionEvaluatorConfig)
+async def register_citation_precision_evaluator(config: CitationPrecisionEvaluatorConfig, builder: EvalBuilder):
+    """This function creates an instance of the CitationPrecisionEvaluator."""
+    llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+
+    evaluator = CitationPrecisionEvaluator(
+        llm=llm,
+        output_dir=builder.eval_general_config.output_dir,
+    )
+    yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate, description="Citation Precision Evaluator")
+
+
+@register_evaluator(config_type=CitationRecallEvaluatorConfig)
+async def register_citation_recall_evaluator(config: CitationRecallEvaluatorConfig, builder: EvalBuilder):
+    """This function creates an instance of the CitationRecallEvaluator."""
+    llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+
+    evaluator = CitationRecallEvaluator(
+        llm=llm,
+        output_dir=builder.eval_general_config.output_dir,
+    )
+    yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate, description="Citation Recall Evaluator")
+
+
+@register_evaluator(config_type=CitationF1EvaluatorConfig)
+async def register_citation_f1_evaluator(config: CitationF1EvaluatorConfig, builder: EvalBuilder):
+    """This function creates an instance of the CitationF1Evaluator."""
+    llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+
+    evaluator = CitationF1Evaluator(
+        llm=llm,
+        output_dir=builder.eval_general_config.output_dir,
+    )
+    yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate, description="Citation F1 Evaluator")
 
 
 @register_evaluator(config_type=RagasWrapperEvaluatorConfig)

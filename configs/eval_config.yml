@@ -56,7 +56,7 @@ general:
     tracing:
       weave:
         _type: weave
-        project: "NAT-BP-Project" # Name of the project in weave, runs will be grouped under this project name
+        project: "New-NAT-BP-Project" # Name of the project in weave, runs will be grouped under this project name
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -161,7 +161,7 @@ eval:
   general:
     output_dir: ./.tmp/aiq_aira/
     cleanup: true
-    workflow_alias: "Test_run" # This will set the run name in weave and where each individual run will be stored under this name
+    workflow_alias: "Test_evaluators_with_all_mistral_models" # This will set the run name in weave and where each individual run will be stored under this name
 
     dataset:
       _type: json
@@ -175,19 +175,27 @@ eval:
   evaluators:
     coverage:
       _type: coverage
-      llm: eval_llm
+      llm: ragas_llm
 
     hallucination:
       _type: hallucination 
-      llm: eval_llm
+      llm: ragas_llm
 
     synthesis:
       _type: synthesis
-      llm: eval_llm
+      llm: ragas_llm
     
-    citation_quality:
-      _type: citation_quality
-      llm: eval_llm
+    citation_precision:
+      _type: citation_precision
+      llm: ragas_llm
+
+    citation_recall:
+      _type: citation_recall
+      llm: ragas_llm
+
+    citation_f1:
+      _type: citation_f1
+      llm: ragas_llm
 
     rag_accuracy:
       _type: ragas_wrapper  

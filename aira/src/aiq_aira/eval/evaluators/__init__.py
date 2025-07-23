@@ -23,6 +23,9 @@ from .coverage_evaluator import CoverageEvaluator, CoverageEvaluatorConfig
 from .synthesis_evaluator import SynthesisEvaluator, SynthesisEvaluatorConfig
 from .hallucination_evaluator import HallucinationEvaluator, HallucinationEvaluatorConfig
 from .citation_quality_evaluator import CitationQualityEvaluator, CitationQualityEvaluatorConfig
+from .citation_quality_evaluator import CitationPrecisionEvaluator, CitationPrecisionEvaluatorConfig
+from .citation_quality_evaluator import CitationRecallEvaluator, CitationRecallEvaluatorConfig
+from .citation_quality_evaluator import CitationF1Evaluator, CitationF1EvaluatorConfig
 from .ragas_wrapper_evaluator import RagasWrapperEvaluator, RagasWrapperEvaluatorConfig
 # from .weave_evaluator import WeaveEvaluator, WeaveEvaluatorConfig
 
@@ -35,6 +38,12 @@ __all__ = [
     "HallucinationEvaluatorConfig",
     "CitationQualityEvaluator",
     "CitationQualityEvaluatorConfig",
+    "CitationPrecisionEvaluator",
+    "CitationPrecisionEvaluatorConfig",
+    "CitationRecallEvaluator",
+    "CitationRecallEvaluatorConfig",
+    "CitationF1Evaluator",
+    "CitationF1EvaluatorConfig",
     "RagasWrapperEvaluator",
     "RagasWrapperEvaluatorConfig",
 ]
