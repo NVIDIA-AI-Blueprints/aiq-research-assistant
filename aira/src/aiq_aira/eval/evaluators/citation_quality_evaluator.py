@@ -108,6 +108,21 @@ class CitationQualityEvaluatorConfig(EvaluatorBaseConfig, name="citation_quality
     llm: LLMRef = Field(description="The LLM to use for evaluation.")
 
 
+class CitationPrecisionEvaluatorConfig(EvaluatorBaseConfig, name="citation_precision"):
+    """Configuration for the citation precision evaluator."""
+    llm: LLMRef = Field(description="The LLM to use for evaluation.")
+
+
+class CitationRecallEvaluatorConfig(EvaluatorBaseConfig, name="citation_recall"):
+    """Configuration for the citation recall evaluator."""
+    llm: LLMRef = Field(description="The LLM to use for evaluation.")
+
+
+class CitationF1EvaluatorConfig(EvaluatorBaseConfig, name="citation_f1"):
+    """Configuration for the citation f1 evaluator."""
+    llm: LLMRef = Field(description="The LLM to use for evaluation.")
+
+
 def parse_sources(citation_section: str) -> Dict[int, str]:
     """
     Parse the citation section to get the source number and content mapping.
@@ -377,18 +392,159 @@ class CitationQualityEvaluator:
             "parsed_sources_count": parsed_sources_count,
         }
 
+        # Return the f1_score as the main score (for backwards compatibility)
         return EvalOutputItem(id=item.id, score=f1_score, reasoning=reasoning)
+
+    async def evaluate_item_all_metrics(self, item: EvalInputItem) -> List[EvalOutputItem]:
+        """Evaluate all three citation quality metrics (precision, recall, f1) for separate tracking."""
+        # Get the base evaluation with all metrics calculated
+        base_result = await self.evaluate_item(item)
+
+        precision = base_result.reasoning.get("precision", 0.0)
+        recall = base_result.reasoning.get("recall", 0.0)
+        f1_score = base_result.reasoning.get("f1_score", 0.0)
+
+        base_reasoning = {
+            "total_facts": base_result.reasoning.get("total_facts", 0),
+            "facts_with_citations": base_result.reasoning.get("facts_with_citations", 0),
+            "parsed_sources_count": base_result.reasoning.get("parsed_sources_count", 0),
+        }
+
+        # Log individual metrics
+        logger.info(f"Item {item.id} Citation Quality Metrics:")
+        logger.info(f"  - Precision: {precision:.3f}")
+        logger.info(f"  - Recall: {recall:.3f}")
+        logger.info(f"  - F1 Score: {f1_score:.3f}")
+
+        # Create separate evaluation items for each metric
+        results = []
+
+        # Precision
+        results.append(
+            EvalOutputItem(id=f"{item.id}_precision",
+                           score=precision,
+                           reasoning={
+                               **base_reasoning, "metric_type": "precision", "precision": precision
+                           }))
+
+        # Recall
+        results.append(
+            EvalOutputItem(id=f"{item.id}_recall",
+                           score=recall,
+                           reasoning={
+                               **base_reasoning, "metric_type": "recall", "recall": recall
+                           }))
+
+        # F1 Score
+        results.append(
+            EvalOutputItem(id=f"{item.id}_f1",
+                           score=f1_score,
+                           reasoning={
+                               **base_reasoning, "metric_type": "f1_score", "f1_score": f1_score
+                           }))
+
+        return results
 
     async def evaluate(self, eval_input: EvalInput) -> EvalOutput:
         semaphore = asyncio.Semaphore(self.max_concurrency)
 
-        async def wrapped_evaluate_item(item: EvalInputItem) -> EvalOutputItem:
+        async def wrapped_evaluate_item(item: EvalInputItem) -> List[EvalOutputItem]:
             async with semaphore:
-                return await self.evaluate_item(item)
+                return await self.evaluate_item_all_metrics(item)
 
-        eval_output_items = await asyncio.gather(*[wrapped_evaluate_item(item) for item in eval_input.eval_input_items])
+        # Get results for all items (each item returns multiple metrics)
+        all_results = await asyncio.gather(*[wrapped_evaluate_item(item) for item in eval_input.eval_input_items])
 
-        scores = [item.score for item in eval_output_items if item.score is not None]
-        avg_score = sum(scores) / len(scores) if scores else 0.0
+        # Flatten the results (each item returned a list of metric results)
+        eval_output_items = []
+        for item_results in all_results:
+            eval_output_items.extend(item_results)
+
+        # Calculate average scores for each metric type
+        precision_scores = [
+            item.score for item in eval_output_items if item.reasoning.get("metric_type") == "precision"
+        ]
+        recall_scores = [item.score for item in eval_output_items if item.reasoning.get("metric_type") == "recall"]
+        f1_scores = [item.score for item in eval_output_items if item.reasoning.get("metric_type") == "f1_score"]
+
+        # Use F1 as the overall average score (for backwards compatibility)
+        avg_score = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0
+
+        logger.info(f"Citation Quality Evaluation Complete:")
+        logger.info(
+            f"  - Precision Average: {sum(precision_scores) / len(precision_scores) if precision_scores else 0.0:.3f}")
+        logger.info(f"  - Recall Average: {sum(recall_scores) / len(recall_scores) if recall_scores else 0.0:.3f}")
+        logger.info(f"  - F1 Average: {avg_score:.3f}")
 
         return EvalOutput(average_score=avg_score, eval_output_items=eval_output_items)
+
+
+class CitationPrecisionEvaluator:
+    """Evaluator that focuses only on citation precision metric."""
+
+    def __init__(self, llm: BaseLanguageModel, max_concurrency: int = 4, output_dir: str = None):
+        self.base_evaluator = CitationQualityEvaluator(llm, max_concurrency, output_dir)
+
+    async def evaluate(self, eval_input: EvalInput) -> EvalOutput:
+        """Evaluate citation precision only."""
+        # Get base results
+        base_result = await self.base_evaluator.evaluate(eval_input)
+
+        # Filter to only precision items
+        precision_items = [
+            item for item in base_result.eval_output_items if item.reasoning.get("metric_type") == "precision"
+        ]
+
+        # Calculate precision average
+        precision_scores = [item.score for item in precision_items]
+        avg_precision = sum(precision_scores) / len(precision_scores) if precision_scores else 0.0
+
+        logger.info(f"Citation Precision Evaluation Complete: Average = {avg_precision:.3f}")
+
+        return EvalOutput(average_score=avg_precision, eval_output_items=precision_items)
+
+
+class CitationRecallEvaluator:
+    """Evaluator that focuses only on citation recall metric."""
+
+    def __init__(self, llm: BaseLanguageModel, max_concurrency: int = 4, output_dir: str = None):
+        self.base_evaluator = CitationQualityEvaluator(llm, max_concurrency, output_dir)
+
+    async def evaluate(self, eval_input: EvalInput) -> EvalOutput:
+        """Evaluate citation recall only."""
+        # Get base results
+        base_result = await self.base_evaluator.evaluate(eval_input)
+
+        # Filter to only recall items
+        recall_items = [item for item in base_result.eval_output_items if item.reasoning.get("metric_type") == "recall"]
+
+        # Calculate recall average
+        recall_scores = [item.score for item in recall_items]
+        avg_recall = sum(recall_scores) / len(recall_scores) if recall_scores else 0.0
+
+        logger.info(f"Citation Recall Evaluation Complete: Average = {avg_recall:.3f}")
+
+        return EvalOutput(average_score=avg_recall, eval_output_items=recall_items)
+
+
+class CitationF1Evaluator:
+    """Evaluator that focuses only on citation f1 metric."""
+
+    def __init__(self, llm: BaseLanguageModel, max_concurrency: int = 4, output_dir: str = None):
+        self.base_evaluator = CitationQualityEvaluator(llm, max_concurrency, output_dir)
+
+    async def evaluate(self, eval_input: EvalInput) -> EvalOutput:
+        """Evaluate citation f1 only."""
+        # Get base results
+        base_result = await self.base_evaluator.evaluate(eval_input)
+
+        # Filter to only f1 items
+        f1_items = [item for item in base_result.eval_output_items if item.reasoning.get("metric_type") == "f1_score"]
+
+        # Calculate f1 average
+        f1_scores = [item.score for item in f1_items]
+        avg_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0
+
+        logger.info(f"Citation F1 Evaluation Complete: Average = {avg_f1:.3f}")
+
+        return EvalOutput(average_score=avg_f1, eval_output_items=f1_items)
