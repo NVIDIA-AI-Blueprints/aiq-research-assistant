@@ -23,7 +23,8 @@ query_writer_instructions="""Generate {number_of_queries} search queries that wi
 
 # Instructions
 1. Create queries to help answer questions for all sections in report organization.
-2. Format your response as a JSON object with the following keys:
+2. First, explain your reasoning and plan inside <think></think> tags.
+3. Format your response as a JSON object with the following keys:
 - "query": The actual search query string
 - "report_section": The section of report organization the query is generated for
 - "rationale": Brief explanation of why this query is relevant to report organization
