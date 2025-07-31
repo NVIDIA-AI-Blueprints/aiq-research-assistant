@@ -29,6 +29,7 @@ from aiq_aira.artifact_utils import artifact_chat_handler
 from aiq_aira.artifact_utils import check_relevant
 from aiq_aira.schema import ArtifactQAInput
 from aiq_aira.schema import ArtifactQAOutput
+from aiq_aira.schema import ArtifactRewriteMode
 from aiq_aira.schema import GeneratedQuery
 from aiq_aira.search_utils import deduplicate_and_format_sources
 from aiq_aira.search_utils import process_single_query
@@ -129,7 +130,12 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             [search_citation], [search_answer], [gen_query])
 
         query_message.artifact = content
-        query_message.sources = sources + "\n" + format_sources(search_citation, source_num_start)
+
+        # add sources to the report if we are re-writing, otherwise keep the original sources
+
+        if query_message.rewrite_mode:
+            if query_message.rewrite_mode == ArtifactRewriteMode.ENTIRE:
+                query_message.sources = sources + "\n" + format_sources(search_citation, source_num_start)
 
         return await artifact_chat_handler(llm, query_message)
 
