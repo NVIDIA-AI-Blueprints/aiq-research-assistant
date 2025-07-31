@@ -91,8 +91,10 @@ class ArtifactQAInput(BaseModel):
     use_internet: bool = Field(default=False, description="If true, the agent can do additional web or RAG lookups")
     use_eci: bool = Field(default=False, description="If true, the agent can do additional ECI lookups")
     rewrite_mode: ArtifactRewriteMode | None = Field(None, description="Rewrite mode for the LLM")
-    additional_context: str | None = Field(None, description="Additional context to provide to the LLM")
+    additional_context: str | None = Field(None,
+                                           description="Additional context to provide to the LLM, currently unused")
     rag_collection: str = Field(..., description="Collection to search for information from")
+    sources: str | None = Field(None, description="Source list fromn the report")
 
 
 class ArtifactQAOutput(BaseModel):

@@ -119,7 +119,7 @@ def deduplicate_and_format_sources(sources: List[str], generated_answers: List[s
         citation_elem = ET.SubElement(source_elem, "citation")
         citation_elem.text = src
 
-    logger.info(f"DEDUPLICATE RESULTS {ET.tostring(root, encoding='unicode')}")
+    logger.debug(f"DEDUPLICATE RESULTS {ET.tostring(root, encoding='unicode')}")
 
     return ET.tostring(root, encoding="unicode")
 
@@ -144,12 +144,18 @@ async def process_single_query(
     logger.info(f"SEARCHING: {query}")
     rag_url = config["configurable"].get("rag_url")
 
-    rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
+    if collection is None or collection == "":
+        logger.info("RAG COLLECTION IS NOT SET, SKIPPING RAG SEARCH")
+        rag_answer = ""
+        rag_citation = ""
+        rag_relevancy = {"score": "no"}
 
-    writer({"rag_answer": rag_citation})  # citation includes the answer
-    logger.info(f"RAG ANSWER: {rag_citation}")
+    if collection is not None and collection != "":
+        rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
+        writer({"rag_answer": rag_citation})  # citation includes the answer
+        logger.debug(f"RAG ANSWER: {rag_citation}")
 
-    rag_relevancy = await check_relevancy(llm, query, rag_answer, writer)
+        rag_relevancy = await check_relevancy(llm, query, rag_answer, writer)
 
     if rag_relevancy["score"] == "no":
         eci_answer, eci_citation = "", ""
@@ -159,12 +165,12 @@ async def process_single_query(
         if eci_search_tool is not None and eci_search_bool:
             eci_answer, eci_citation = await search_eci(query, writer, eci_search_tool)
             writer({"eci_answer": eci_citation})
-            logger.info(f"ECI ANSWER: {eci_citation}")
+            logger.debug(f"ECI ANSWER: {eci_citation}")
 
         if search_web:
             web_answer, web_citation = await search_tavily(query, writer)
             writer({"web_answer": web_citation})
-            logger.info(f"WEB ANSWER: {web_citation}")
+            logger.debug(f"WEB ANSWER: {web_citation}")
 
     if rag_relevancy["score"] == "yes":
         return rag_answer, rag_citation

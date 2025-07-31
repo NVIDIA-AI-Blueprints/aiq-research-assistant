@@ -52,6 +52,13 @@ general:
       console:
         _type: console
         level: WARN
+    # Uncomment this to enable tracing to phoenix
+    # Before running docker compose --profile aira up -d, run docker compose --profile aira-phoenix up -d
+    # tracing:
+    #   phoenix:
+    #     _type: phoenix
+    #     endpoint: http://phoenix:6006/v1/traces
+    #     project: ai_researcher
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
@@ -63,7 +70,7 @@ llms:
     model_name: meta/llama-3.3-70b-instruct
     temperature: 0.0
     base_url: ${INSTRUCT_LLM_BASE_URL:-http://aira-instruct-llm:8000/v1}
-    max_tokens: 5000
+    max_tokens: 20000
     api_key: not-needed
   # The reasoning llm is used for report planning and reflection and should be a reasoning model
   # that supports thinking tokens. The default configuration below is used assuming a docker compose

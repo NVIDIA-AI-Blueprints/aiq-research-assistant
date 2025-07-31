@@ -14,6 +14,7 @@ dynamic = ["version"]
 dependencies = [
   "aiqtoolkit-langchain>=1.2.0a20250703",
   "aiqtoolkit-weave>=1.2.0a20250703",
+  "aiqtoolkit-phoenix>=1.2.0a20250703",
   "aiqtoolkit>=1.2.0a20250703",
   "aiqtoolkit-opentelemetry>=1.2.0a20250703",
   "aiohappyeyeballs==2.4.4",

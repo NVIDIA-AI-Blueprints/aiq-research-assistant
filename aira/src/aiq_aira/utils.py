@@ -91,7 +91,7 @@ async def dummy():
     return None
 
 
-def format_sources(sources: str) -> str:
+def format_sources(sources: str, source_num_start: int | None = None) -> str:
     """
     Format the sources into nicer looking markdown.
     """
@@ -100,6 +100,8 @@ def format_sources(sources: str) -> str:
         source_entries = re.split(r'(?=---\nQUERY:)', sources)
         formatted_sources = []
         src_count = 1
+        if source_num_start is not None:
+            src_count = source_num_start
 
         for idx, entry in enumerate(source_entries):
             if not entry.strip():
@@ -203,3 +205,36 @@ def redact_urls(text: str) -> str:
     text = re.sub(www_pattern, 'link redacted', text, flags=re.IGNORECASE)
 
     return text
+
+
+def get_max_source_number(sources_text: str) -> int:
+    """
+    Extract the maximum source number from a string containing sources in the format:
+    
+    ___
+    **Source** 1
+    other stuff
+    ___
+    **Source** 2
+    other stuff
+    etc
+    
+    Args:
+        sources_text: String containing sources with **Source** X format
+        
+    Returns:
+        The maximum source number found, or 0 if no sources are found
+    """
+    if not sources_text:
+        return 0
+
+    # Pattern to match "**Source** X" where X is a number
+    pattern = r'\*\*Source\*\*\s*(\d+)'
+    matches = re.findall(pattern, sources_text)
+
+    if not matches:
+        return 0
+
+    # Convert matches to integers and return the maximum
+    source_numbers = [int(match) for match in matches]
+    return max(source_numbers)

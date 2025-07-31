@@ -20,6 +20,7 @@ import re
 from urllib.parse import urljoin
 
 import aiohttp
+from aiq.profiler.decorators.function_tracking import track_function
 from langchain_community.tools import TavilySearchResults
 from langgraph.types import StreamWriter
 
@@ -35,13 +36,13 @@ from aiq_aira.utils import get_domain
 logger = logging.getLogger(__name__)
 
 
+@track_function(metadata={"action": "search_rag", "source": "search_rag"})
 async def search_rag(session: aiohttp.ClientSession, url: str, prompt: str, writer: StreamWriter, collection: str):
     """
     Calls a RAG endpoint at `url`, passing `prompt` and referencing `collection`.
     Returns a tuple (content, citations).
     """
     writer({"rag_answer": "\n Performing RAG search \n"})
-    logger.info("RAG SEARCH")
     headers = {
         "accept": "application/json", "Content-Type": "application/json", "Authorization": f"Bearer {RAG_API_KEY}"
     }

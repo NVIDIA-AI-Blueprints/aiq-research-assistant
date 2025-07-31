@@ -32,6 +32,8 @@ from aiq_aira.schema import ArtifactQAOutput
 from aiq_aira.schema import GeneratedQuery
 from aiq_aira.search_utils import deduplicate_and_format_sources
 from aiq_aira.search_utils import process_single_query
+from aiq_aira.utils import format_sources
+from aiq_aira.utils import get_max_source_number
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +87,21 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
                     updated_artifact=query_message.artifact,
                     assistant_reply="Sorry, I am not able to help answer that question. Please try again.")
 
+        # Split sources from report
+        current_artifact = query_message.artifact
+        sources_marker = "## Sources"
+        sources_pos = current_artifact.find(sources_marker)
+        if sources_pos != -1:
+            # Split the artifact into content and sources
+            content = current_artifact[:sources_pos].strip()
+            sources = current_artifact[sources_pos:].strip()
+            source_num_start = get_max_source_number(sources) + 1
+        else:
+            # If no sources found, treat entire artifact as content
+            content = current_artifact
+            sources = ""
+            source_num_start = None
+
         # Only enabled when not rewrite mode or rewrite mode is "entire"
         graph_config = {"configurable": {"rag_url": config.rag_url, }}
 
@@ -95,7 +112,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             """
             logger.debug(f"Writing message: {message}")
 
-        rag_answer, rag_citation = await process_single_query(
+        search_answer, search_citation = await process_single_query(
             query=query_message.question,
             config=graph_config,
             writer=writer,
@@ -106,12 +123,13 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             eci_search_bool=query_message.use_eci
         )
 
-        gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
+        gen_query = GeneratedQuery(query=query_message.question, report_section="user query", rationale="Q/A")
 
-        query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [gen_query])
+        query_message.additional_context = "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
+            [search_citation], [search_answer], [gen_query])
 
-        logger.info(f"Artifact QA Query message: {query_message}")
+        query_message.artifact = content
+        query_message.sources = sources + "\n" + format_sources(search_citation, source_num_start)
 
         return await artifact_chat_handler(llm, query_message)
 
@@ -120,53 +138,10 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         Run the Q&A logic for a single user question about an artifact, streaming the response.
         """
 
-        if eci_search_tool is None and query_message.use_eci:
-            raise ValueError("ECI search is enabled but no ECI search tool is provided")
-
-        apply_guardrail = os.getenv("AIRA_APPLY_GUARDRAIL", "false")
-
-        if apply_guardrail.lower() == "true":
-
-            relevancy_check = await check_relevant(llm=llm,
-                                                   artifact=query_message.artifact,
-                                                   question=query_message.question,
-                                                   chat_history=query_message.chat_history)
-
-            if relevancy_check == 'no':
-                yield ArtifactQAOutput(
-                    updated_artifact=query_message.artifact,
-                    assistant_reply="Sorry, I am not able to help answer that question. Please try again.")
-                return
-
-        # Only enabled when not rewrite mode or rewrite mode is "entire"
-        graph_config = {"configurable": {"rag_url": config.rag_url, }}
-
-        def writer(message):
-            """
-            The RAG search expects a stream writer function.
-            This is a temporary placeholder to satisfy the type checker.
-            """
-            logger.debug(f"Writing message: {message}")
-
-        rag_answer, rag_citation = await process_single_query(
-            query=query_message.question,
-            config=graph_config,
-            writer=writer,
-            collection=query_message.rag_collection,
-            llm=llm,
-            eci_search_tool=eci_search_tool,
-            search_web=query_message.use_internet,
-            eci_search_bool=query_message.use_eci
-        )
-
-        gen_query = GeneratedQuery(query=query_message.question, report_section=query_message.artifact, rationale="Q/A")
-
-        query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
-            [rag_citation], [rag_answer], [gen_query])
-
-        logger.info(f"Artifact QA Query message: {query_message}")
-
-        yield await artifact_chat_handler(llm, query_message)
+        # This is a placeholder async generator that raises NotImplementedError
+        raise NotImplementedError("Streaming is not implemented for artifact_qa")
+        # The following yield is unreachable but makes this a proper async generator
+        yield ArtifactQAOutput(updated_artifact="", assistant_reply="")
 
     yield FunctionInfo.create(
         single_fn=_artifact_qa,
