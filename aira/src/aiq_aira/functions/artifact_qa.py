@@ -132,6 +132,7 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         query_message.artifact = content
 
         # add sources to the report if we are re-writing, otherwise keep the original sources
+        query_message.sources = sources 
 
         if query_message.rewrite_mode:
             if query_message.rewrite_mode == ArtifactRewriteMode.ENTIRE:
