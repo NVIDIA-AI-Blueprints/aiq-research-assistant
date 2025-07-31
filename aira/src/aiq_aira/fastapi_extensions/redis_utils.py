@@ -94,6 +94,26 @@ async def check_existing_collections(collection_names: List[str]) -> tuple[List[
         return [], collection_names
 
 
+async def collection_exists_in_redis(collection_name: str) -> bool:
+    """
+    Check if a specific collection exists in Redis cache.
+    
+    Args:
+        collection_name: Name of the collection to check
+        
+    Returns:
+        bool: True if collection exists and session is active, False otherwise
+    """
+    try:
+        r = await get_redis()
+        session_key = f"session:{collection_name}"
+        exists = await r.exists(session_key)
+        return bool(exists)
+    except Exception as e:
+        logger.error(f"Error checking collection '{collection_name}' in Redis: {e}")
+        return False
+
+
 async def cleanup_expired_collections(rag_ingest_url: str):
     """
     Monitors Redis key expirations and sends a DELETE request to the RAG API

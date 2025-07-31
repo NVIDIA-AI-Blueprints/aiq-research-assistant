@@ -26,6 +26,7 @@ from aiq_aira.artifact_prompts import UPDATE_ENTIRE_ARTIFACT_PROMPT
 from aiq_aira.schema import ArtifactQAInput
 from aiq_aira.schema import ArtifactQAOutput
 from aiq_aira.schema import ArtifactRewriteMode
+from aiq_aira.utils import redact_urls
 
 logger = logging.getLogger(__name__)
 
@@ -110,21 +111,20 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
     rewrite_mode: ArtifactRewriteMode = input_data.rewrite_mode
     additional_context = input_data.additional_context
 
-    def add_context_to_user_message(msg):
-        context = additional_context
-        if not context:
-            return msg
-
-        return f"{msg}\n\nAdditional context:\n{context}"
-
     # 1) If user specifically wants a rewrite:
     if input_data.rewrite_mode:
 
         if rewrite_mode == ArtifactRewriteMode.ENTIRE:
 
-            updated = await do_entire_artifact_rewrite(llm, current_artifact, add_context_to_user_message(user_message))
+            updated_report = await do_entire_artifact_rewrite(llm, current_artifact, user_message + additional_context)
 
-            return ArtifactQAOutput(updated_artifact=updated,
+            # redact urls from the updated report
+            updated_report = redact_urls(updated_report)
+
+            # add sources to the updated report
+            updated_report = updated_report + "\n\n" + input_data.sources
+
+            return ArtifactQAOutput(updated_artifact=updated_report,
                                     assistant_reply="Here is the updated artifact (entire rewrite).")
 
         else:
@@ -167,6 +167,7 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
     # Remove <think> if present
     answer_buf = remove_think_tags(answer_buf)
 
-    assistant_reply = answer_buf.strip()
+    assistant_reply = redact_urls(answer_buf.strip())
 
-    return ArtifactQAOutput(updated_artifact=current_artifact, assistant_reply=assistant_reply)
+    return ArtifactQAOutput(updated_artifact=current_artifact + "\n\n" + input_data.sources,
+                            assistant_reply=assistant_reply)

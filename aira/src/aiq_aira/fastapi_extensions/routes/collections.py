@@ -23,6 +23,7 @@ from fastapi import FastAPI
 from ..redis_utils import CollectionRequest
 from ..redis_utils import CollectionResponse
 from ..redis_utils import check_existing_collections
+from ..redis_utils import collection_exists_in_redis
 from ..redis_utils import get_redis
 from ..redis_utils import initialize_redis
 from ..redis_utils import track_collection
@@ -192,3 +193,18 @@ async def add_collection_routes(app: FastAPI, rag_ingest_url: str):
                       response_model=CollectionResponse,
                       tags=["rag-endpoints"],
                       summary="Create RAG collections with session TTL tracking")
+
+    # GET /collections/{collection_name}/exists - Check if collection exists in Redis cache
+    @app.get("/collections/{collection_name}/exists", tags=["rag-endpoints"])
+    async def check_collection_exists(collection_name: str) -> dict:
+        """
+        Check if a collection exists in Redis cache (has an active session).
+        
+        Args:
+            collection_name: Name of the collection to check
+            
+        Returns:
+            dict: {"exists": bool, "collection_name": str}
+        """
+        exists = await collection_exists_in_redis(collection_name)
+        return {"exists": exists, "collection_name": collection_name}
