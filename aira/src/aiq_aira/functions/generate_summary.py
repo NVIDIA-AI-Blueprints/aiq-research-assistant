@@ -93,20 +93,15 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         if message.search_eci and config.eci_search_tool_name is None:
             raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
-        eci_search_tool = aiq_builder.get_function(
-            name=config.eci_search_tool_name) if config.eci_search_tool_name else None
-
         response: AIRAState = await graph.ainvoke(input={
             "queries": message.queries, "web_research_results": [], "running_summary": ""
         },
                                                   config={
                                                       "llm": llm,
-                                                      "eci_search_tool": eci_search_tool,
                                                       "report_organization": msg,
                                                       "rag_url": config.rag_url,
                                                       "collection": message.rag_collection,
                                                       "search_web": message.search_web,
-                                                      "search_eci": message.search_eci,
                                                       "num_reflections": message.reflection_count,
                                                       "topic": message.topic,
                                                   })
@@ -127,15 +122,11 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         if message.search_eci and config.eci_search_tool_name is None:
             raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
-        eci_search_tool = aiq_builder.get_function(
-            name=config.eci_search_tool_name) if config.eci_search_tool_name else None
-
         async for _t, val in graph.astream(
                 input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
                 stream_mode=['custom', 'values'],
                 config={
                     "llm": llm,
-                    "eci_search_tool": eci_search_tool,
                     "report_organization": msg,
                     "rag_url": config.rag_url,
                     "collection": message.rag_collection,
