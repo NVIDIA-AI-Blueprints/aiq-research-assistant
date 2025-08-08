@@ -2,8 +2,10 @@ import asyncio
 import re
 import logging
 from langchain_openai import ChatOpenAI
+from aiq_aira.llm_utils import update_system_prompt_for_reasoning
 
 logger = logging.getLogger(__name__)
+
 
 async def async_gen(num_loops: int):
     """
@@ -13,15 +15,12 @@ async def async_gen(num_loops: int):
         yield i
         await asyncio.sleep(0.0)
 
+
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
-
-    if hasattr(llm, "model_name") and "nemotron" in llm.model_name:
-        system_prompt = "detailed thinking on"
-
-    return system_prompt
+    return update_system_prompt_for_reasoning(system_prompt, llm)
 
 def get_domain(url: str):
     """
