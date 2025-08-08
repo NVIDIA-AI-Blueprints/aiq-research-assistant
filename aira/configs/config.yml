@@ -46,7 +46,7 @@ llms:
     base_url: ${NEMOTRON_LLM_BASE_URL-http://nim-llm-ms:8000/v1} # default if deployed using RAG blueprint and docker compose
     max_tokens: 5000
     stream: true
-    api_key: not-needed
+    api_key: ${NVIDIA_API_KEY-not-needed}
   
 
 functions:

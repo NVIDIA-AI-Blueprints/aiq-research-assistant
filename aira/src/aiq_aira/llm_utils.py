@@ -180,7 +180,6 @@ async def _stream_with_reasoning_content(chain: Runnable,
         async def stream_operation():
             nonlocal result
             async for chunk in _stream_chain_with_params(chain, input_data, stream_usage):
-                breakpoint()
                 # Check for reasoning content in additional_kwargs
                 if chunk.additional_kwargs and "reasoning_content" in chunk.additional_kwargs:
                     writer({writer_key: chunk.content})
