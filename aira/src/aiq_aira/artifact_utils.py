@@ -25,6 +25,7 @@ from aiq_aira.artifact_prompts import (
 )
 
 from aiq_aira.schema import ArtifactQAInput, ArtifactQAOutput, ArtifactRewriteMode
+from aiq_aira.llm_utils import remove_reasoning_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -33,23 +34,7 @@ logger = logging.getLogger(__name__)
 ##############################
 
 
-def remove_think_tags(text: str) -> str:
-    """
-    Remove any text in a string that is wrapped in <think> tags.
-    """
-    # IF think tags are in there
-    if "<think>" not in text or "</think>" not in text:
-        return text
-
-    while "<think>" in text and "</think>" in text:
-        start = text.find("<think>")
-        end = text.find("</think>") + len("</think>")
-        text = text[:start] + text[end:]
-
-    return text
-
-
-
+# Use the imported remove_reasoning_tokens function from llm_utils
 async def check_relevant(llm, artifact, question, chat_history: list[str]):
     
     try:
@@ -83,13 +68,33 @@ async def do_entire_artifact_rewrite(llm, artifact_content: str, user_message: s
     # The user request is appended to the end.
     user_facing_prompt = rewrite_prompt + f"\n\nUser request:\n{user_message}"
 
-    final_text = ""
-    # We'll just read the entire stream from the LLM
-    async for chunk in llm.astream(user_facing_prompt):
-        final_text += chunk.content
+    # Use the new LLM streaming utility with proper system prompt
+    from aiq_aira.llm_utils import stream_llm_response_with_reasoning, update_system_prompt_for_reasoning
+    from langchain_core.prompts import ChatPromptTemplate
+    
+    # Create a proper system prompt
+    system_prompt = "You are a helpful AI assistant that can rewrite artifacts based on user requests."
+    system_prompt = update_system_prompt_for_reasoning(system_prompt, llm)
+    
+    # Create a proper chat prompt template
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{input}")
+    ])
+    chain = prompt | llm
+    
+    final_text, _ = await stream_llm_response_with_reasoning(
+        chain=chain,
+        llm=llm,
+        input_data={"input": user_facing_prompt},
+        writer=lambda x: None,  # No streaming needed for this function
+        writer_key="",
+        timeout=None,
+        stream_usage=False
+    )
 
-    # strip out <think> if present
-    final_text = remove_think_tags(final_text)
+    # strip out reasoning tokens if present
+    final_text = remove_reasoning_tokens(final_text, llm)
 
     return final_text.strip()
 
@@ -169,13 +174,32 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
     # Build a ChatPromptTemplate
     prompt = ChatPromptTemplate.from_messages(conversation_messages).format_messages()
 
-    # Call the LLM
-    answer_buf = ""
-    async for chunk in llm.astream(prompt):
-        answer_buf += chunk.content
+    # Call the LLM using the new utility with proper system prompt
+    from aiq_aira.llm_utils import stream_llm_response_with_reasoning, update_system_prompt_for_reasoning
+    
+    # Create a proper system prompt
+    system_prompt = "You are a helpful AI assistant that can answer questions about artifacts."
+    system_prompt = update_system_prompt_for_reasoning(system_prompt, llm)
+    
+    # Create a proper chat prompt template
+    chat_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{input}")
+    ])
+    chain = chat_prompt | llm
+    
+    answer_buf, _ = await stream_llm_response_with_reasoning(
+        chain=chain,
+        llm=llm,
+        input_data={"input": user_message},
+        writer=lambda x: None,  # No streaming needed for this function
+        writer_key="",
+        timeout=None,
+        stream_usage=False
+    )
 
-    # Remove <think> if present
-    answer_buf = remove_think_tags(answer_buf)
+    # Remove reasoning tokens if present
+    answer_buf = remove_reasoning_tokens(answer_buf, llm)
 
     assistant_reply = answer_buf.strip()
 

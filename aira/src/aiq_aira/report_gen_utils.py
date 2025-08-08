@@ -9,6 +9,7 @@ from aiq_aira.prompts import (
 
 from aiq_aira.constants import ASYNC_TIMEOUT
 from aiq_aira.utils import update_system_prompt
+from aiq_aira.llm_utils import stream_llm_response_with_reasoning, remove_reasoning_tokens
 import asyncio
 import logging
 
@@ -50,34 +51,26 @@ async def summarize_report(
     )
     chain = prompt | llm
 
-    # Stream the result
-    result = ""
-    stop = False
+    # Stream the result using the new LLM utility
     input_payload = {"input": user_input}
-    try: 
-        writer({"summarize_sources": "\n Starting summary \n"})
-        async with asyncio.timeout(ASYNC_TIMEOUT):
-            async for chunk in chain.astream(input_payload, stream_usage=True):
-                result += chunk.content
-                if chunk.content == "</think>":
-                    stop = True
-                if not stop:
-                    writer({"summarize_sources": chunk.content})
-    except asyncio.TimeoutError as e:
-        writer({"summarize_sources": " \n \n ---------------- \n \n Timeout error from reasoning LLM. Consider running report generation again. \n \n "})
-
+    
+    writer({"summarize_sources": "\n Starting summary \n"})
+    
+    result, success = await stream_llm_response_with_reasoning(
+        chain=chain,
+        llm=llm,
+        input_data=input_payload,
+        writer=writer,
+        writer_key="summarize_sources",
+        timeout=ASYNC_TIMEOUT,
+        stream_usage=True
+    )
+    
+    if not success:
         return user_input
 
-    # Remove <think>...</think> sections
-    while "<think>" in result and "</think>" in result:
-        start = result.find("<think>")
-        end = result.find("</think>") + len("</think>")
-        result = result[:start] + result[end:]
-    
-    # Handle case where opening <think> tag might be missing
-    while "</think>" in result:
-        end = result.find("</think>") + len("</think>")
-        result = result[end:]
+    # Remove reasoning tokens
+    result = remove_reasoning_tokens(result, llm)
 
     # Return the final updated summary
     return result
