@@ -149,7 +149,6 @@ def format_sources(sources: str, source_num_start: int | None = None) -> str:
 def _escape_markdown(text: str) -> str:
     """
     Escapes Markdown to be rendered verbatim in the frontend in some scenarios
-    Changes '* item' to '\* item', '1. item' to '\1. item', etc.
     """
     if not text:
         return ""
