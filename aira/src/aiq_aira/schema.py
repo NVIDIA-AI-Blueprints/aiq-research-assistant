@@ -39,6 +39,7 @@ class GenerateQueryStateInput(BaseModel):
     report_organization: str = Field(..., description="Desired structure or constraints for the final report")
     num_queries: int = Field(3, description="Number of queries to generate")
     llm_name: str = Field(..., description="LLM model to use")
+    rag_collection: str = Field(..., description="Collection to search for information from")
 
 
 class GenerateQueryStateOutput(BaseModel):

@@ -36,6 +36,55 @@ from aiq_aira.utils import get_domain
 logger = logging.getLogger(__name__)
 
 
+async def get_document_summaries(rag_url: str, ingestor_url: str, rag_collection: str):
+    """
+    Get document summaries from a RAG endpoint
+    """
+
+    # first get the document names in the collection 
+
+    headers = {
+        "accept": "application/json", "Content-Type": "application/json", "Authorization": f"Bearer {RAG_API_KEY}"
+    }
+    req_url = urljoin(ingestor_url, f"v1/documents?collection_name={rag_collection}")
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with asyncio.timeout(ASYNC_TIMEOUT):
+                async with session.get(req_url, headers=headers) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    if result.get("documents"):
+                        document_names = result["documents"]
+                    else:
+                        logger.error(f"Error getting document names from {req_url}: {result}")
+                        return ""   
+
+    except Exception as e:
+        logger.error(f"Error getting document names from {req_url}: {e}")
+        return ""
+
+    # then get the summaries for each document
+    document_summaries = []
+    for document_name in document_names:
+        req_url = urljoin(rag_url, f"v1/summary?collection_names={rag_collection}&file_name={document_name}&blocking=true&timeout=30")
+
+        async with aiohttp.ClientSession() as session:
+            async with asyncio.timeout(ASYNC_TIMEOUT):
+                async with session.get(req_url, headers=headers) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    if result.get("summary"):
+                        document_summaries.append(result["summary"])
+                    else:
+                        logger.error(f"Error getting summary for {document_name} from {req_url}: {result}")
+                        document_summaries.append("")
+
+    document_summaries = "\n".join(document_summaries)
+
+    return document_summaries
+
+
 @track_function(metadata={"action": "search_rag", "source": "search_rag"})
 async def search_rag(session: aiohttp.ClientSession, url: str, prompt: str, writer: StreamWriter, collection: str):
     """

@@ -42,6 +42,7 @@ from aiq_aira.utils import async_gen
 from aiq_aira.utils import format_sources
 from aiq_aira.utils import redact_urls
 from aiq_aira.utils import update_system_prompt
+from aiq_aira.tools import get_document_summaries
 
 logger = logging.getLogger(__name__)
 store = InMemoryByteStore()
@@ -62,9 +63,17 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     number_of_queries = config["configurable"].get("number_of_queries")
     report_organization = config["configurable"].get("report_organization")
     topic = config["configurable"].get("topic")
+    rag_url = config["configurable"].get("rag_url")
+    ingestor_url = config["configurable"].get("ingestor_url")
+    rag_collection = config["configurable"].get("rag_collection")
 
     system_prompt = "you are a helpful assistant"
     system_prompt = update_system_prompt(system_prompt, llm)
+
+    if rag_url and rag_collection:
+        document_summaries = get_document_summaries(rag_url, ingestor_url, rag_collection)
+    else:
+        document_summaries = ""
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
@@ -79,6 +88,8 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
             report_organization,
         "number_of_queries":
             number_of_queries,
+        "document_summaries":
+            document_summaries,
         "input":
             query_writer_instructions.format(topic=topic,
                                              report_organization=report_organization,

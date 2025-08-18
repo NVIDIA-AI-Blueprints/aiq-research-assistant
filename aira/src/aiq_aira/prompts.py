@@ -48,6 +48,9 @@ query_writer_instructions = """Generate {number_of_queries} search queries that 
 # Report organization
 {report_organization}
 
+# General context about topic and organization
+{document_summaries}
+
 # Instructions
 1. Create queries to help answer questions for all sections in report organization.
 2. Format your response as a JSON object with the following keys:

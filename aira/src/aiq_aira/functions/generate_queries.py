@@ -44,6 +44,8 @@ class AIRAGenerateQueriesConfig(FunctionBaseConfig, name="generate_queries"):
     """
     Configuration for the generate_queries function/endpoint
     """
+    rag_url: str = ""
+    ingestor_url: str = ""
 
 
 @register_function(config_type=AIRAGenerateQueriesConfig)
@@ -74,8 +76,11 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
                                        config={
                                            "llm": llm,
                                            "number_of_queries": message.num_queries,
+                                           "rag_url": config.rag_url,
+                                           "ingestor_url": config.ingestor_url,
                                            "report_organization": msg,
-                                           "topic": message.topic
+                                           "topic": message.topic,
+                                           "rag_collection": message.rag_collection
                                        })
         return GenerateQueryStateOutput.model_validate(response)
 
@@ -97,8 +102,11 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
             config={
                 "llm": llm,
                 "number_of_queries": message.num_queries,
+                "rag_url": config.rag_url,
+                "ingestor_url": config.ingestor_url,
                 "report_organization": msg,
-                "topic": message.topic
+                "topic": message.topic,
+                "rag_collection": message.rag_collection
             }
         ):
 
