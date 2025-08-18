@@ -44,8 +44,8 @@ class AIRAGenerateQueriesConfig(FunctionBaseConfig, name="generate_queries"):
     """
     Configuration for the generate_queries function/endpoint
     """
-    rag_url: str = ""
-    ingestor_url: str = ""
+    rag_url: str
+    ingestor_url: str
 
 
 @register_function(config_type=AIRAGenerateQueriesConfig)
@@ -69,6 +69,8 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
         msg = message.report_organization + "\n" + meta_prompt
+
+        
 
         response = await graph.ainvoke(input={
             "queries": [], "web_research_results": [], "running_summary": ""

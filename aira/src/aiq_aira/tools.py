@@ -41,6 +41,8 @@ async def get_document_summaries(rag_url: str, ingestor_url: str, rag_collection
     Get document summaries from a RAG endpoint
     """
 
+    logger.info("Getting RAG Summaries")
+
     # first get the document names in the collection 
 
     headers = {
@@ -67,7 +69,8 @@ async def get_document_summaries(rag_url: str, ingestor_url: str, rag_collection
     # then get the summaries for each document
     document_summaries = []
     for document_name in document_names:
-        req_url = urljoin(rag_url, f"v1/summary?collection_names={rag_collection}&file_name={document_name}&blocking=true&timeout=30")
+        document_name = document_name.get("document_name")
+        req_url = urljoin(rag_url, f"v1/summary?collection_name={rag_collection}&file_name={document_name}&blocking=true&timeout=30")
 
         async with aiohttp.ClientSession() as session:
             async with asyncio.timeout(ASYNC_TIMEOUT):

@@ -126,6 +126,7 @@ class ConfigSchema(TypedDict):
     collection: str
     number_of_queries: int
     rag_url: str
+    ingestor_url: str
     num_reflections: int
     search_web: bool
     search_eci: bool

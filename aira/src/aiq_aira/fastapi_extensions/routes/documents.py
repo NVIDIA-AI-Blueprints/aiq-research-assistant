@@ -67,6 +67,9 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
             if "blocking" not in metadata:
                 metadata["blocking"] = False
 
+            if "generate_summary" not in metadata:
+                metadata["generate_summary"] = True
+
             logger.info(f"Document upload request ({http_method}) - Metadata: {metadata}")
 
             # Create multipart form data for upstream request

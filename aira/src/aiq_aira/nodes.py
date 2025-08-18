@@ -70,8 +70,15 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     system_prompt = "you are a helpful assistant"
     system_prompt = update_system_prompt(system_prompt, llm)
 
-    if rag_url and rag_collection:
-        document_summaries = get_document_summaries(rag_url, ingestor_url, rag_collection)
+    logger.info(config)
+
+    logger.info(rag_url)
+    logger.info(ingestor_url)
+    logger.info(rag_collection)
+    
+
+    if rag_url and ingestor_url and rag_collection:
+        document_summaries = await get_document_summaries(rag_url, ingestor_url, rag_collection)
     else:
         document_summaries = ""
 
@@ -93,6 +100,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
         "input":
             query_writer_instructions.format(topic=topic,
                                              report_organization=report_organization,
+                                             document_summaries=document_summaries,
                                              number_of_queries=number_of_queries)
     }
 

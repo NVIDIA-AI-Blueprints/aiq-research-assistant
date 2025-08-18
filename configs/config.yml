@@ -89,6 +89,8 @@ llms:
 functions:
   generate_query:
     _type: generate_queries
+    rag_url: ${RAG_SERVER_URL:-http://rag-server:8081/v1}
+    ingestor_url: ${RAG_INGEST_URL:-http://ingestor-server:8082/v1}
 
   generate_summary:
     _type: generate_summaries
