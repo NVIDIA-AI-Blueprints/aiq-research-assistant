@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-This document contains frequently asked questions that aren't covered in the deployment or troubleshooting guides.
+This document contains frequently asked questions that are not covered in the deployment or troubleshooting guides.
 
 
 ## How Many Files can I Upload? Can I Bulk Upload Files?
@@ -56,7 +56,7 @@ The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundn
 
 ## How are the REST Endpoints Served?
 
-The REST endpoints are created using the [NVIDIA Agent Intelligence Toolkit](https://github.com/NVIDIA/AIQToolkit). Each endpoint is defined as a function and frontend endpoint in the `aira/configs/config.yml` configuration file. The docker compose entrypoint for the backend invokes the `aiq serve` command which makes these endpoints available as REST APIs. The functions are registered with the AIQ toolkit in the `register.py` file, and the source code for the main endpoints is located in the `functions` directory. 
+The REST endpoints are created using the [NVIDIA NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit). Each endpoint is defined as a function and frontend endpoint in the `aira/configs/config.yml` configuration file. The docker compose entrypoint for the backend invokes the `aiq serve` command which makes these endpoints available as REST APIs. The functions are registered with the NeMo Agent toolkit in the `register.py` file, and the source code for the main endpoints is located in the `functions` directory. 
 
 ## How do I Debug a Hallucination?
 
