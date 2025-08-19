@@ -70,8 +70,6 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
         msg = message.report_organization + "\n" + meta_prompt
 
-        
-
         response = await graph.ainvoke(input={
             "queries": [], "web_research_results": [], "running_summary": ""
         },

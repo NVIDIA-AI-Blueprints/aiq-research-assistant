@@ -43,7 +43,7 @@ async def get_document_summaries(rag_url: str, ingestor_url: str, rag_collection
 
     logger.info("Getting RAG Summaries")
 
-    # first get the document names in the collection 
+    # first get the document names in the collection
 
     headers = {
         "accept": "application/json", "Content-Type": "application/json", "Authorization": f"Bearer {RAG_API_KEY}"
@@ -60,7 +60,7 @@ async def get_document_summaries(rag_url: str, ingestor_url: str, rag_collection
                         document_names = result["documents"]
                     else:
                         logger.error(f"Error getting document names from {req_url}: {result}")
-                        return ""   
+                        return ""
 
     except Exception as e:
         logger.error(f"Error getting document names from {req_url}: {e}")
@@ -70,18 +70,25 @@ async def get_document_summaries(rag_url: str, ingestor_url: str, rag_collection
     document_summaries = []
     for document_name in document_names:
         document_name = document_name.get("document_name")
-        req_url = urljoin(rag_url, f"v1/summary?collection_name={rag_collection}&file_name={document_name}&blocking=true&timeout=30")
+        req_url = urljoin(
+            rag_url, f"v1/summary?collection_name={rag_collection}&file_name={document_name}&blocking=true&timeout=30")
 
-        async with aiohttp.ClientSession() as session:
-            async with asyncio.timeout(ASYNC_TIMEOUT):
-                async with session.get(req_url, headers=headers) as response:
-                    response.raise_for_status()
-                    result = await response.json()
-                    if result.get("summary"):
-                        document_summaries.append(result["summary"])
-                    else:
-                        logger.error(f"Error getting summary for {document_name} from {req_url}: {result}")
-                        document_summaries.append("")
+        try:
+
+            async with aiohttp.ClientSession() as session:
+                async with asyncio.timeout(ASYNC_TIMEOUT):
+                    async with session.get(req_url, headers=headers) as response:
+                        response.raise_for_status()
+                        result = await response.json()
+                        if result.get("summary"):
+                            document_summaries.append(result["summary"])
+                        else:
+                            logger.error(f"Error getting summary for {document_name} from {req_url}: {result}")
+                            document_summaries.append("")
+
+        except Exception as e:
+            logger.error(f"Error getting summary for {document_name}: {e}")
+            document_summaries.append("")
 
     document_summaries = "\n".join(document_summaries)
 

@@ -59,7 +59,7 @@ services:
     environment:
       TAVILY_API_KEY: ${TAVILY_API_KEY:-this-is-a-test-key}
       AIRA_APPLY_GUARDRAIL: "false"
-      OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
       # Required for rag middleware via fastapi extensions
       RAG_INGEST_URL: ${RAG_INGEST_URL:-http://ingestor-server:8082/v1}

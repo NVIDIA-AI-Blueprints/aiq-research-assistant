@@ -38,11 +38,11 @@ from aiq_aira.schema import AIRAState
 from aiq_aira.schema import GeneratedQuery
 from aiq_aira.search_utils import deduplicate_and_format_sources
 from aiq_aira.search_utils import process_single_query
+from aiq_aira.tools import get_document_summaries
 from aiq_aira.utils import async_gen
 from aiq_aira.utils import format_sources
 from aiq_aira.utils import redact_urls
 from aiq_aira.utils import update_system_prompt
-from aiq_aira.tools import get_document_summaries
 
 logger = logging.getLogger(__name__)
 store = InMemoryByteStore()
@@ -70,14 +70,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     system_prompt = "you are a helpful assistant"
     system_prompt = update_system_prompt(system_prompt, llm)
 
-    logger.info(config)
-
-    logger.info(rag_url)
-    logger.info(ingestor_url)
-    logger.info(rag_collection)
-    
-
-    if rag_url and ingestor_url and rag_collection:
+    if rag_url and ingestor_url and rag_collection and (rag_collection is not ""):
         document_summaries = await get_document_summaries(rag_url, ingestor_url, rag_collection)
     else:
         document_summaries = ""
@@ -106,6 +99,8 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
 
     answer_agg = ""
     stop = False
+
+    logger.info("Here")
 
     try:
         async with asyncio.timeout(ASYNC_TIMEOUT):

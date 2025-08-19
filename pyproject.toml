@@ -12,11 +12,10 @@ root = "."
 name = "aiq_aira"
 dynamic = ["version"]
 dependencies = [
-  "aiqtoolkit-langchain>=1.2.0a20250703",
-  "aiqtoolkit-weave>=1.2.0a20250703",
-  "aiqtoolkit-phoenix>=1.2.0a20250703",
-  "aiqtoolkit>=1.2.0a20250703",
-  "aiqtoolkit-opentelemetry>=1.2.0a20250703",
+  "nvidia-nat-langchain==1.2.0rc9",
+  "nvidia-nat-weave==1.2.0rc9",
+  "nvidia-nat-phoenix==1.2.0rc9",
+  "nvidia-nat-opentelemetry==1.2.0rc9",
   "aiohappyeyeballs==2.4.4",
   "aiohttp",
   "aiosignal==1.3.2",
