@@ -13,6 +13,7 @@ from aiq_aira.schema import GeneratedQuery
 from aiq_aira.prompts import relevancy_checker
 from aiq_aira.tools import search_rag, search_tavily
 from aiq_aira.utils import dummy, _escape_markdown
+from aiq_aira.llm_utils import invoke_llm_with_reasoning
 import html
 
 logger = logging.getLogger(__name__)
@@ -28,32 +29,43 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
     processed_answer_for_display = html.escape(_escape_markdown(answer))
 
     try:
-        async with asyncio.timeout(ASYNC_TIMEOUT):
-            response = await llm.ainvoke(
-                relevancy_checker.format(document=answer, query=query)
-            )
-            score = parse_json_markdown(response.content)
-            writer({"relevancy_checker": f""" =
+        # Use the new LLM utility with proper system prompt
+        from aiq_aira.llm_utils import update_system_prompt_for_reasoning
+        from langchain_core.prompts import ChatPromptTemplate
+        
+        # Create a proper system prompt
+        system_prompt = "You are a helpful AI assistant that evaluates the relevance of answers to questions."
+        system_prompt = update_system_prompt_for_reasoning(system_prompt, llm)
+        
+        # Create a proper chat prompt template
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", "{input}")
+        ])
+        chain = prompt | llm
+        
+        response = await invoke_llm_with_reasoning(
+            chain=chain,
+            llm=llm,
+            input_data={"input": relevancy_checker.format(document=answer, query=query)},
+            timeout=ASYNC_TIMEOUT
+        )
+        score = parse_json_markdown(response)
+        writer({"relevancy_checker": f""" =
     ---
     Relevancy score: {score.get("score")}  
     Query: {query}
     Answer: {processed_answer_for_display}
     """})
 
-            return score
+        return score
     
-    except asyncio.TimeoutError as e:
-             writer({"relevancy_checker": f""" 
+    except Exception as e:
+        writer({"relevancy_checker": f""" 
 ----------                
-LLM time out evaluating relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
+LLM error evaluating relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
 ----------
 """})   
-    except Exception as e:
-        writer({"relevancy_checker": f"""
----------
-Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_display} 
----------
-"""})
         logger.debug(f"Error parsing relevancy JSON: {e}")
 
     # default if fails

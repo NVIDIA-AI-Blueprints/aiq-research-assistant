@@ -90,8 +90,6 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
         msg = message.report_organization + "\n" + meta_prompt
-        if message.search_eci and config.eci_search_tool_name is None:
-            raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
         response: AIRAState = await graph.ainvoke(input={
             "queries": message.queries, "web_research_results": [], "running_summary": ""
@@ -119,8 +117,6 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
         msg = message.report_organization + "\n" + meta_prompt
-        if message.search_eci and config.eci_search_tool_name is None:
-            raise ValueError("ECI search is enabled but no ECI search tool is provided")
 
         async for _t, val in graph.astream(
                 input={"queries": message.queries, "web_research_results": [], "running_summary": ""},

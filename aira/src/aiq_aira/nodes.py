@@ -37,6 +37,7 @@ from aiq_aira.prompts import (
 
 from aiq_aira.utils import async_gen, format_sources, update_system_prompt
 from aiq_aira.constants import ASYNC_TIMEOUT
+from aiq_aira.llm_utils import stream_llm_response_with_reasoning, remove_reasoning_tokens
 
 from aiq_aira.search_utils import process_single_query, deduplicate_and_format_sources
 from aiq_aira.report_gen_utils import summarize_report
@@ -58,7 +59,7 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     number_of_queries = config["configurable"].get("number_of_queries")
     report_organization = config["configurable"].get("report_organization")
     topic = config["configurable"].get("topic")
-
+    
     system_prompt = ""
     system_prompt = update_system_prompt(system_prompt, llm)
 
@@ -80,34 +81,27 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
         "number_of_queries": number_of_queries,
         "input": query_writer_instructions.format(topic=topic, report_organization=report_organization, number_of_queries=number_of_queries)
     }
-
-    answer_agg = ""
-    stop = False
-
-    try: 
-        async with asyncio.timeout(ASYNC_TIMEOUT):
-            async for chunk in chain.astream(input, stream_usage=True):
-                answer_agg += chunk.content
-                if "</think>" in chunk.content:
-                    stop = True
-                if not stop:
-                    writer({"generating_questions": chunk.content})
-    except asyncio.TimeoutError as e: 
-        writer({"generating_questions": " \n \n ---------------- \n \n Timeout error from reasoning LLM, please try again"})
+    
+    # Use the new LLM streaming utility
+    answer_agg, success = await stream_llm_response_with_reasoning(
+        chain=chain,
+        llm=llm,
+        input_data=input,
+        writer=writer,
+        writer_key="generating_questions",
+        timeout=ASYNC_TIMEOUT,
+        stream_usage=True
+    )
+    
+    if not success:
         queries = []
         return {"queries": queries}
 
-    # Split to get the final JSON after </think>
-    splitted = answer_agg.split("</think>")
-    if len(splitted) < 2:
-        writer({"generating_questions": " \n \n ---------------- \n \n Timeout error from reasoning LLM, please try again"})
-        logger.info(f"Error processing query response. No </think> tag. Response: {answer_agg}")
-        queries = []
-        return {"queries": queries}
-
-    json_str = splitted[1].strip()
+    # Remove reasoning tokens and parse JSON
+    answer_agg = remove_reasoning_tokens(answer_agg, llm)
+    
     try:
-        queries = parse_json_markdown(json_str)
+        queries = parse_json_markdown(answer_agg)
     except Exception as e:
         logger.error(f"Error parsing queries as JSON: {e}")
         queries = []
@@ -238,24 +232,27 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
         chain = prompt | llm
 
         writer({"reflect_on_summary": "\n Starting reflection \n"})
-        async for i in async_gen(1):
-            result = ""
-            stop = False
-            async for chunk in chain.astream(input, stream_usage=True):
-                result = result + chunk.content
-                if chunk.content == "</think>":
-                    stop = True
-                if not stop:
-                    writer({"reflect_on_summary": chunk.content})
-
-        splitted = result.split("</think>")
-        if len(splitted) < 2:
+        
+        # Use the new LLM streaming utility
+        result, success = await stream_llm_response_with_reasoning(
+            chain=chain,
+            llm=llm,
+            input_data=input,
+            writer=writer,
+            writer_key="reflect_on_summary",
+            timeout=ASYNC_TIMEOUT,
+            stream_usage=True
+        )
+        
+        if not success:
             # If we can't parse anything, just fallback
             running_summary = state.running_summary
             writer({"running_summary": running_summary})
             return {"running_summary": running_summary}
 
-        reflection_json = splitted[1].strip()
+        # Remove reasoning tokens and parse JSON
+        result = remove_reasoning_tokens(result, llm)
+        reflection_json = result.strip()
         try:
             reflection_obj = parse_json_markdown(reflection_json)
             gen_query = GeneratedQuery(
@@ -307,7 +304,6 @@ async def reflect_on_summary(state: AIRAState, config: RunnableConfig, writer: S
             writer=writer
         )
 
-
         state.running_summary = updated_report
 
         writer({"running_summary": updated_report})
@@ -330,33 +326,30 @@ async def finalize_summary(state: AIRAState, config: RunnableConfig, writer: Str
 
     sources_formatted = format_sources(state.citations)
     
-    # Final report creation, used to remove any remaing model commentary from the report draft
+    # Final report creation, used to remove any remaining model commentary from the report draft
     finalizer = PromptTemplate.from_template(finalize_report) | llm
-    final_buf = ""
-    try:
-        async with asyncio.timeout(ASYNC_TIMEOUT*3):
-            async for chunk in finalizer.astream({
-                "report": state.running_summary,
-                "report_organization": report_organization,
-            }, stream_usage=True):
-                final_buf += chunk.content
-                writer({"final_report": chunk.content})
-    except asyncio.TimeoutError as e:
-        writer({"final_report": " \n \n --------------- \n Timeout error from reasoning LLM during final report creation. Consider restarting report generation. \n \n "})
+    
+    # Use the new LLM streaming utility
+    final_buf, success = await stream_llm_response_with_reasoning(
+        chain=finalizer,
+        llm=llm,
+        input_data={
+            "report": state.running_summary,
+            "report_organization": report_organization,
+        },
+        writer=writer,
+        writer_key="final_report",
+        timeout=ASYNC_TIMEOUT*3,
+        stream_usage=True
+    )
+    
+    if not success:
         state.running_summary = f"{state.running_summary} \n\n ---- \n\n {sources_formatted}"
         writer({"finalized_summary": state.running_summary})
         return {"final_report": state.running_summary, "citations": sources_formatted}
     
-    # Strip out <think> sections
-    while "<think>" in final_buf and "</think>" in final_buf:
-        start = final_buf.find("<think>")
-        end = final_buf.find("</think>") + len("</think>")
-        final_buf = final_buf[:start] + final_buf[end:]
-    
-    # Handle case where opening <think> tag might be missing
-    while "</think>" in final_buf:
-        end = final_buf.find("</think>") + len("</think>")
-        final_buf = final_buf[end:]
+    # Remove reasoning tokens
+    final_buf = remove_reasoning_tokens(final_buf, llm)
         
     state.running_summary = f"{final_buf} \n\n ## Sources \n\n{sources_formatted}"    
     writer({"finalized_summary": state.running_summary})
