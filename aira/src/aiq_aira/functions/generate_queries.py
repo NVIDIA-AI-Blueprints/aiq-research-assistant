@@ -10,12 +10,11 @@ from aiq.builder.framework_enum import LLMFrameworkEnum
 import json
 
 from aiq_aira.nodes import generate_query
-from aiq_aira.schema import (
-    ConfigSchema,
-    GenerateQueryStateInput,
-    GenerateQueryStateOutput,
-    AIRAState,
-)
+from aiq_aira.prompts import meta_prompt
+from aiq_aira.schema import AIRAState
+from aiq_aira.schema import ConfigSchema
+from aiq_aira.schema import GenerateQueryStateInput
+from aiq_aira.schema import GenerateQueryStateOutput
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import START, END, StateGraph
 import logging
@@ -50,16 +49,17 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        msg = message.report_organization + "\n" + meta_prompt
 
-        response = await graph.ainvoke(
-            input={"queries": [], "web_research_results": [], "running_summary": ""},
-            config={
-                "llm": llm,
-                "number_of_queries": message.num_queries,
-                "report_organization": message.report_organization,
-                "topic": message.topic
-            }
-        )
+        response = await graph.ainvoke(input={
+            "queries": [], "web_research_results": [], "running_summary": ""
+        },
+                                       config={
+                                           "llm": llm,
+                                           "number_of_queries": message.num_queries,
+                                           "report_organization": msg,
+                                           "topic": message.topic
+                                       })
         return GenerateQueryStateOutput.model_validate(response)
 
     # ------------------------------------------------------------------
@@ -73,6 +73,7 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
         """
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+        msg = message.report_organization + "\n" + meta_prompt
 
         async for _t, val in graph.astream(
             input={"queries": [], "web_research_results": [], "running_summary": ""},
@@ -80,7 +81,7 @@ async def generate_queries_fn(config: AIRAGenerateQueriesConfig, aiq_builder: Bu
             config={
                 "llm": llm,
                 "number_of_queries": message.num_queries,
-                "report_organization": message.report_organization,
+                "report_organization": msg,
                 "topic": message.topic
             }
         ):
