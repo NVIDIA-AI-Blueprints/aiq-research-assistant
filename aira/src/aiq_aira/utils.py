@@ -13,10 +13,14 @@ async def async_gen(num_loops: int):
         yield i
         await asyncio.sleep(0.0)
 
+
 def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
     """
     Update the system prompt for the LLM to enable reasoning if the model supports it
     """
+
+    if hasattr(llm, "model") and "nemotron" in llm.model:
+        system_prompt = "detailed thinking on"
 
     if hasattr(llm, "model_name") and "nemotron" in llm.model_name:
         system_prompt = "detailed thinking on"
@@ -45,24 +49,24 @@ def format_sources(sources: str) -> str:
         source_entries = re.split(r'(?=---\nQUERY:)', sources)
         formatted_sources = []
         src_count = 1
-        
+
         for idx, entry in enumerate(source_entries):
             if not entry.strip():
                 continue
-                
+
             # Split into query, answer, and citations using a more precise pattern
             # This pattern looks for newlines followed by QUERY:, ANSWER:, or CITATION(S):
             # but only if they're not preceded by a pipe (|) character (markdown table)
             src_parts = re.split(r'(?<!\|)\n(?=QUERY:|ANSWER:|CITATION(?:S)?:)', entry.strip())
-            
+
             if len(src_parts) >= 4:
                 source_num = src_count
                 # Remove the prefix from each part
                 query = re.sub(r'^QUERY:', '', src_parts[1]).strip()
                 answer = re.sub(r'^ANSWER:', '', src_parts[2]).strip()
-                
+
                 # Handle multiple citations
-                citations = ''.join(src_parts[3:]) 
+                citations = ''.join(src_parts[3:])
 
                 formatted_entry = f"""
 ---
@@ -81,13 +85,13 @@ def format_sources(sources: str) -> str:
                 logger.info(f"Failed to clean up {entry} because it failed to parse")
                 formatted_sources.append(entry)
                 src_count += 1
-                
+
         # Combine main content with formatted sources
         return "\n".join(formatted_sources)
     except Exception as e:
         logger.warning(f"Error formatting sources: {e}")
         return sources
-    
+
 def _escape_markdown(text: str) -> str:
     """
     Escapes Markdown to be rendered verbatim in the frontend in some scenarios

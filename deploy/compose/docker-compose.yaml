@@ -32,11 +32,11 @@ services:
 
   aira-backend:
     container_name: aira-backend
-    image: nvcr.io/nvidia/blueprint/aira-backend:v1.1.0
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.2.0
     runtime: nvidia
     build:
       context: ../../
-      dockerfile: aira/Dockerfile
+      dockerfile: deploy/Dockerfile
     entrypoint: "/entrypoint.sh"
     ports:
       - "3838:3838"
@@ -45,10 +45,10 @@ services:
     environment:
       TAVILY_API_KEY: ${TAVILY_API_KEY:-this-is-a-test-key}
       AIRA_APPLY_GUARDRAIL: "false"
-      OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
     volumes:
-      - ../../aira/configs:/app/configs
+      - ../../configs:/app/configs
     networks:
       - nvidia-rag
     profiles: ["aira"]
