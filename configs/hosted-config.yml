@@ -41,7 +41,7 @@ llms:
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   nemotron:
     _type: nim
-    model_name : nvidia/llama-3_3-nemotron-super-49b-v1_5
+    model_name : nvidia/llama-3.3-nemotron-super-49b-v1.5
     temperature: 0.5
     base_url: https://integrate.api.nvidia.com/v1
     max_tokens: 5000
