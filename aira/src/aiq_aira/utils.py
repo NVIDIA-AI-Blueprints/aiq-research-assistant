@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +14,23 @@
 # limitations under the License.
 
 import asyncio
-import re
 import logging
+import re
+import time
+
+import httpx
 from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
+
+# Colors for logging
+BOLD = "\033[1m"
+BLUE = "\033[94m"
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+
 
 async def async_gen(num_loops: int):
     """
@@ -42,6 +54,7 @@ def update_system_prompt(system_prompt: str, llm: ChatOpenAI):
 
     return system_prompt
 
+
 def get_domain(url: str):
     """
     Extract the domain from a URL.
@@ -49,13 +62,15 @@ def get_domain(url: str):
     domain = url.split("/")[2]
     return domain.replace("www.", "") if domain.startswith("www.") else domain
 
+
 async def dummy():
     """
     A do-nothing async function for placeholders.
     """
     return None
 
-def format_sources(sources: str) -> str:
+
+def format_sources(sources: str, source_num_start: int | None = None) -> str:
     """
     Format the sources into nicer looking markdown.
     """

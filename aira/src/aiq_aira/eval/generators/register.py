@@ -13,6 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Import registrations to ensure they are loaded
-from . import register
-from .eval import evaluator_register, generator_register
+from .generate_full import AIRAFullGenerator
