@@ -57,13 +57,13 @@ functions:
   generate_summary:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://10.57.207.82:8081 
+    rag_url: http://rag-server:8081/v1 
 
   artifact_qa:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://10.57.207.82:8081
+    rag_url: http://rag-server:8081/v1
   
   health_check:
     _type: health_check
