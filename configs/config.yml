@@ -33,19 +33,21 @@ llms:
     _type: nim
     model_name: meta/llama-3.3-70b-instruct
     temperature: 0.0
-    base_url: https://integrate.api.nvidia.com/v1
-    
+    base_url: ${INSTRUCT_LLM_BASE_URL:-http://aira-instruct-llm:8000/v1}
+    max_tokens: 20000
+    api_key: not-needed
   # The reasoning llm is used for report planning and reflection and should be a reasoning model
   # that supports thinking tokens. The default configuration below is used assuming a docker compose
   # deployment of AIRA and RAG with a local NVIDIA NIM microservice for the nemotron model.
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   nemotron:
     _type: nim
-    model_name : nvidia/llama-3.3-nemotron-super-49b-v1
+    model_name : nvidia/llama-3_3-nemotron-super-49b-v1_5
     temperature: 0.5
-    base_url: https://integrate.api.nvidia.com/v1
+    base_url: ${NEMOTRON_LLM_BASE_URL:-http://nim-llm-ms:8000/v1}
     max_tokens: 5000
     stream: true
+    api_key: not-needed
   
 
 functions:
@@ -55,13 +57,13 @@ functions:
   generate_summary:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1 
+    rag_url: http://10.57.207.82:8081 
 
   artifact_qa:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1
+    rag_url: http://10.57.207.82:8081
   
   health_check:
     _type: health_check
