@@ -168,12 +168,21 @@ async def create_post_collections_handler(rag_ingest_url: str):
 
     return post_collections
 
+async def create_get_collections_handler(rag_ingest_url: str):
+    """Get a handler for GET /collections endpoint"""
+    async def get_collections():
+        """Get collections"""
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+            response = await client.get(f"{rag_ingest_url}/collections")
+            return response.json()
+    return get_collections
 
 async def add_collection_routes(app: FastAPI, rag_ingest_url: str):
     """Add collection-related routes to the FastAPI app"""
 
     # Create the POST collections handler
     post_collections_handler = await create_post_collections_handler(rag_ingest_url)
+    get_collections_handler = await create_get_collections_handler(rag_ingest_url)
 
     # Add the route
     app.add_api_route("/collections",
@@ -181,4 +190,10 @@ async def add_collection_routes(app: FastAPI, rag_ingest_url: str):
                       methods=["POST"],
                       response_model=CollectionResponse,
                       tags=["rag-endpoints"],
-                      summary="Create RAG collections with session TTL tracking")
+                      summary="Create RAG collections")
+    
+    app.add_api_route("/collections",
+                      get_collections_handler,
+                      methods=["GET"],
+                      tags=["rag-endpoints"],
+                      summary="Get RAG collections")
