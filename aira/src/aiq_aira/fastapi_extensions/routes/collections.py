@@ -25,13 +25,6 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
-class CollectionRequest(BaseModel):
-    """Request model for creating collections"""
-    collection_names: List[str]
-    collection_type: Optional[str] = "text"
-    embedding_dimension: Optional[int] = 2048
-
-
 class CollectionResponse(BaseModel):
     """Response model for collection operations"""
     message: Optional[str] = None
@@ -81,16 +74,20 @@ async def verify_collection_ready(collection_name: str,
 async def create_post_collections_handler(rag_ingest_url: str):
     """Create a handler for POST /collections endpoint"""
 
-    async def post_collections(request: CollectionRequest):
-        """Create collections - forward request directly to RAG service"""
+    async def post_collections(request: List[str]):
+        # Simple list format: ["collection1", "collection2"]
+        collection_names = request
+        collection_type = "text"
+        embedding_dimension = 2048
+        
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
             params = {
-                "collection_type": request.collection_type,
-                "embedding_dimension": request.embedding_dimension
+                "collection_type": collection_type,
+                "embedding_dimension": embedding_dimension
             }
             
             url = f"{rag_ingest_url}/collections"
-            response = await client.post(url, json=request.collection_names, params=params)
+            response = await client.post(url, json=collection_names, params=params)
             
             # Forward the response directly
             return response.json()
