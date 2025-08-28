@@ -35,6 +35,9 @@ from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontE
 from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorkerBase
 from fastapi import FastAPI
 
+from .routes.collections import add_collection_routes
+from .routes.documents import add_document_routes
+
 
 class APIExtensionsConfig(FastApiFrontEndConfig, name="aira_frontend"):
     """Configuration for API extensions including middleware settings"""
@@ -47,6 +50,14 @@ class APIExtensionsWorker(FastApiFrontEndPluginWorker):
     @override
     async def add_routes(self, app: FastAPI, builder: WorkflowBuilder):
         await super().add_routes(app, builder)
+
+        rag_ingest_url = os.getenv("RAG_INGEST_URL", "http://ingestor-server:8082/v1")
+
+        # Add collection routes with Redis session tracking
+        await add_collection_routes(app, rag_ingest_url)
+
+        # Add document routes
+        await add_document_routes(app, rag_ingest_url)
 
 
 class APIExtensionsPlugin(FastApiFrontEndPlugin):
