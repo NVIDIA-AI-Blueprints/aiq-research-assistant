@@ -60,11 +60,11 @@ services:
     
   aira-frontend:
     container_name: aira-frontend
-    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.0.0
+    image: nvcr.io/nvstaging/blueprint/aira-frontend:v1.2.0
     ports:
-      - "3001:3001"
+      - "3000:3000"
     expose:
-      - "3001"
+      - "3000"
     networks:
       - nvidia-rag
     environment:
