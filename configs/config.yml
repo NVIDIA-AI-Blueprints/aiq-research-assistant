@@ -1,7 +1,7 @@
 general:
   use_uvloop: true
   front_end:
-    _type: fastapi
+    _type: aira_frontend
     endpoints:
       - path: /generate_query
         method: POST

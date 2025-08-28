@@ -52,26 +52,6 @@ services:
     networks:
       - nvidia-rag
     profiles: ["aira"]
-
-  aira-nginx:
-    image: nginx:latest
-    container_name: aira-nginx
-    ports:
-      - "8051:8051"
-    expose:
-      - "8051"
-    environment:
-      # If you are deploying RAG separately,
-      # update to match the URL for the Ingestor Server in your RAG deployment
-      - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082}
-      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
-    volumes:
-      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
-    depends_on:
-      - aira-backend
-    networks:
-      - nvidia-rag
-    profiles: ["aira"]
     
   aira-frontend:
     container_name: aira-frontend
@@ -84,7 +64,7 @@ services:
       - nvidia-rag
     environment:
       NVWB_TRIM_PREFIX: true
-      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
+      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-backend:3838}
     profiles: ["aira"]
 
 # Use the nvidia-rag network created by the 
