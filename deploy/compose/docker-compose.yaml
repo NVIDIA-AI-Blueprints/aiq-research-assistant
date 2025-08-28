@@ -57,7 +57,7 @@ services:
     
   aira-frontend:
     container_name: aira-frontend
-    image: nvcr.io/nvstaging/blueprint/aira-frontend:v1.1.1
+    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.1.1
     ports:
       - "3000:3000"
     expose:
