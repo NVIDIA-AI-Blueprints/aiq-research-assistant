@@ -81,90 +81,19 @@ async def verify_collection_ready(collection_name: str,
 async def create_post_collections_handler(rag_ingest_url: str):
     """Create a handler for POST /collections endpoint"""
 
-    async def post_collections(request: CollectionRequest) -> CollectionResponse:
-        """Create collections"""
+    async def post_collections(request: CollectionRequest):
+        """Create collections - forward request directly to RAG service"""
         async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
-            try:
-                verified_existing = []
-                new_collections = []
-
-                for name in request.collection_names:
-                    logger.info(f"Verifying collection '{name}' exists in RAG service...")
-                    if await verify_collection_exists(name, rag_ingest_url):
-                        verified_existing.append(name)
-                        logger.info(f"Collection '{name}' verified - using existing session")
-                    else:
-                        logger.warning(
-                            f"Collection '{name}' not found in RAG service - removing from cache and recreating")
-                        new_collections.append(name)
-
-                # If all collections already exist and are verified, return success
-                if not new_collections:
-                    return CollectionResponse(message=f"All collections already exist: {', '.join(verified_existing)}",
-                                              successful=verified_existing,
-                                              failed=[],
-                                              total_success=len(verified_existing),
-                                              total_failed=0)
-
-                # Create only the new collections
-                params = {
-                    "collection_type": request.collection_type, "embedding_dimension": request.embedding_dimension
-                }
-
-                url = f"{rag_ingest_url}/collections"
-                logger.info(f"Creating new collections at {url} with params: {params}")
-                logger.info(f"New collection names: {new_collections}")
-                if verified_existing:
-                    logger.info(f"Existing collection names (verified): {verified_existing}")
-
-                response = await client.post(url, json=new_collections, params=params)
-
-                # If successful, verify each collection is ready before tracking
-                if response.status_code in [200, 201]:
-                    result = response.json()
-                    created_collections = result.get("successful", [])
-
-                    # Verify each newly created collection is ready
-                    actually_successful = []
-                    failed_verification = []
-
-                    for name in created_collections:
-                        if await verify_collection_ready(name, rag_ingest_url):
-                            actually_successful.append(name)
-                        else:
-                            logger.error(f"Collection '{name}' created but not accessible")
-                            failed_verification.append(name)
-
-                    # Combine results
-                    all_successful = verified_existing + actually_successful
-                    all_failed = result.get("failed", []) + failed_verification
-
-                    return CollectionResponse(
-                        message=
-                        f"Collection creation completed. Created and verified: {len(actually_successful)}, Already existed: {len(verified_existing)}, Failed verification: {len(failed_verification)}",
-                        successful=all_successful,
-                        failed=all_failed,
-                        total_success=len(all_successful),
-                        total_failed=len(all_failed))
-                elif len(verified_existing) > 0:
-                    error_text = response.text
-                    # Still return existing as successful, following existing RAG API behavior
-                    return CollectionResponse(
-                        message=f"Failed to create new collections: {response.status_code} - {error_text}",
-                        successful=verified_existing,
-                        failed=new_collections,
-                        total_success=len(verified_existing),
-                        total_failed=len(new_collections))
-                else:
-                    raise Exception(f"Failed to create collections: {response.status_code} - {response.text}")
-
-            except Exception as e:
-                logger.error(f"Error creating collections: {e}")
-                return CollectionResponse(message=f"Error creating collections: {str(e)}",
-                                          successful=[],
-                                          failed=request.collection_names,
-                                          total_success=0,
-                                          total_failed=len(request.collection_names))
+            params = {
+                "collection_type": request.collection_type,
+                "embedding_dimension": request.embedding_dimension
+            }
+            
+            url = f"{rag_ingest_url}/collections"
+            response = await client.post(url, json=request.collection_names, params=params)
+            
+            # Forward the response directly
+            return response.json()
 
     return post_collections
 
@@ -188,7 +117,6 @@ async def add_collection_routes(app: FastAPI, rag_ingest_url: str):
     app.add_api_route("/collections",
                       post_collections_handler,
                       methods=["POST"],
-                      response_model=CollectionResponse,
                       tags=["rag-endpoints"],
                       summary="Create RAG collections")
     

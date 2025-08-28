@@ -65,7 +65,7 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
 
             # Set default blocking if not specified
             if "blocking" not in metadata:
-                metadata["blocking"] = False
+                metadata["blocking"] = True
 
             logger.info(f"Document upload request ({http_method}) - Metadata: {metadata}")
 
