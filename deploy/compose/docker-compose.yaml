@@ -49,6 +49,7 @@ services:
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
       # Required for rag middleware via fastapi extensions
       RAG_INGEST_URL: ${RAG_INGEST_URL:-http://rag-server:8082/v1}
+      RAG_SERVER_URL: ${RAG_SERVER_URL:-http://rag-server:8081/v1}
     volumes:
       - ../../configs:/app/configs
     networks:
