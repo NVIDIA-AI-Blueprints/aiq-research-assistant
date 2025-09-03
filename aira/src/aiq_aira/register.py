@@ -30,6 +30,7 @@ from aiq.data_models.api_server import AIQChatResponseChunk
 from aiq_aira.functions import generate_summary, generate_queries, artifact_qa
 from aiq.builder.framework_enum import LLMFrameworkEnum
 from aiq.plugins.langchain import register
+from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ class AIResearcherInput(BaseModel):
 ################################################
 # End to end research workflow
 ################################################
-# note the component parts generate_queries, generate_summary, and artifact_qa 
+# note the component parts generate_queries, generate_summary, and artifact_qa
 # are used in the AIRA demo frontend
 # the ai_researcher workflow is not used in the AIRA demo frontend
 # the components are registered for AIQ serve by importing them in this file
@@ -115,8 +116,8 @@ async def ai_researcher(config: AIResearcherWorkflowConfig, builder: Builder):
     So the user only has to call one endpoint to get from raw topic -> final report.
     """
 
-    generate_queries = builder.get_function(name="generate_query")  
-    generate_summary = builder.get_function(name="generate_summary") 
+    generate_queries = builder.get_function(name="generate_query")
+    generate_summary = builder.get_function(name="generate_summary")
 
     async def _response_stream_fn(input_message: str) -> AsyncGenerator[AIQChatResponseChunk, None]:
         """

@@ -28,7 +28,7 @@ RUN --mount=source=.git,target=.git,type=bind \
 
 
 ######## Final Stage #########
-FROM nvcr.io/nvidia/base/ubuntu:jammy-20250415.1
+FROM nvcr.io/nvidia/base/ubuntu:jammy-20250619
 
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 

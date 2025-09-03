@@ -1,7 +1,7 @@
 general:
   use_uvloop: true
   front_end:
-    _type: fastapi
+    _type: aira_frontend
     endpoints:
       - path: /generate_query
         method: POST
@@ -42,7 +42,7 @@ llms:
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   nemotron:
     _type: nim
-    model_name : nvidia/llama-3.3-nemotron-super-49b-v1.5
+    model_name : nvidia/llama-3_3-nemotron-super-49b-v1_5
     temperature: 0.5
     base_url: ${NEMOTRON_LLM_BASE_URL:-http://nim-llm-ms:8000/v1}
     max_tokens: 5000
@@ -57,13 +57,13 @@ functions:
   generate_summary:
     _type: generate_summaries
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1 
+    rag_url: ${RAG_SERVER_URL:-http://rag-server:8081/v1}
 
   artifact_qa:
     _type: artifact_qa
     llm_name: instruct_llm
     # update to the IP address of the RAG server if you are not deploying RAG with docker compose
-    rag_url: http://rag-server:8081/v1
+    rag_url: ${RAG_SERVER_URL:-http://rag-server:8081/v1}
   
   health_check:
     _type: health_check

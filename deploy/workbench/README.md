@@ -52,7 +52,7 @@ Before you begin, run the  [RAG Blueprint](https://github.com/NVIDIA-AI-Blueprin
 
 1. On the **Project Dashboard**, select **Start** under the **Compose** section. The compose services may take several minutes to pull and build.
 
-1. When the compose services are ready, you can access the frontend on the IP address, eg. ``http://<ip_addr>:3001``.
+1. When the compose services are ready, you can access the frontend on the IP address, eg. ``http://<ip_addr>:3000``.
 
    * If ``ERR_CONNECTION_REFUSED``, try restarting the frontend container: **Environment** > **Compose** > **aira-frontend** > **restart**.
 
