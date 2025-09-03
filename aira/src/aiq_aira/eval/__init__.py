@@ -14,4 +14,3 @@
 # limitations under the License.
 
 # Import registrations to ensure they are loaded
-from . import evaluator_register, generator_register

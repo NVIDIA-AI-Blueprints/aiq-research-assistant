@@ -92,14 +92,14 @@ export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instruction
 ```bash
 
 # Full workflow + evaluation (requires RAG server) + saving logs to txt file 
-uv run aiq eval --config_file aira/configs/eval_config.yml 
+uv run nat eval --config_file configs/eval_config.yml 
 ```
 ### 4. Run Evaluation saving it to .txt file 
 
 ```bash
 
 # I would recommend running with > output.txt 2>&1 to better analyze the log statements / any errors
-uv run aiq eval --config_file aira/configs/eval_config.yml > output.txt 2>&1
+uv run nat eval --config_file configs/eval_config.yml > output.txt 2>&1
 ```
 
 
@@ -148,7 +148,7 @@ Your dataset only needs these basic fields - **the system will automatically gen
 ## Configuration
 
 ### Main Configuration File
-Use `aira/configs/eval_config.yml` as your starting point:
+Use `configs/eval_config.yml` as your starting point:
 
 ```yaml
 # LLM Configuration
@@ -313,26 +313,33 @@ The following custom evaluators use **dual template evaluation** for robustness:
 
 
 
-## Project Structure Harness Structure 
+## Eval Project Structure 
 
 ```
-aiq-bp-internal/
-├── aira/                           # AIRA workflow package
-│   ├── configs/
-│   │   └── eval_config.yml        # Main configuration file
+aiq-internal-notebook/
+├── aira/                      # AIRA workflow package
 │   ├── src/aiq_aira/
-│   │   ├── functions/             # Core AIRA functions  
-│   │   └── eval/
+│   │   ├── functions/         # Core function implementations (generate_summary, ...)
+│   │   └── eval/              # Evaluation harness (what this doc focuses on)
 │   │       ├── generators/
-│   │       │   ├── generate_full.py      # Main generator with preprocessing
-│   │       │   └── extraction_utils.py   # Preprocessing utilities
-│   │       ├── evaluators/        # Custom evaluators
-│   │       └── schema.py          # Data models
-│   └── pyproject.toml
-├── data/
-│   ├── data/eval_dataset.json     # Complete dataset example
-└── docs/
-    └── evaluate.md                # This documentation
+│   │       │   ├── generate_full.py      # Main end-to-end generator
+│   │       │   └── extraction_utils.py   # Pre-processing helpers
+│   │       ├── evaluators/    # Built-in evaluators
+│   │       │   ├── coverage_evaluator.py
+│   │       │   ├── synthesis_evaluator.py
+│   │       │   ├── hallucination_evaluator.py
+│   │       │   ├── citation_quality_evaluator.py
+│   │       │   └── ragas_wrapper_evaluator.py
+│   │       ├── generator_register.py     # Registers generator entry-points
+│   │       ├── evaluator_register.py     # Registers evaluator entry-points
+│   │       └── schema.py                 # Pydantic data models
+│   └── test_aira/             # Unit / integration tests
+├── configs/                   # YAML configuration files (e.g. eval_config.yml)
+├── data/                      # Example dataset (eval_dataset.json, sample zips)
+├── notebooks/                 # Jupyter notebooks (aira_evaluation tutorial here)
+├── docs/                      # Markdown docs (this file, API guides, etc.)
+├── ci/                        # CI helper scripts
+└── pyproject.toml             # Project dependencies & build config
 ```
 
 ## Implementing a Custom Evaluator
