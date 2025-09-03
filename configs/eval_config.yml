@@ -107,11 +107,6 @@ functions:
   health_check:
     _type: health_check
 
-
-  default_prompt:
-    _type: default_prompt
-    # can set report_structure and report_topic here
-
   default_collections:
     _type: default_collections
     collections:
