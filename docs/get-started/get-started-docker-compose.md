@@ -202,7 +202,7 @@ aira-backend                     Up 2 minutes
 You can then view the web UI at:
 
 ```
-localhost:3001
+localhost:3000
 ```
 
 The backend will be running and visible at:
