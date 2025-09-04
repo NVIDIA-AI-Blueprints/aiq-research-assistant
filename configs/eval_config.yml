@@ -45,10 +45,11 @@ general:
       console:
         _type: console
         level: DEBUG
-    tracing:
-      weave:
-        _type: weave
-        project: "NAT-BP-Project-Default" # Name of the project in weave, runs will be grouped under this project name
+    # Uncomment this if you want to use W&B Weave for tracing
+    # tracing:
+    #   weave:
+    #     _type: weave
+    #     project: "NAT-BP-Project-Default" # Name of the project in weave, runs will be grouped under this project name
 
 llms:
   # The inst_llm is used for Q&A and report writing and should be an instruct model.
