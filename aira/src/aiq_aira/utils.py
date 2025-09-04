@@ -16,19 +16,13 @@
 import asyncio
 import logging
 import re
-import time
 
-import httpx
 from langchain_openai import ChatOpenAI
 
 logger = logging.getLogger(__name__)
 
 # Colors for logging
 BOLD = "\033[1m"
-BLUE = "\033[94m"
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
 RESET = "\033[0m"
 
 
