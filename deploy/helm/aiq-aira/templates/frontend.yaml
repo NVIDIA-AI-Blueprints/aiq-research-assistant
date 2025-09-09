@@ -1,0 +1,38 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-aira-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: aira-frontend
+  template:
+    metadata:
+      labels:
+        app: aira-frontend
+        tags.datadoghq.com/env: "{{ .Values.datadogEnv }}"
+        tags.datadoghq.com/service: "aira-frontend"
+        tags.datadoghq.com/version: "{{ .Values.frontend.image.tag }}"
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret.name }}
+      containers:
+        - name: aira-frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.service.port }}
+              protocol: TCP
+          env:
+            {{- if .Values.frontendEnvVars }}
+            {{- range $k, $v := .Values.frontendEnvVars }}
+            - name: "{{ $k }}"
+              value: "{{ $v }}"
+            {{- end }}
+            {{- end }}
+            - name: INFERENCE_ORIGIN
+              value: http://{{ .Release.Name }}-aira-backend.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+{{- end }}
