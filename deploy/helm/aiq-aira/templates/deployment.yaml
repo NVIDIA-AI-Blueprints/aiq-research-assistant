@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-aira-backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: aira-backend
+  template:
+    metadata:
+      labels:
+        app: aira-backend
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret.name }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "aiq-aira.fullname" . }}-config
+      containers:
+        - name: aira-backend
+          command:
+            - /bin/bash
+            - -c
+            - /entrypoint.sh
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/configs
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- if .Values.backendEnvVars }}
+            {{- range $k, $v := .Values.backendEnvVars }}
+            - name: "{{ $k }}"
+              value: "{{ $v }}"
+            {{- end }}
+            {{- end }}
+            - name: INSTRUCT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ngcApiSecret.name }}
+                  key: NVIDIA_API_KEY
+            # - name: NEMOTRON_API_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: {{ .Values.ngcApiSecret.name }}
+            #       key: NVIDIA_API_KEY
+            - name: TAVILY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.tavilyApiSecret.name }}
+                  key: TAVILY_API_KEY
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP

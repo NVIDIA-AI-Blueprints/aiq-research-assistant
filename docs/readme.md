@@ -5,6 +5,7 @@ The following sections are covered:
 - [Get Started with AI-Q NVIDIA Research Assistant Blueprint](/docs/get-started/)
     - [Get Started with AI-Q NVIDIA Research Assistant Blueprint Using NVIDIA API](/notebooks/get_started_nvidia_api.ipynb)
     - [Get started with AI-Q NVIDIA Research Assistant Blueprint Using Docker Compose](/docs/get-started/get-started-docker-compose.md)
+    - [Get started with AI-Q NVIDIA Research Assistant Blueprint Using Helm chart](/docs/get-started/helm-deployment.md)
 - [Local Development Guide](/docs/local-development.md)
 - [Phoenix Tracing Configuration for Docker Deployment](/docs/phoenix-tracing.md)
 - [Evaluation](/docs/evaluation.md)
