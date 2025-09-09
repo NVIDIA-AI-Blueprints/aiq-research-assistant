@@ -1,0 +1,69 @@
+{
+  "average_score": 0.8500000000000001,
+  "eval_output_items": [
+    {
+      "id": "cystic_fibrosis_1",
+      "score": 0.9,
+      "reasoning": {
+        "average_score": 0.9,
+        "individual_scores": [
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "num_claims": 20,
+        "facts_source": "coverage_facts_claims",
+        "report_snippet": "# Cystic Fibrosis Pathogenesis: Interplay of Airway Epithelial Cells, Neutrophils, Monocytes, and Macrophages  \n\n## Executive Summary  \n\nCystic fibrosis (CF) is a genetic disorder rooted in mutations ..."
+      }
+    },
+    {
+      "id": "cystic_fibrosis_2",
+      "score": 0.8,
+      "reasoning": {
+        "average_score": 0.8,
+        "individual_scores": [
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "num_claims": 20,
+        "facts_source": "coverage_facts_claims",
+        "report_snippet": "# The Role of Airway Epithelial Cells, Neutrophils, Monocytes, and Macrophages in Cystic Fibrosis Pathogenesis  \n\n## Introduction  \nCystic fibrosis (CF), a genetic disorder rooted in mutations of the ..."
+      }
+    }
+  ]
+}

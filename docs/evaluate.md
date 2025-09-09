@@ -73,9 +73,7 @@ uv pip install -e ".[dev]" --prerelease=allow
 #### Standard Installation
 ```bash
 # Install AIRA package
-cd aira/
 pip install -e .
-cd ..
 ```
 
 
@@ -91,7 +89,7 @@ export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instruction
 
 ```bash
 
-# Full workflow + evaluation (requires RAG server) + saving logs to txt file 
+# Full workflow + evaluation (requires RAG server) + AIRA Instruct LLM
 uv run nat eval --config_file configs/eval_config.yml 
 ```
 ### 4. Run Evaluation saving it to .txt file 
@@ -257,7 +255,7 @@ uv pip install -e "./aira[dev]"
 
 ### Citation Pairing LLM Configuration
 
-The `citation_pairing_llm` setting controls which model pairs facts with citations. **Llama models struggle with citation pairing**, so GPT models are recommended (The team is looking to revamp the prompt so that nvidia models perform better but for now please try and use gpt if you can and you would need either a perflab key or LLM Gateway key):
+The `citation_pairing_llm` setting controls which model pairs facts with citations. **Llama models struggle with citation pairing**, so GPT models are recommended:
 
 **Option 1: Use GPT models (Recommended)**
 ```yaml
@@ -265,17 +263,12 @@ workflow:
   generator:
     citation_pairing_llm: gpt-4o-20241120  # Default, good performance. High chance to see rate limiting when using llm_gateway. If you do I would recommend switching to the mistral model(nvdev/mistralai/mixtral-8x22b-instruct-v0.1) over any llama model for this task
 ```
-**Required environment variables if you want to use gpt models (LLM Gateway):**
-```bash
-export NV_CLIENT_ID="your_client_id"
-export NV_CLIENT_SECRET="your_client_secret"
-```
 
 **Option 2: Use NVIDIA models**
 ```yaml
 workflow:
   generator:
-    citation_pairing_llm: nvdev/mistralai/mixtral-8x22b-instruct-v0.1
+    citation_pairing_llm: mistralai/mixtral-8x22b-instruct-v0.1
 ```
 **Uses existing:** `NVIDIA_API_KEY` (no additional setup required)
 
@@ -475,6 +468,9 @@ uv run aiq eval --config_file aira/configs/eval_config.yml
 ```
 
 ### 4. Check Results
+
+After running the evaluation, you'll find the results in the output directory (typically `.tmp/aiq_aira/`):
+
 ```
 ./.tmp/aiq_aira/
 ├── workflow_output.json         # Generated data (with preprocessing)
@@ -482,6 +478,8 @@ uv run aiq eval --config_file aira/configs/eval_config.yml
 ├── synthesis_output.json        # Synthesis evaluation results
 └── ...
 ```
+
+**Example Output Files**: For reference on what to expect from a full end-to-end evaluation, see the [example workflow output files](example-workflow-output/) which demonstrate the typical structure and content of evaluation results.
 
 
 ## Troubleshooting
