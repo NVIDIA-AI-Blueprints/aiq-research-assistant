@@ -204,20 +204,36 @@ wandb login
 uv pip install -e ".[dev]" --prerelease=allow
 ```
 
-### 3. Configure Weave in Your Config File 
-```yaml
-general:
-  telemetry:
-    tracing:
-      weave:
-        _type: weave
-        project: "your-project-name"
+### 3. Enable Weave Tracing in Your Config File
 
-eval:
-  general:
-    workflow_alias: "my_experiment_name"  # This will label your evaluation in Weave 
-    .tmp/aiq_aira
-```
+**By default, Weave tracing is disabled (commented out) in `configs/eval_config.yml`**. To enable it:
+
+1. **Open `configs/eval_config.yml`**
+2. **Find the commented Weave configuration** (around lines 48-52):
+   ```yaml
+   # Uncomment this if you want to use W&B Weave for tracing
+     # tracing:
+     #   weave:
+     #     _type: weave
+     #     project: "NAT-BP-Project-Default"
+   ```
+
+3. **Uncomment the tracing section** and customize your project name:
+   ```yaml
+   # Uncomment this if you want to use W&B Weave for tracing
+   tracing:
+     weave:
+       _type: weave
+       project: "your-project-name"  # Change this to your desired project name
+   ```
+
+4. **Add a workflow alias** in the eval section for better organization:
+   ```yaml
+   eval:
+     general:
+       workflow_alias: "my_experiment_name"  # This will label your evaluation in Weave
+       output_dir: .tmp/aiq_aira
+   ```
 
 ### 4. Run the evaluation the same. You should see 
 
@@ -227,6 +243,8 @@ eval:
 - `"cystic_fibrosis_eval"`
 
 **Information Tracked on Weave**: Weave will track your evaluation metrics (citation quality, etc.) for each individual run. Additionally, it will also contain information about your dataset and configuration information such as the llm_type that you used to run certain portions of your experiment allowing for better comparsions.
+
+**Reference the official documentation**: [Observing a Workflow with W&B Weave](https://docs.nvidia.com/nemo/agent-toolkit/1.2/workflows/observe/observe-workflow-with-weave.html)
 
 ![Weave Dashboard](images/weave_dashboard.png)
 
@@ -462,7 +480,7 @@ uv run nat eval --config_file aira/configs/eval_config.yml
 └── ...                          # Additional evaluator outputs
 ```
 
-**Example Output Files**: For reference on what to expect from a full end-to-end evaluation, see the [example workflow output files](../docs/example-workflow-output/aiq_aira%202/) which demonstrate the typical structure and content of all evaluation results you should see when running the default evaluation.
+**Example Output Files**: For reference on what to expect from a full end-to-end evaluation, see the [example workflow output files](../docs/example-workflow-output/) which demonstrate the typical structure and content of all evaluation results you should see when running the default evaluation.
 
 ## Analysis and Diagnostics
 
