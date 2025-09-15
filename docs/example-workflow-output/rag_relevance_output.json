@@ -1,0 +1,63 @@
+{
+  "average_score": 0.9921875,
+  "eval_output_items": [
+    {
+      "id": "cystic_fibrosis_1",
+      "score": 0.984375,
+      "reasoning": {
+        "metric": "ContextRelevance",
+        "individual_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.75,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "questions_evaluated": 16,
+        "num_contexts": 18,
+        "score_details": "Average of 16 question evaluations: 0.984375",
+        "has_contexts": true
+      }
+    },
+    {
+      "id": "cystic_fibrosis_2",
+      "score": 1.0,
+      "reasoning": {
+        "metric": "ContextRelevance",
+        "individual_scores": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "questions_evaluated": 16,
+        "num_contexts": 26,
+        "score_details": "Average of 16 question evaluations: 1.0",
+        "has_contexts": true
+      }
+    }
+  ]
+}
