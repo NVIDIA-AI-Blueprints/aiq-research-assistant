@@ -9,7 +9,7 @@ Next create a virtual environment using Python 3.12:
 ```bash
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
-uv pip install -e "./aira[dev]"
+uv pip install -e ".[dev]" --prerelease=allow
 ```
 
 Update the configuration file located at `aira/configs/config.yaml`, providing values for a RAG deployment and your reasoning and instruct LLMs. The configuration file includes comments on what values to update.
@@ -20,7 +20,7 @@ Run the backend service:
 # optionally export the Tavily search key
 export TAVILY_API_KEY=your-tavily-api-key
 # run the service
-uv run aiq serve --config_file aira/configs/config.yml --host 0.0.0.0 --port 3838
+uv run nat serve --config_file aira/configs/config.yml --host 0.0.0.0 --port 3838
 ```
 
 You can now access the backend at `http://localhost:3838/docs`. 

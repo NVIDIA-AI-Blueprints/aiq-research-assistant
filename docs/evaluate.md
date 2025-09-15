@@ -43,6 +43,8 @@ If you encounter dependency conflicts, reference the tested dependency versions 
 
 ## Quick Start
 
+**Interactive Tutorial**: For a step-by-step walkthrough of the evaluation process, see the [AIRA Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) which provides hands-on examples and detailed explanations.
+
 ### 1. Branch Checkout
 After cloning the repository, make sure to checkout to the correct branch:
 
@@ -89,7 +91,7 @@ export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instruction
 
 ```bash
 
-# Full workflow + evaluation (requires RAG server) + AIRA Instruct LLM
+# Full workflow + evaluation (requires RAG server) + aira-instruct-llm
 uv run nat eval --config_file configs/eval_config.yml 
 ```
 ### 4. Run Evaluation saving it to .txt file 
@@ -199,39 +201,23 @@ wandb login
 
 ### 2. Reinstall Package (if necessary)
 ```bash
-uv pip install -e "./aira[dev]"
+uv pip install -e ".[dev]" --prerelease=allow
 ```
 
-### 3. Enable Weave Tracing in Your Config File
+### 3. Configure Weave in Your Config File 
+```yaml
+general:
+  telemetry:
+    tracing:
+      weave:
+        _type: weave
+        project: "your-project-name"
 
-**By default, Weave tracing is disabled (commented out) in `configs/eval_config.yml`**. To enable it:
-
-1. **Open `configs/eval_config.yml`**
-2. **Find the commented Weave configuration** (around lines 48-52):
-   ```yaml
-   # Uncomment this if you want to use W&B Weave for tracing
-     # tracing:
-     #   weave:
-     #     _type: weave
-     #     project: "NAT-BP-Project-Default"
-   ```
-
-3. **Uncomment the tracing section** and customize your project name:
-   ```yaml
-   # Uncomment this if you want to use W&B Weave for tracing
-   tracing:
-     weave:
-       _type: weave
-       project: "your-project-name"  # Change this to your desired project name
-   ```
-
-4. **Add a workflow alias** in the eval section for better organization:
-   ```yaml
-   eval:
-     general:
-       workflow_alias: "my_experiment_name"  # This will label your evaluation in Weave
-       output_dir: .tmp/aiq_aira
-   ```
+eval:
+  general:
+    workflow_alias: "my_experiment_name"  # This will label your evaluation in Weave 
+    .tmp/aiq_aira
+```
 
 ### 4. Run the evaluation the same. You should see 
 
@@ -242,10 +228,7 @@ uv pip install -e "./aira[dev]"
 
 **Information Tracked on Weave**: Weave will track your evaluation metrics (citation quality, etc.) for each individual run. Additionally, it will also contain information about your dataset and configuration information such as the llm_type that you used to run certain portions of your experiment allowing for better comparsions.
 
-**Reference the official documentation**: [Observing a Workflow with W&B Weave](https://docs.nvidia.com/nemo/agent-toolkit/1.2/workflows/observe/observe-workflow-with-weave.html)
-
 ![Weave Dashboard](images/weave_dashboard.png)
-
 
 ### Key Configuration Options
 
@@ -261,7 +244,7 @@ The `citation_pairing_llm` setting controls which model pairs facts with citatio
 ```yaml
 workflow:
   generator:
-    citation_pairing_llm: gpt-4o-20241120  # Default, good performance. High chance to see rate limiting when using llm_gateway. If you do I would recommend switching to the mistral model(nvdev/mistralai/mixtral-8x22b-instruct-v0.1) over any llama model for this task
+    citation_pairing_llm: gpt-4o-20241120
 ```
 
 **Option 2: Use NVIDIA models**
@@ -328,23 +311,23 @@ The following custom evaluators use **dual template evaluation** for robustness:
 ## Eval Project Structure 
 
 ```
-aiq-internal-notebook/
-├── aira/                      # AIRA workflow package
-│   ├── src/aiq_aira/
-│   │   ├── functions/         # Core function implementations (generate_summary, ...)
-│   │   └── eval/              # Evaluation harness (what this doc focuses on)
-│   │       ├── generators/
-│   │       │   ├── generate_full.py      # Main end-to-end generator
-│   │       │   └── extraction_utils.py   # Pre-processing helpers
-│   │       ├── evaluators/    # Built-in evaluators
-│   │       │   ├── coverage_evaluator.py
-│   │       │   ├── synthesis_evaluator.py
-│   │       │   ├── hallucination_evaluator.py
-│   │       │   ├── citation_quality_evaluator.py
-│   │       │   └── ragas_wrapper_evaluator.py
-│   │       ├── generator_register.py     # Registers generator entry-points
-│   │       ├── evaluator_register.py     # Registers evaluator entry-points
-│   │       └── schema.py                 # Pydantic data models
+
+aira/                      # AIRA workflow package
+├── src/aiq_aira/
+│   ├── functions/         # Core function implementations (generate_summary, ...)
+│   └── eval/              # Evaluation harness (what this doc focuses on)
+│       ├── generators/
+│       │   ├── generate_full.py      # Main end-to-end generator
+│       │   └── extraction_utils.py   # Pre-processing helpers
+│       ├── evaluators/    # Built-in evaluators
+│       │   ├── coverage_evaluator.py
+│       │   ├── synthesis_evaluator.py
+│       │   ├── hallucination_evaluator.py
+│       │   ├── citation_quality_evaluator.py
+│       │   └── ragas_wrapper_evaluator.py
+│       ├── generator_register.py     # Registers generator entry-points
+│       ├── evaluator_register.py     # Registers evaluator entry-points
+│       └── schema.py                 # Pydantic data models
 │   └── test_aira/             # Unit / integration tests
 ├── configs/                   # YAML configuration files (e.g. eval_config.yml)
 ├── data/                      # Example dataset (eval_dataset.json, sample zips)
@@ -427,7 +410,7 @@ eval:
 To ensure all your changes are picked up, reinstall the `aiq_aira` package in editable mode:
 
 ```bash
-uv pip install -e "./aira[dev]" --prerelease=allow
+uv pip install -e ".[dev]" --prerelease=allow
 ```
 
 That's it! You can now run the evaluation, and your custom evaluator will be included in the process. Please reach out to Kyle Zheng if there are any questions
@@ -464,23 +447,34 @@ workflow:
 
 ### 3. Run Evaluation
 ```bash
-uv run aiq eval --config_file aira/configs/eval_config.yml
+uv run nat eval --config_file aira/configs/eval_config.yml
 ```
 
 ### 4. Check Results
-
-After running the evaluation, you'll find the results in the output directory (typically `.tmp/aiq_aira/`):
-
 ```
 ./.tmp/aiq_aira/
 ├── workflow_output.json         # Generated data (with preprocessing)
 ├── coverage_output.json         # Coverage evaluation results
 ├── synthesis_output.json        # Synthesis evaluation results
-└── ...
+├── hallucination_output.json    # Hallucination detection results
+├── citation_f1_output.json      # Citation quality F1 scores
+├── rag_accuracy_output.json     # RAG accuracy metrics
+└── ...                          # Additional evaluator outputs
 ```
 
-**Example Output Files**: For reference on what to expect from a full end-to-end evaluation, see the [example workflow output files](example-workflow-output/) which demonstrate the typical structure and content of evaluation results.
+**Example Output Files**: For reference on what to expect from a full end-to-end evaluation, see the [example workflow output files](../docs/example-workflow-output/aiq_aira%202/) which demonstrate the typical structure and content of all evaluation results you should see when running the default evaluation.
 
+## Analysis and Diagnostics
+
+### Interactive Analysis Notebook
+After running your evaluation, use the [AIRA Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) to:
+- **Load and analyze** your evaluation results interactively
+- **Visualize metrics** across different evaluators and experiments  
+- **Compare performance** between different configurations
+- **Identify patterns** in model behavior and evaluation scores
+- **Generate diagnostic insights** for improving your AIRA workflows
+
+The notebook provides pre-built analysis functions and visualization tools specifically designed for AIRA evaluation outputs.
 
 ## Troubleshooting
 
