@@ -68,7 +68,7 @@ uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 Activate with: source .venv/bin/activate
 # Install AIRA package in development mode
-uv pip install -e ".[dev]" --prerelease=allow
+uv pip install -e ".[dev]"
 ```
 
 
@@ -201,7 +201,7 @@ wandb login
 
 ### 2. Reinstall Package (if necessary)
 ```bash
-uv pip install -e ".[dev]" --prerelease=allow
+uv pip install -e ".[dev]"
 ```
 
 ### 3. Enable Weave Tracing in Your Config File
@@ -428,7 +428,7 @@ eval:
 To ensure all your changes are picked up, reinstall the `aiq_aira` package in editable mode:
 
 ```bash
-uv pip install -e ".[dev]" --prerelease=allow
+uv pip install -e ".[dev]"
 ```
 
 That's it! You can now run the evaluation, and your custom evaluator will be included in the process. Please reach out to Kyle Zheng if there are any questions

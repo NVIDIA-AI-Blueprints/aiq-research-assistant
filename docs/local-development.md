@@ -9,10 +9,10 @@ Next create a virtual environment using Python 3.12:
 ```bash
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
-uv pip install -e ".[dev]" --prerelease=allow
+uv pip install -e ".[dev]"
 ```
 
-Update the configuration file located at `aira/configs/config.yaml`, providing values for a RAG deployment and your reasoning and instruct LLMs. The configuration file includes comments on what values to update.
+Update the configuration file located at `configs/config.yaml`, providing values for a RAG deployment and your reasoning and instruct LLMs. The configuration file includes comments on what values to update.
 
 Run the backend service:
 
