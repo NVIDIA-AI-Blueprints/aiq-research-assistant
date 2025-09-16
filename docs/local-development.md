@@ -20,7 +20,7 @@ Run the backend service:
 # optionally export the Tavily search key
 export TAVILY_API_KEY=your-tavily-api-key
 # run the service
-uv run nat serve --config_file aira/configs/config.yml --host 0.0.0.0 --port 3838
+uv run nat serve --config_file configs/config.yml --host 0.0.0.0 --port 3838
 ```
 
 You can now access the backend at `http://localhost:3838/docs`. 
