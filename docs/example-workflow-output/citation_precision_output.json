@@ -1,0 +1,27 @@
+{
+  "average_score": 0.9448066056210733,
+  "eval_output_items": [
+    {
+      "id": "cystic_fibrosis_1_precision",
+      "score": 0.9743589741091387,
+      "reasoning": {
+        "total_facts": 39,
+        "facts_with_citations": 39,
+        "parsed_sources_count": 6,
+        "metric_type": "precision",
+        "precision": 0.9743589741091387
+      }
+    },
+    {
+      "id": "cystic_fibrosis_2_precision",
+      "score": 0.9152542371330078,
+      "reasoning": {
+        "total_facts": 59,
+        "facts_with_citations": 59,
+        "parsed_sources_count": 7,
+        "metric_type": "precision",
+        "precision": 0.9152542371330078
+      }
+    }
+  ]
+}

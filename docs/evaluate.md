@@ -43,6 +43,8 @@ If you encounter dependency conflicts, reference the tested dependency versions 
 
 ## Quick Start
 
+**Interactive Tutorial**: For a step-by-step walkthrough of the evaluation process, see the [AIRA Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) which provides hands-on examples and detailed explanations.
+
 ### 1. Branch Checkout
 After cloning the repository, make sure to checkout to the correct branch:
 
@@ -66,16 +68,14 @@ uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 Activate with: source .venv/bin/activate
 # Install AIRA package in development mode
-uv pip install -e ".[dev]" --prerelease=allow
+uv pip install -e ".[dev]"
 ```
 
 
 #### Standard Installation
 ```bash
 # Install AIRA package
-cd aira/
 pip install -e .
-cd ..
 ```
 
 
@@ -91,7 +91,7 @@ export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instruction
 
 ```bash
 
-# Full workflow + evaluation (requires RAG server) + saving logs to txt file 
+# Full workflow + evaluation (requires RAG server) + aira-instruct-llm
 uv run nat eval --config_file configs/eval_config.yml 
 ```
 ### 4. Run Evaluation saving it to .txt file 
@@ -201,7 +201,7 @@ wandb login
 
 ### 2. Reinstall Package (if necessary)
 ```bash
-uv pip install -e "./aira[dev]"
+uv pip install -e ".[dev]"
 ```
 
 ### 3. Enable Weave Tracing in Your Config File
@@ -248,7 +248,6 @@ uv pip install -e "./aira[dev]"
 
 ![Weave Dashboard](images/weave_dashboard.png)
 
-
 ### Key Configuration Options
 
 - **`fact_extraction_llm`**: LLM used for generating missing evaluation fields
@@ -257,25 +256,20 @@ uv pip install -e "./aira[dev]"
 
 ### Citation Pairing LLM Configuration
 
-The `citation_pairing_llm` setting controls which model pairs facts with citations. **Llama models struggle with citation pairing**, so GPT models are recommended (The team is looking to revamp the prompt so that nvidia models perform better but for now please try and use gpt if you can and you would need either a perflab key or LLM Gateway key):
+The `citation_pairing_llm` setting controls which model pairs facts with citations. **Llama models struggle with citation pairing**, so GPT models are recommended:
 
 **Option 1: Use GPT models (Recommended)**
 ```yaml
 workflow:
   generator:
-    citation_pairing_llm: gpt-4o-20241120  # Default, good performance. High chance to see rate limiting when using llm_gateway. If you do I would recommend switching to the mistral model(nvdev/mistralai/mixtral-8x22b-instruct-v0.1) over any llama model for this task
-```
-**Required environment variables if you want to use gpt models (LLM Gateway):**
-```bash
-export NV_CLIENT_ID="your_client_id"
-export NV_CLIENT_SECRET="your_client_secret"
+    citation_pairing_llm: gpt-4o-20241120
 ```
 
 **Option 2: Use NVIDIA models**
 ```yaml
 workflow:
   generator:
-    citation_pairing_llm: nvdev/mistralai/mixtral-8x22b-instruct-v0.1
+    citation_pairing_llm: mistralai/mixtral-8x22b-instruct-v0.1
 ```
 **Uses existing:** `NVIDIA_API_KEY` (no additional setup required)
 
@@ -335,23 +329,23 @@ The following custom evaluators use **dual template evaluation** for robustness:
 ## Eval Project Structure 
 
 ```
-aiq-internal-notebook/
-├── aira/                      # AIRA workflow package
-│   ├── src/aiq_aira/
-│   │   ├── functions/         # Core function implementations (generate_summary, ...)
-│   │   └── eval/              # Evaluation harness (what this doc focuses on)
-│   │       ├── generators/
-│   │       │   ├── generate_full.py      # Main end-to-end generator
-│   │       │   └── extraction_utils.py   # Pre-processing helpers
-│   │       ├── evaluators/    # Built-in evaluators
-│   │       │   ├── coverage_evaluator.py
-│   │       │   ├── synthesis_evaluator.py
-│   │       │   ├── hallucination_evaluator.py
-│   │       │   ├── citation_quality_evaluator.py
-│   │       │   └── ragas_wrapper_evaluator.py
-│   │       ├── generator_register.py     # Registers generator entry-points
-│   │       ├── evaluator_register.py     # Registers evaluator entry-points
-│   │       └── schema.py                 # Pydantic data models
+
+aira/                      # AIRA workflow package
+├── src/aiq_aira/
+│   ├── functions/         # Core function implementations (generate_summary, ...)
+│   └── eval/              # Evaluation harness (what this doc focuses on)
+│       ├── generators/
+│       │   ├── generate_full.py      # Main end-to-end generator
+│       │   └── extraction_utils.py   # Pre-processing helpers
+│       ├── evaluators/    # Built-in evaluators
+│       │   ├── coverage_evaluator.py
+│       │   ├── synthesis_evaluator.py
+│       │   ├── hallucination_evaluator.py
+│       │   ├── citation_quality_evaluator.py
+│       │   └── ragas_wrapper_evaluator.py
+│       ├── generator_register.py     # Registers generator entry-points
+│       ├── evaluator_register.py     # Registers evaluator entry-points
+│       └── schema.py                 # Pydantic data models
 │   └── test_aira/             # Unit / integration tests
 ├── configs/                   # YAML configuration files (e.g. eval_config.yml)
 ├── data/                      # Example dataset (eval_dataset.json, sample zips)
@@ -434,7 +428,7 @@ eval:
 To ensure all your changes are picked up, reinstall the `aiq_aira` package in editable mode:
 
 ```bash
-uv pip install -e "./aira[dev]" --prerelease=allow
+uv pip install -e ".[dev]"
 ```
 
 That's it! You can now run the evaluation, and your custom evaluator will be included in the process. Please reach out to Kyle Zheng if there are any questions
@@ -471,7 +465,7 @@ workflow:
 
 ### 3. Run Evaluation
 ```bash
-uv run aiq eval --config_file aira/configs/eval_config.yml
+uv run nat eval --config_file aira/configs/eval_config.yml
 ```
 
 ### 4. Check Results
@@ -480,9 +474,25 @@ uv run aiq eval --config_file aira/configs/eval_config.yml
 ├── workflow_output.json         # Generated data (with preprocessing)
 ├── coverage_output.json         # Coverage evaluation results
 ├── synthesis_output.json        # Synthesis evaluation results
-└── ...
+├── hallucination_output.json    # Hallucination detection results
+├── citation_f1_output.json      # Citation quality F1 scores
+├── rag_accuracy_output.json     # RAG accuracy metrics
+└── ...                          # Additional evaluator outputs
 ```
 
+**Example Output Files**: For reference on what to expect from a full end-to-end evaluation, see the [example workflow output files](../docs/example-workflow-output/) which demonstrate the typical structure and content of all evaluation results you should see when running the default evaluation.
+
+## Analysis and Diagnostics
+
+### Interactive Analysis Notebook
+After running your evaluation, use the [AIRA Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) to:
+- **Load and analyze** your evaluation results interactively
+- **Visualize metrics** across different evaluators and experiments  
+- **Compare performance** between different configurations
+- **Identify patterns** in model behavior and evaluation scores
+- **Generate diagnostic insights** for improving your AIRA workflows
+
+The notebook provides pre-built analysis functions and visualization tools specifically designed for AIRA evaluation outputs.
 
 ## Troubleshooting
 

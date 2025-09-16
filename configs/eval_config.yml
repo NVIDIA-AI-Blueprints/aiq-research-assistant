@@ -85,7 +85,7 @@ llms:
   # Mistral is a good model for RAGAS metrics due to the variability it provides as opposed to the llama models
   ragas_llm:
     _type: nim
-    model_name: nvdev/mistralai/mixtral-8x22b-instruct-v0.1
+    model_name: mistralai/mixtral-8x22b-instruct-v0.1
     temperature: 0.0
     base_url: https://integrate.api.nvidia.com/v1
     api_key: ${NVIDIA_API_KEY}
