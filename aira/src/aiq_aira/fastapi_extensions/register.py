@@ -26,13 +26,13 @@ routes and functionality into the base FastAPI server.
 import os
 from typing import override
 
-from aiq.builder.workflow_builder import WorkflowBuilder
-from aiq.cli.register_workflow import register_front_end
-from aiq.data_models.config import AIQConfig
-from aiq.front_ends.fastapi.fastapi_front_end_config import FastApiFrontEndConfig
-from aiq.front_ends.fastapi.fastapi_front_end_plugin import FastApiFrontEndPlugin
-from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorker
-from aiq.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorkerBase
+from nat.builder.workflow_builder import WorkflowBuilder
+from nat.cli.register_workflow import register_front_end
+from nat.data_models.config import AIQConfig
+from nat.front_ends.fastapi.fastapi_front_end_config import FastApiFrontEndConfig
+from nat.front_ends.fastapi.fastapi_front_end_plugin import FastApiFrontEndPlugin
+from nat.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorker
+from nat.front_ends.fastapi.fastapi_front_end_plugin_worker import FastApiFrontEndPluginWorkerBase
 from fastapi import FastAPI
 
 from .routes.collections import add_collection_routes

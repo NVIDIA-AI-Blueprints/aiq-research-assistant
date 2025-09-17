@@ -20,16 +20,16 @@ import asyncio
 
 from typing import Any, AsyncGenerator
 from pydantic import BaseModel
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.component_ref import FunctionRef
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.function_info import FunctionInfo
-from aiq.data_models.api_server import AIQChatResponseChunk
+from nat.builder.builder import Builder
+from nat.cli.register_workflow import register_function
+from nat.data_models.component_ref import LLMRef
+from nat.data_models.component_ref import FunctionRef
+from nat.data_models.function import FunctionBaseConfig
+from nat.builder.function_info import FunctionInfo
+from nat.data_models.api_server import AIQChatResponseChunk
 from aiq_aira.functions import generate_summary, generate_queries, artifact_qa
-from aiq.builder.framework_enum import LLMFrameworkEnum
-from aiq.plugins.langchain import register
+from nat.builder.framework_enum import LLMFrameworkEnum
+from nat.plugins.langchain import register
 from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 
 logger = logging.getLogger(__name__)

@@ -19,8 +19,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 
-from aiq.builder.builder import Builder
-from aiq.builder.framework_enum import LLMFrameworkEnum
+from nat.builder.builder import Builder
+from nat.builder.framework_enum import LLMFrameworkEnum
 from pydantic import BaseModel
 from pydantic import Field
 

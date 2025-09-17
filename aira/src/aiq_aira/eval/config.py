@@ -15,11 +15,11 @@
 
 import typing
 
-from aiq.data_models.common import BaseModelRegistryTag
-from aiq.data_models.common import TypedBaseModel
-from aiq.data_models.component_ref import FunctionRef
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.function import FunctionBaseConfig
+from nat.data_models.common import BaseModelRegistryTag
+from nat.data_models.common import TypedBaseModel
+from nat.data_models.component_ref import FunctionRef
+from nat.data_models.component_ref import LLMRef
+from nat.data_models.function import FunctionBaseConfig
 from pydantic import Discriminator
 from pydantic import Field
 from pydantic import Tag

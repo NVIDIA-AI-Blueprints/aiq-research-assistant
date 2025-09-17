@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from aiq.builder.builder import EvalBuilder
-from aiq.builder.evaluator import EvaluatorInfo
-from aiq.builder.framework_enum import LLMFrameworkEnum
-from aiq.cli.register_workflow import register_evaluator
+from nat.builder.builder import EvalBuilder
+from nat.builder.evaluator import EvaluatorInfo
+from nat.builder.framework_enum import LLMFrameworkEnum
+from nat.cli.register_workflow import register_evaluator
 
 from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationF1Evaluator
 from aiq_aira.eval.evaluators.citation_quality_evaluator import CitationF1EvaluatorConfig

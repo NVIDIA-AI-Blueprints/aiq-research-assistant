@@ -101,7 +101,7 @@ weave = [
 [tool.uv]
 managed = true
 
-[project.entry-points.'aiq.plugins']
+[project.entry-points.'nat.plugins']
 aiq_aira = "aiq_aira.register"
 
 [project.scripts]
