@@ -43,7 +43,7 @@ async def summarize_report(
     # Decide which prompt to use
     if existing_summary:
         # We have an existing summary; use the 'report_extender' prompt
-        user_input = report_extender.format(report=existing_summary, source=new_source)
+        user_input = report_extender.format(report=existing_summary, source=new_source, report_organization=report_organization)
     else:
         # No existing summary; use the 'summarizer_instructions' prompt
         user_input = summarizer_instructions.format(
