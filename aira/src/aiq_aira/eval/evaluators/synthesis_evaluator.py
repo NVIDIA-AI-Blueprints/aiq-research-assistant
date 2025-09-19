@@ -22,12 +22,12 @@ import typing as t
 from dataclasses import dataclass
 from dataclasses import field
 
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.evaluator import EvaluatorBaseConfig
-from aiq.eval.evaluator.evaluator_model import EvalInput
-from aiq.eval.evaluator.evaluator_model import EvalInputItem
-from aiq.eval.evaluator.evaluator_model import EvalOutput
-from aiq.eval.evaluator.evaluator_model import EvalOutputItem
+from nat.data_models.component_ref import LLMRef
+from nat.data_models.evaluator import EvaluatorBaseConfig
+from nat.eval.evaluator.evaluator_model import EvalInput
+from nat.eval.evaluator.evaluator_model import EvalInputItem
+from nat.eval.evaluator.evaluator_model import EvalOutput
+from nat.eval.evaluator.evaluator_model import EvalOutputItem
 from langchain_core.callbacks.base import Callbacks
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.prompt_values import StringPromptValue

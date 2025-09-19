@@ -36,8 +36,8 @@ The full generator integrates with the AI Research Assistant workflow to:
 import json
 import logging
 
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
+from nat.builder.builder import Builder
+from nat.cli.register_workflow import register_function
 
 from aiq_aira.eval.config import AIRAEvaluatorWorkflowConfig
 from aiq_aira.eval.schema import AIResearcherEvalInput
@@ -106,7 +106,7 @@ def register_generator(name: str):
 @register_function(config_type=AIRAEvaluatorWorkflowConfig)
 async def aira_evaluator_workflow(config: AIRAEvaluatorWorkflowConfig, builder: Builder):
     '''Workflow for evaluating AI Research Assistant performance'''
-    from aiq.builder.function_info import FunctionInfo
+    from nat.builder.function_info import FunctionInfo
 
     from aiq_aira.eval.generators import register
 

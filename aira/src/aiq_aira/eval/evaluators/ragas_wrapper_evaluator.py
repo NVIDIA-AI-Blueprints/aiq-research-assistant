@@ -22,12 +22,12 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.evaluator import EvaluatorBaseConfig
-from aiq.eval.evaluator.evaluator_model import EvalInput
-from aiq.eval.evaluator.evaluator_model import EvalInputItem
-from aiq.eval.evaluator.evaluator_model import EvalOutput
-from aiq.eval.evaluator.evaluator_model import EvalOutputItem
+from nat.data_models.component_ref import LLMRef
+from nat.data_models.evaluator import EvaluatorBaseConfig
+from nat.eval.evaluator.evaluator_model import EvalInput
+from nat.eval.evaluator.evaluator_model import EvalInputItem
+from nat.eval.evaluator.evaluator_model import EvalOutput
+from nat.eval.evaluator.evaluator_model import EvalOutputItem
 from langchain_core.language_models import BaseLanguageModel
 from pydantic import Field
 from ragas import SingleTurnSample
@@ -293,14 +293,19 @@ class RagasWrapperEvaluator:
 
         eval_output_items = await asyncio.gather(*[wrapped_evaluate_item(item) for item in eval_input.eval_input_items])
 
-        scores = [item.score for item in eval_output_items if item.score is not None]
-        avg_score = sum(scores) / len(scores) if scores else 0.0
+        # Filter out None and NaN scores for average calculation
+        valid_scores = []
+        for item in eval_output_items:
+            if item.score is not None and not math.isnan(item.score):
+                valid_scores.append(item.score)
+        
+        avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
 
         logger.info(f"Completed batch evaluation for {self.metric_name}:")
         logger.info(f"  - Total items: {len(eval_output_items)}")
-        logger.info(f"  - Valid scores: {len(scores)}")
+        logger.info(f"  - Valid scores: {len(valid_scores)}")
         logger.info(f"  - Average score: {avg_score:.4f}")
         logger.info(
-            f"  - Score distribution: min={min(scores) if scores else 'N/A'}, max={max(scores) if scores else 'N/A'}")
+            f"  - Score distribution: min={min(valid_scores) if valid_scores else 'N/A'}, max={max(valid_scores) if valid_scores else 'N/A'}")
 
         return EvalOutput(average_score=avg_score, eval_output_items=eval_output_items)

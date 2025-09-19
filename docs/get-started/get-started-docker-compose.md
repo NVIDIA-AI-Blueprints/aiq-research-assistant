@@ -163,6 +163,28 @@ rag-server                       Up 4 minutes
 
 Next deploy the instruct model. *This step can take up to 45 minutes*.
 
+#### Check Available NIM Profiles (Optional)
+
+Before deploying, you can list available profiles for your system to ensure compatibility. According to [NVIDIA NIM documentation](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html), you can check profiles for the Llama 3.3 70B Instruct model:
+
+```bash
+# List available profiles for Llama 3.3 70B Instruct
+docker run --rm --gpus=all -e NGC_API_KEY=$NGC_API_KEY \
+  nvcr.io/nim/meta/llama-3.3-70b-instruct:latest \
+  list-model-profiles
+```
+
+For the Nemotron model used by RAG (running in the `nim-llm-ms` container), you can check its profiles after the RAG deployment is complete:
+
+```bash
+# Check profiles for the already-running Nemotron model in nim-llm-ms container
+docker exec nim-llm-ms list-model-profiles
+```
+
+**Note**: The Nemotron model is deployed as part of the RAG setup and runs in the `nim-llm-ms` container. For supported hardware configurations, see the [Llama 3.3 Nemotron documentation](https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html#llama-3-3-nemotron-super-49b-v1-5).
+
+#### Deploy the Model
+
 ```bash
 docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
 ```
@@ -287,7 +309,7 @@ To deploy using hosted NVIDIA NIM microservices, follow the instructions for [de
 
 ### Update AI-Q Research Assistant Configuration 
 
-Edit the *AIRA configuration file* located at `aira/configs/config.yml`. 
+Edit the *AI-Q configuration file* located at `configs/config.yml`. 
 
 Update the following values, leaving the rest of the file with the default values.
 

@@ -15,9 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# AIQ AIRA Evaluation Suite
+# AI-Q Evaluation Suite
 
-A complete evaluation framework for AI Research Assistant (AIRA) workflows, featuring **automatic dataset preprocessing** and comprehensive assessment of AI-generated research reports.
+A complete evaluation framework for AI-Q Research Assistant workflows, featuring **automatic dataset preprocessing** and comprehensive assessment of AI-generated research reports.
 
 
 ### Automatic Dataset Preprocessing
@@ -32,6 +32,15 @@ The evaluation suite now **automatically generates missing evaluation fields** f
 ### Required Versions
 - **Python 3.12+**
 
+### RAG/AI-Q Deployment Required
+- **RAG Server**: Must be deployed and accessible for document retrieval
+- **AI-Q Backend Services**: Instruct LLM, Nemotron, and other backend services must be running
+- **Default Collections**: Biomedical and Financial datasets must be loaded into RAG (required for evaluation)
+
+**Deployment Options:**
+- **Docker Compose**: Follow [get-started-docker-compose.md](get-started/get-started-docker-compose.md) for local deployment
+- **Helm**: Deploy via Helm using [helm-deployment.md](get-started/helm-deployment.md) for Kubernetes environments
+
 ### Dependency Management
 If you encounter dependency conflicts, reference the tested dependency versions from the NeMo-Agent-Toolkit project:
 - **Reference**: https://github.com/NVIDIA/NeMo-Agent-Toolkit/blob/develop/uv.lock
@@ -43,7 +52,7 @@ If you encounter dependency conflicts, reference the tested dependency versions 
 
 ## Quick Start
 
-**Interactive Tutorial**: For a step-by-step walkthrough of the evaluation process, see the [AIRA Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) which provides hands-on examples and detailed explanations.
+**Interactive Tutorial**: For a step-by-step walkthrough of the evaluation process, see the [AI-Q Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) which provides hands-on examples and detailed explanations.
 
 ### 1. Branch Checkout
 After cloning the repository, make sure to checkout to the correct branch:
@@ -67,15 +76,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 Activate with: source .venv/bin/activate
-# Install AIRA package in development mode
+
+# Install AI-Q package in development mode (recommended)
 uv pip install -e ".[dev]"
 ```
 
 
 #### Standard Installation
 ```bash
-# Install AIRA package
-pip install -e .
+# Install AI-Q package
+uv pip install -e .
 ```
 
 
@@ -87,14 +97,53 @@ export TAVILY_API_KEY="your_tavily_api_key"  # Optional for web search
 export WANDB_API_KEY="your_wandb_api_key" # Optional, there are more instructions below if you want to set up tracing to w&b weave
 ```
 
-### 3. Run Evaluation
+#### Optional: Hosted Service Endpoints
+
+If you're using hosted services for LLM backends and RAG server, you can set these environment variables:
+
+```bash
+# Hosted Instruct LLM Backend (set to meta/llama-3.3-70b-instruct)
+export INSTRUCT_LLM_BASE_URL="http://aira-instruct-llm:8000/v1"
+
+# Hosted Nemotron Backend (for reasoning)
+export NEMOTRON_LLM_BASE_URL="http://nim-llm-ms:8000/v1"
+
+# RAG server for generate_summary / artifact_qa
+export RAG_SERVER_URL="http://rag-server:8081/v1"
+
+# Optional: If you want to use hosted endpoints for the evaluation LLM and RAGAS LLM, uncomment the following lines and point to the correct hosted endpoints
+# Else, the default for evaluation LLM and RAGAS LLM are to use models hosted on NVIDIA's build.nvidia.com
+# export EVAL_LLM_BASE_URL="http://local-llm-endpoint:8000/v1"
+# export RAGAS_LLM_BASE_URL="http://local-llm-endpoint:8000/v1"
+```
+
+**Note**: You must configure all backend services before running evaluation - either via environment variables above or by setting `base_url` fields in `configs/eval_config.yml` for: `instruct_llm`, `nemotron`, `eval_llm`, `ragas_llm`, and the `rag_url` for RAG server access.
+
+### 3. Load Default Collections (Required)
+
+The AI-Q evaluation requires default collections to be loaded into the RAG server. The evaluation dataset references the `Biomedical_Dataset` collection, so this step is mandatory:
+
+```bash
+docker run \
+  -e RAG_INGEST_URL=http://ingestor-server:8082/v1 \
+  -e PYTHONUNBUFFERED=1 \
+  -v /tmp:/tmp-data \
+  --network nvidia-rag \
+  nvcr.io/nvidia/blueprint/aira-load-files:v1.1.0
+```
+
+This command loads both Biomedical and Financial datasets into RAG. **Note**: This process can take up to 60 minutes to complete.
+
+**Important**: The default evaluation dataset (`data/eval_dataset.json`) uses `"rag_collection": "Biomedical_Dataset"`, so this collection must be available before running evaluation.
+
+### 4. Run Evaluation
 
 ```bash
 
 # Full workflow + evaluation (requires RAG server) + aira-instruct-llm
 uv run nat eval --config_file configs/eval_config.yml 
 ```
-### 4. Run Evaluation saving it to .txt file 
+### 5. Run Evaluation saving it to .txt file 
 
 ```bash
 
@@ -186,7 +235,7 @@ eval:
       llm: eval_llm
 ```
 
-## Setting Up Weave Tracing (Currently need to request weave access, contact Michael Demoret for enterprise weave access)
+## Setting Up Weave Tracing
 
 To enable Weights & Biases Weave for experiment tracking and observability:
 
@@ -199,7 +248,7 @@ export WANDB_API_KEY=<your_api_key>
 wandb login
 ```
 
-### 2. Reinstall Package (if necessary)
+### 2. Reinstall Package 
 ```bash
 uv pip install -e ".[dev]"
 ```
@@ -272,6 +321,15 @@ workflow:
     citation_pairing_llm: mistralai/mixtral-8x22b-instruct-v0.1
 ```
 **Uses existing:** `NVIDIA_API_KEY` (no additional setup required)
+
+### Nemotron Model Naming
+
+**Important**: The Nemotron model name differs between NVIDIA Build and local deployments:
+
+- **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
+- **Local Deployment**: `nvidia/llama-3_3-nemotron-super-49b-v1_5` (with underscores)
+
+The configuration files in this project are set up for **local deployments** and use the underscore format. If you're using NVIDIA Build, update the model names to use dots instead of underscores.
 
 
 ## Available Evaluators
@@ -357,73 +415,145 @@ aira/                      # AIRA workflow package
 
 ## Implementing a Custom Evaluator
 
-Adding your own custom evaluator to the AIRA evaluation suite is a straightforward process. Follow these steps to integrate your own evaluation logic:
+Adding your own custom evaluator to the AI-Q evaluation suite follows the established patterns used by existing evaluators. For detailed guidance, refer to the official [NVIDIA NeMo Agent Toolkit Custom Evaluator Documentation](https://docs.nvidia.com/nemo/agent-toolkit/1.2/extend/custom-evaluator.html).
+
+**Reference Examples**: Look at the existing evaluators in `aira/src/aiq_aira/eval/evaluators/` for complete implementation patterns:
+- `citation_quality_evaluator.py` - Complex multi-metric evaluator
+- `coverage_evaluator.py` - Single metric evaluator
+- `synthesis_evaluator.py` - Dual template evaluator
+- `hallucination_evaluator.py` - Binary classification evaluator
 
 ### 1. Create the Evaluator Class
 
-First, create a new Python file for your evaluator (e.g., `my_custom_evaluator.py`) inside `aira/src/aiq_aira/eval/evaluators/`. Your class should inherit from a base class or implement the required `evaluate` method.
+Create a new Python file for your evaluator (e.g., `my_custom_evaluator.py`) inside `aira/src/aiq_aira/eval/evaluators/`. Use the `BaseEvaluator` class for simplified implementation:
 
 ```python
 # aira/src/aiq_aira/eval/evaluators/my_custom_evaluator.py
-from aiq.builder.evaluator import EvaluatorBase, EvaluationOutput
+import asyncio
+import logging
+from typing import Dict, Any
+from langchain_core.language_models.base import BaseLanguageModel
+from nat.eval.evaluator.base_evaluator import BaseEvaluator
+from nat.eval.evaluator.evaluator_model import EvalInputItem, EvalOutputItem
+from aiq_aira.eval.schema import AIResearcherEvalOutput
 
-class MyCustomEvaluator(EvaluatorBase):
-    async def evaluate(self, workflow_output, **kwargs) -> EvaluationOutput:
-        # Your evaluation logic here
-        score = 0.95
-        return EvaluationOutput(
-            evaluator=self.config.name,
-            metric="custom_metric",
-            value=score
-        )
+logger = logging.getLogger(__name__)
+
+class MyCustomEvaluator(BaseEvaluator):
+    """Custom evaluator following the AIRA evaluation pattern."""
+    
+    def __init__(self, llm: BaseLanguageModel, max_concurrency: int = 4):
+        super().__init__(max_concurrency, tqdm_desc="Evaluating custom metric")
+        self.llm = llm
+    
+    @override
+    async def evaluate_item(self, item: EvalInputItem) -> EvalOutputItem:
+        """Evaluate a single item."""
+        try:
+            # Parse the workflow output
+            if item.output_obj == "":
+                item.output_obj = item.input_obj
+            
+            data_source = AIResearcherEvalOutput.model_validate_json(item.output_obj)
+            
+            # Your custom evaluation logic here
+            # Example: evaluate based on final_report length
+            report_length = len(data_source.final_report) if data_source.final_report else 0
+            score = min(report_length / 1000.0, 1.0)  # Normalize to 0-1
+            
+            reasoning = {
+                "report_length": report_length,
+                "evaluation_method": "custom_length_based",
+                "description": "Evaluates report quality based on length"
+            }
+            
+            logger.info(f"Custom evaluation for item {item.id}: score={score:.3f}")
+            
+            return EvalOutputItem(id=item.id, score=score, reasoning=reasoning)
+            
+        except Exception as e:
+            logger.error(f"Custom evaluation failed for item {item.id}: {str(e)}")
+            return EvalOutputItem(
+                id=item.id,
+                score=0.0,
+                reasoning={"error": f"Evaluation failed: {str(e)}"}
+            )
 ```
 
 ### 2. Define the Configuration
 
-Next, define a configuration class for your evaluator. This class should inherit from `EvaluatorBaseConfig` and include a unique `name` for your evaluator.
+Define a configuration class for your evaluator. This class should inherit from `EvaluatorBaseConfig` and include a unique `name` for your evaluator:
 
 ```python
-# In the same file
-from aiq.data_models.evaluator import EvaluatorBaseConfig
+# Add to the same file
+from nat.data_models.evaluator import EvaluatorBaseConfig
+from nat.data_models.component_ref import LLMRef
+from pydantic import Field
 
 class MyCustomEvaluatorConfig(EvaluatorBaseConfig, name="my_custom_evaluator"):
-    # Add any custom configuration fields here
-    pass
+    """Configuration for the custom evaluator."""
+    llm: LLMRef = Field(description="The LLM to use for evaluation.")
+    max_concurrency: int = Field(default=4, description="Maximum concurrent evaluations.")
 ```
 
 ### 3. Register the Evaluator
 
-Now, you need to register your new evaluator so that the AIQ Toolkit can discover it. In `aira/src/aiq_aira/eval/evaluator_register.py`, add the following:
-
--   Import your new evaluator and its config.
--   Create a registration function using the `@register_evaluator` decorator.
+Register your evaluator using the function-based pattern. In `aira/src/aiq_aira/eval/evaluator_register.py`, add the following:
 
 ```python
 # aira/src/aiq_aira/eval/evaluator_register.py
 
 # ... existing imports
+from nat.builder.framework_enum import LLMFrameworkEnum
 from aiq_aira.eval.evaluators.my_custom_evaluator import MyCustomEvaluator, MyCustomEvaluatorConfig
 
 @register_evaluator(config_type=MyCustomEvaluatorConfig)
 async def register_my_custom_evaluator(config: MyCustomEvaluatorConfig, builder: EvalBuilder):
-    evaluator = MyCustomEvaluator(config=config)
-    yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate)
+    """This function creates an instance of the MyCustomEvaluator."""
+    llm = await builder.get_llm(config.llm, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
+    
+    evaluator = MyCustomEvaluator(
+        llm=llm,
+        max_concurrency=config.max_concurrency,
+    )
+    yield EvaluatorInfo(config=config, evaluate_fn=evaluator.evaluate, description="My Custom Evaluator")
 ```
 
-### 4. Add to the Evaluation Config
+**Key differences from the NVIDIA documentation example:**
+- Use `await builder.get_llm()` instead of `builder.get_llm_by_ref()`
+- Include `wrapper_type=LLMFrameworkEnum.LANGCHAIN` parameter
+- Add a descriptive `description` field to `EvaluatorInfo`
+- Follow the same pattern as existing AIRA evaluators
 
-Finally, add your new evaluator to the `eval_config.yml` file under the `evaluators` section.
+### 4. Import for Registration
+
+To ensure the evaluator is registered at runtime, import the evaluator function in `aira/src/aiq_aira/eval/__init__.py` — even if the function is not called directly:
+
+```python
+# aira/src/aiq_aira/eval/__init__.py
+
+# ... existing imports
+from .evaluator_register import register_my_custom_evaluator  # pylint: disable=unused-import
+```
+
+### 5. Add to the Evaluation Config
+
+Finally, add your new evaluator to the `eval_config.yml` file under the `evaluators` section:
 
 ```yaml
-# aira/configs/eval_config.yml
+# configs/eval_config.yml
 eval:
   evaluators:
     # ... other evaluators
-    my_custom_evaluator:
+    my_custom_eval:
       _type: my_custom_evaluator
+      llm: eval_llm
+      max_concurrency: 4
 ```
 
-### 5. Reinstall the Package
+The `_type` field specifies the evaluator name. The keyword `my_custom_eval` can be set to any string and is used as a prefix for the evaluator output file name.
+
+### 6. Reinstall and Test
 
 To ensure all your changes are picked up, reinstall the `aiq_aira` package in editable mode:
 
@@ -431,7 +561,22 @@ To ensure all your changes are picked up, reinstall the `aiq_aira` package in ed
 uv pip install -e ".[dev]"
 ```
 
-That's it! You can now run the evaluation, and your custom evaluator will be included in the process. Please reach out to Kyle Zheng if there are any questions
+You can verify your evaluator is registered by running:
+
+```bash
+nat info components -t evaluator
+```
+
+This should now display your custom evaluator `my_custom_evaluator` in the list of available evaluators.
+
+### Key Points for Custom Evaluators
+
+- **Use `BaseEvaluator`**: Inherit from `nat.eval.evaluator.base_evaluator.BaseEvaluator` for simplified implementation
+- **Follow existing patterns**: Reference the evaluators in `aira/src/aiq_aira/eval/evaluators/` for complete examples
+- **Import for registration**: Don't forget to import your evaluator function in `__init__.py`
+- **Test thoroughly**: Use `nat info components -t evaluator` to verify registration
+
+For additional details and advanced patterns, refer to the [NVIDIA NeMo Agent Toolkit Custom Evaluator Documentation](https://docs.nvidia.com/nemo/agent-toolkit/1.2/extend/custom-evaluator.html).
 
 ## Developer Workflow
 
@@ -465,7 +610,7 @@ workflow:
 
 ### 3. Run Evaluation
 ```bash
-uv run nat eval --config_file aira/configs/eval_config.yml
+uv run nat eval --config_file configs/eval_config.yml
 ```
 
 ### 4. Check Results
@@ -485,14 +630,14 @@ uv run nat eval --config_file aira/configs/eval_config.yml
 ## Analysis and Diagnostics
 
 ### Interactive Analysis Notebook
-After running your evaluation, use the [AIRA Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) to:
+After running your evaluation, use the [AI-Q Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) to:
 - **Load and analyze** your evaluation results interactively
 - **Visualize metrics** across different evaluators and experiments  
 - **Compare performance** between different configurations
 - **Identify patterns** in model behavior and evaluation scores
-- **Generate diagnostic insights** for improving your AIRA workflows
+- **Generate diagnostic insights** for improving your AI-Q workflows
 
-The notebook provides pre-built analysis functions and visualization tools specifically designed for AIRA evaluation outputs.
+The notebook provides pre-built analysis functions and visualization tools specifically designed for AI-Q evaluation outputs.
 
 ## Troubleshooting
 
@@ -552,4 +697,4 @@ The preprocessing system is designed to be extensible - you can easily add new e
 
 ## License
 
-Apache 2.0 - See LICENSE file for details.
+Apache 2.0 - See [LICENSE](../LICENSE) file for details.

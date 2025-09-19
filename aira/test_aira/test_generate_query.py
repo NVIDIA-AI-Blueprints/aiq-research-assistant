@@ -15,19 +15,19 @@
 
 import pytest
 from pathlib import Path
-from aiq.builder.workflow_builder import WorkflowBuilder
+from nat.builder.workflow_builder import WorkflowBuilder
 from aiq_aira.functions.generate_queries import AIRAGenerateQueriesConfig
 from aiq_aira.schema import GenerateQueryStateInput, GenerateQueryStateOutput, GeneratedQuery
-from aiq.data_models.config import AIQConfig
+from nat.data_models.config import AIQConfig
 import yaml
 import logging
 
 # for some reason I have to manually import these functions for the workflow builder to run 
 from aiq_aira.functions import artifact_qa, generate_summary, generate_queries
 from aiq_aira import register
-from aiq.llm.openai_llm import openai_llm
-from aiq.front_ends.fastapi.register import register_fastapi_front_end
-from aiq.llm import register  # Import LLM registration module
+from nat.llm.openai_llm import openai_llm
+from nat.front_ends.fastapi.register import register_fastapi_front_end
+from nat.llm import register  # Import LLM registration module
 
 logger = logging.getLogger(__name__)
 
