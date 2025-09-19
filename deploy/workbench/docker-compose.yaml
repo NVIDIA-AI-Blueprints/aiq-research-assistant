@@ -47,7 +47,7 @@ services:
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-true}
     volumes:
-      - ../../aira/configs:/app/configs
+      - ../../configs:/app/configs
     networks:
       - nvidia-rag
     profiles: ["aira-no-gpu"]
