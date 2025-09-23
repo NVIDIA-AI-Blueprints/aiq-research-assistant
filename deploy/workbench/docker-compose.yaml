@@ -46,6 +46,9 @@ services:
       AIRA_APPLY_GUARDRAIL: "false"
       OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-true}
+      # Required for rag middleware via fastapi extensions
+      RAG_INGEST_URL: ${RAG_INGEST_URL:-http://ingestor-server:8082/v1}
+      RAG_SERVER_URL: ${RAG_SERVER_URL:-http://rag-server:8081/v1}
     volumes:
       - ../../configs:/app/configs
     networks:
