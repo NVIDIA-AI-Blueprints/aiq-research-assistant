@@ -120,17 +120,17 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
 
     # 1) If user specifically wants a rewrite:
     if input_data.rewrite_mode:
-
         if rewrite_mode == ArtifactRewriteMode.ENTIRE:
-
             updated = await do_entire_artifact_rewrite(llm, current_artifact,
                                                        add_context_to_user_message(user_message))
+            # add sources to the updated report if they exist
+            if hasattr(input_data, 'sources') and input_data.sources:
+                updated = updated + "\n\n" + input_data.sources
 
             return ArtifactQAOutput(
                 updated_artifact=updated,
                 assistant_reply="Here is the updated artifact (entire rewrite)."
             )
-
         else:
             # Unrecognized rewrite mode
             return ArtifactQAOutput(
@@ -179,7 +179,12 @@ async def artifact_chat_handler(llm, input_data: ArtifactQAInput) -> ArtifactQAO
 
     assistant_reply = answer_buf.strip()
 
+    # Add sources if they exist
+    final_artifact = current_artifact
+    if hasattr(input_data, 'sources') and input_data.sources:
+        final_artifact = current_artifact + "\n\n" + input_data.sources
+    
     return ArtifactQAOutput(
-        updated_artifact=current_artifact,
+        updated_artifact=final_artifact,
         assistant_reply=assistant_reply
     )
