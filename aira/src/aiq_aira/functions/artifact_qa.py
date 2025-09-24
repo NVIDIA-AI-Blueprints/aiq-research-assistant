@@ -114,8 +114,6 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query]
         )
 
-        logger.info(f"Artifact QA Query message: {query_message}")
-
         return await artifact_chat_handler(llm, query_message)
 
     async def _artifact_qa_streaming(query_message: ArtifactQAInput) -> AsyncGenerator[ArtifactQAOutput, None]:
@@ -173,8 +171,6 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
             [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query]
         )
-
-        logger.info(f"Artifact QA Query message: {query_message}")
 
         yield await artifact_chat_handler(llm, query_message)
 
