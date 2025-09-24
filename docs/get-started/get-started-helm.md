@@ -101,13 +101,57 @@ aiq-aira-phoenix-78fd7584b7-s9bwc         1/1     Running            0          
 
 #### Access to UI
 
-The UI can be accessed from a node on the cluster by first getting the cluster IP for the frontend service:
-```bash
-kubectl get service aiq-aira-aira-frontend -n aiq
-```
-The UI can then be viewed from a web browser on the cluster node at: `http://<frontend-cluster-ip>:3000`
+Since the frontend service has a `nodePort` configured for port 30080, you can view the UI from a web browser on the host running `kubectl` at http://localhost:30080.
 
-The UI can also be view from outside the cluster at: `http://<cluster-node-name-or-ip>:30080`
+The UI can also be viewed from outside the cluster at: `http://<cluster-node-name-or-ip>:30080`
+
+
+## Create default collections
+
+The AI research assistant demo web application requires two default collections. One collection supports a biomedical research prompt and contains reports on Cystic Fibrosis. The second supports a financial research prompt and contains public financial documents from Alphabet, Meta, and Amazon.
+
+To load these default collections, apply the standalone Kubernetes job:
+
+```bash
+kubectl apply -f deploy/helm/load-files.yaml
+```
+
+### Monitoring the job
+
+You can monitor the job's progress by checking its status:
+
+```bash
+kubectl get jobs -n aira
+```
+
+To view the job's logs (which is helpful for troubleshooting):
+
+```bash
+# Get the pod name first
+kubectl get pods -n aira -l job-name=load-files-nv-ingest
+
+# Then view the logs (replace <pod-name> with the actual pod name)
+kubectl logs -n aira <pod-name> -f
+```
+
+### Retrying the job
+
+The file loading process can take upwards of 60 minutes and may fail due to transient issues. If the job fails, you can easily retry it:
+
+1. Delete the failed job:
+```bash
+kubectl delete job load-files-nv-ingest -n aira
+```
+
+2. Reapply the job:
+```bash
+kubectl apply -f deploy/helm/load-files.yaml
+```
+
+3. Monitor the logs again to ensure it's progressing:
+```bash
+kubectl logs -n aira -l job-name=load-files-nv-ingest -f
+```
 
 
 ## Stopping Services
