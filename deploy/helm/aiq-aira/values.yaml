@@ -33,7 +33,7 @@ service:
   port: 3838
 
 backendEnvVars:
-  INSTRUCT_MODEL_NAME: "meta/llama-3.1-8b-instruct"
+  INSTRUCT_MODEL_NAME: "meta/llama-3.3-70b-instruct"
   INSTRUCT_MODEL_TEMP: "0.0"
   NEMOTRON_MAX_TOKENS: "5000"
   INSTRUCT_MAX_TOKENS: "5000"
