@@ -20,7 +20,7 @@ The AI-Q Research Assistant blueprint requires the deployment of the NVIDIA RAG 
 
 | Option | RAG Deployment | AIRA Deployment | Total Hardware Requirement |
 |--------|----------------|-----------------|---------------------------|
-| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 3xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>5xH100 80GB total |
+| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>5xH100 80GB total |
 | Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>10xH100 80GB total |
 
 ## Deployment
