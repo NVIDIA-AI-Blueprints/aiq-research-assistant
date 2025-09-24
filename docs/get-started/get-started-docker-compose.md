@@ -181,7 +181,12 @@ For the Nemotron model used by RAG (running in the `nim-llm-ms` container), you 
 docker exec nim-llm-ms list-model-profiles
 ```
 
-**Note**: The Nemotron model is deployed as part of the RAG setup and runs in the `nim-llm-ms` container. For supported hardware configurations, see the [Llama 3.3 Nemotron documentation](https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html#llama-3-3-nemotron-super-49b-v1-5).
+##### Supported Hardware Information
+
+- **Llama 3.3 70B Instruct**: See detailed hardware requirements in the [NVIDIA NIM documentation](https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html)
+- **Llama 3.3 Nemotron Super 49B**: For supported hardware configurations, see the [Nemotron documentation](https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html#llama-3-3-nemotron-super-49b-v1-5)
+
+**Note**: Profiles help ensure optimal performance and resource utilization. The system will automatically select the most appropriate profile based on your hardware configuration, but you can verify compatibility beforehand using the commands above.
 
 #### Deploy the Model
 
@@ -217,7 +222,6 @@ To confirm that the deployment was successful, run `docker ps --format "table {{
 
 ```
 aira-frontend                    Up 2 minutes
-aira-nginx                       Up 2 minutes
 aira-backend                     Up 2 minutes
 ```
 
@@ -230,7 +234,7 @@ localhost:3000
 The backend will be running and visible at:
 
 ```
-localhost:8051/docs
+localhost:3838/docs
 ```
 
 ### Add Default Collections
@@ -328,7 +332,7 @@ Update the following values, leaving the rest of the file with the default value
 Edit the *Docker Compose file* located at `deploy/compose/docker-compose.yaml`.
 
   - [ ] Update the value `services.aira-backend.environment.TAVILY_API_KEY` with your TAVILY API Key
-  - [ ] If you have deployed RAG on a different server than AIRA, update the value `services.aira-nginx.environment.RAG_INGEST_URL` with the *public http IP address of the RAG ingestor service* such as `http://UPDATE-TO-YOUR-RAG-IP-SERVER:8082`. If you have deployed RAG using docker compose on the same server as AIRA, leave the default value.
+  - [ ] If you have deployed RAG on a different server than AIRA, update the value `services.aira-backend.environment.RAG_INGEST_URL` with the *public http IP address of the RAG ingestor service* such as `http://UPDATE-TO-YOUR-RAG-IP-SERVER:8082`. If you have deployed RAG using docker compose on the same server as AIRA, leave the default value.
   
   > **WARNING:** The rag ingest IP address must be resolvable outside the docker network, so addresses such as `localhost` or `rag-server` will not work. Currently only http addresses are supported. HTTPS rag deployments, or authenticated RAG deployments, will require updates to the NGINX proxy.
 
