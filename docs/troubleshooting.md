@@ -19,17 +19,17 @@ To identify errors with collections or document upload, follow the steps below.
 
     If this doesn't work, follow the RAG documentation to fix the deployment. Check the ingestor-server logs, eg `docker logs ingestor-server -f`. 
 
-2. Attempt to list the collections through the middleware proxy:
+2. Attempt to list the collections through the backend service:
 
     ```bash
-    # replace aira-nginx with the *PUBLIC* IP address of the nginx proxy, `localhost`, or run this command from a container 
-    curl -v http://aira-nginx:8051/v1/collections
+    # replace aira-backend with the *PUBLIC* IP address of the backend service, `localhost`, or run this command from a container 
+    curl -v http://aira-backend:3838/v1/collections
     ```
 
-    If this doesn't work, double check the proxy configuration, which requires `RAG_INGEST_URL` and `AIRA_BASE_URL` to be set. If you are deploying with helm, the values.yaml file contains the entire nginx proxy configuration, be sure you have the appropriate service IP addresses in the proxy_pass lines. Check the nginx logs, eg `docker logs aira-nginx -f`. 
+    If this doesn't work, check the backend configuration and ensure `RAG_INGEST_URL` is properly set. Check the backend logs, eg `docker logs aira-backend -f`. 
 
 
-3. Attempt to list the collections through the application. Check the browser network logs and the application logs, `docker logs aira-frontend -f`. If this does not work, ensure you have configured the application via the `INFERENCE_ORIGIN` environment variable which should be set to the IP address of your NGINX proxy, `http://aira-nginx:8051`. 
+3. Attempt to list the collections through the application. Check the browser network logs and the application logs, `docker logs aira-frontend -f`. If this does not work, ensure you have configured the application via the `INFERENCE_ORIGIN` environment variable which should be set to the IP address of your backend service, `http://aira-backend:3838`. 
 
 4. If collection listing works, but documents fail to upload, check the logs in the RAG ingestor service, `docker logs ingestor-server -f`. 
 

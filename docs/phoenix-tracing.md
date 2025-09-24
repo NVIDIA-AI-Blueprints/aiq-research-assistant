@@ -22,7 +22,7 @@ This will deploy a Phoenix server accessible at port 6006.
 
 ## Enable Phoenix Tracing in AI-Q Research Assistant
 
-Update the AI-Q Research Assistant configuration file (`aira/configs/config.yml`) to include telemetry settings:
+Update the AI-Q Research Assistant configuration file (`configs/config.yml`) to include telemetry settings:
 
 ```yaml
 general:
