@@ -327,7 +327,7 @@ workflow:
 **Important**: The Nemotron model name differs between NVIDIA Build and local deployments:
 
 - **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
-- **Local Deployment**: `nvidia/llama-3_3-nemotron-super-49b-v1_5` (with underscores)
+- **Local Deployment**: `nvidia/llama-3-3-nemotron-super-49b-v1-5` 
 
 The configuration files in this project are set up for **local deployments** and use the underscore format. If you're using NVIDIA Build, update the model names to use dots instead of underscores.
 

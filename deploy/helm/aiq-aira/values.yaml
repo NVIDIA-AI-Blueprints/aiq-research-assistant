@@ -39,7 +39,7 @@ backendEnvVars:
   INSTRUCT_MAX_TOKENS: "5000"
   INSTRUCT_BASE_URL: "http://instruct-llm:8000"
   INSTRUCT_API_KEY: "not-needed"
-  NEMOTRON_MODEL_NAME: "nvidia/llama-3.3-nemotron-super-49b-v1"
+  NEMOTRON_MODEL_NAME: "nvidia/llama-3.3-nemotron-super-49b-v1.5"
   NEMOTRON_MODEL_TEMP: "0.5"
   NEMOTRON_BASE_URL: "http://nim-llm.rag.svc.cluster.local:8000"
   AIRA_APPLY_GUARDRAIL: "false"

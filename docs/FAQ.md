@@ -91,7 +91,7 @@ llms:
 
   nemotron:
     _type: openai
-    model_name : nvidia/llama-3_3-nemotron-super-49b-v1_5
+    model_name : nvidia/llama-3-3-nemotron-super-49b-v1-5
     temperature: 0.5
     max_tokens: 5000
     stream: true
