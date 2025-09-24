@@ -432,6 +432,7 @@ Create a new Python file for your evaluator (e.g., `my_custom_evaluator.py`) ins
 import asyncio
 import logging
 from typing import Dict, Any
+from typing_extensions import override
 from langchain_core.language_models.base import BaseLanguageModel
 from nat.eval.evaluator.base_evaluator import BaseEvaluator
 from nat.eval.evaluator.evaluator_model import EvalInputItem, EvalOutputItem
