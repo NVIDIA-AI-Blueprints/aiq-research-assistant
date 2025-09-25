@@ -120,6 +120,12 @@ Since the frontend service has a `nodePort` configured for port 30080, you can v
 The UI can also be viewed from outside the cluster at: `http://<cluster-node-name-or-ip>:30080`
 
 
+## Create Default Collections
+
+The AI-Q NVIDIA Research Assistant demo web application requires two default collections. One collection supports a biomedical research prompt and contains reports on Cystic Fibrosis. The second supports a financial research prompt and contains public financial documents from Alphabet, Meta, and Amazon.
+
+Follow the steps in [Bulk Upload via Python](../../data/readme.md#bulk-upload-via-python) to create these default collections.
+
 ## Stopping Services
 
 To stop all services, run the following commands:
