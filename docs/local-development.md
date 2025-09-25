@@ -16,7 +16,7 @@ Update the configuration file located at `configs/config.yaml`, providing values
 
 **Note**: The Nemotron model name differs between NVIDIA Build and local deployments:
 - **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)  
-- **Local Deployment**: `nvidia/llama-3-3-nemotron-super-49b-v1-5` (with underscores)
+- **Local Deployment**: `nvidia/llama-3-3-nemotron-super-49b-v1-5`
 
 The configuration files are set up for local deployments using the underscore format.
 
