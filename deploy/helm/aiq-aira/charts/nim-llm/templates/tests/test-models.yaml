@@ -10,7 +10,7 @@ metadata:
 spec:
   containers:
     - name: curl
-      image: curlimages/curl:8.6.0
+      image: curlimages/curl:8.16.0
       command: ['curl']
       args:
         - 'http://{{ .Values.service.name | default (include "nim-llm.fullname" .) }}:{{ .Values.service.openai_port | default .Values.service.openaiPort }}/v1/models'

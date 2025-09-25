@@ -11,7 +11,7 @@ metadata:
 spec:
   containers:
     - name: curl
-      image: curlimages/curl:8.6.0
+      image: curlimages/curl:8.16.0
       command: ['curl']
       args:
         - -X
