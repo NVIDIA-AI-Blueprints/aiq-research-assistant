@@ -91,7 +91,7 @@ helm install aiq-aira aiq-aira/ \
 
 #### Instruct LLM profile selection
 
-By default, the deployment of the instruct LLM will automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). The following is an example for selecting a throughput profile for 2 H100 GPUs:
+By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). The following is an example for selecting a throughput profile for 2 H100 GPUs:
 ```
 env:
  - name: NIM_MODEL_PROFILE
