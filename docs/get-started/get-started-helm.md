@@ -20,7 +20,7 @@ The AI-Q Research Assistant blueprint requires the deployment of the NVIDIA RAG 
 
 | Option | RAG Deployment | AIRA Deployment | Total Hardware Requirement |
 |--------|----------------|-----------------|---------------------------|
-| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>5xH100 80GB total |
+| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>6xH100 80GB total |
 | Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>10xH100 80GB total |
 
 ## Deployment
@@ -66,14 +66,21 @@ helm install aiq-aira https://helm.ngc.nvidia.com/nvidia/blueprint/charts/aiq-ai
 --password=$NGC_API_KEY \
 --set imagePullSecret.password=$NGC_API_KEY \
 --set ngcApiSecret.password=$NGC_API_KEY \
---set config.tavily_api_key=$TAVILY_API_KEY \
---set backendEnvVars.RAG_SERVER_URL=<RAG_SERVER_URL> \
---set backendEnvVars.RAG_INGEST_URL=<INGESTOR_SERVER_URL> -n aiq
+--set tavilyApiSecret.password=$TAVILY_API_KEY -n aiq
 ```
 
 To deploy from source:
 
+```bash
+helm install aiq-aira aiq-aira/ \
+--set imagePullSecret.password=$NGC_API_KEY \
+--set ngcApiSecret.password=$NGC_API_KEY \
+--set tavilyApiSecret.password=$TAVILY_API_KEY -n aiq
 ```
+
+The deployment commands above assume the RAG deployment instructions were followed in [Deploy RAG](#deploy-rag) with the RAG services running in the `rag` namespace. If using a different RAG deployment, the default service URLs can be overridden by setting `backendEnvVars.RAG_SERVER_URL` and `backendEnvVars.RAG_INGEST_URL`. For example:
+
+```bash
 helm install aiq-aira aiq-aira/ \
 --set imagePullSecret.password=$NGC_API_KEY \
 --set ngcApiSecret.password=$NGC_API_KEY \
@@ -82,8 +89,15 @@ helm install aiq-aira aiq-aira/ \
 --set backendEnvVars.RAG_INGEST_URL=<INGESTOR_SERVER_URL> -n aiq
 ```
 
-You can get the RAG_SERVER_URL and INGESTOR_SERVER_URL by running ```kubectl get svc``` in the namespace where you installed rag. If you installed it in the ```rag``` namespace. The values are typically
-```rag-server.rag.svc.cluster.local``` and ```ingestor-server.rag.svc.cluster.local```.
+#### Instruct LLM profile selection
+
+By default, the deployment of the instruct LLM will automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). The following is an example for selecting a throughput profile for 2 H100 GPUs:
+```
+env:
+ - name: NIM_MODEL_PROFILE
+ - value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
+```
+More information about model profile selection can be found [here](https://dl.gitlab-master-pages.nvidia.com/ai-services/microservices/nim-llm/large-language-models/latest/profiles.html) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
 
 #### Check status of pods
 ```bash
