@@ -86,7 +86,9 @@ Ubuntu 22.04
 
 NVIDIA Container ToolKit  
 GPU Driver -  530.30.02 or later  
-CUDA version - 12.6 or later  
+CUDA version - 12.6 or later
+
+> **Note:** Mixed MIG support in Helm deployment requires GPU operator 25.3.2 or higher and GPU Driver 570.172.08 or higher.
 
 ### Hardware Requirements
 
@@ -111,7 +113,6 @@ Instruct Model for Report Generation | `llama-3.3-70b-instruct` | 2 x H100 80GB*
 | Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>6xH100 80GB total |
 | Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#deploy-with-helm-chart) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>10xH100 80GB total |
 
-> **Note:** Mixed MIG support requires GPU operator 25.3.2 or higher and NVIDIA Driver 570.172.08 or higher.
 
 #### Running with hosted NVIDIA NIM Microservices
 
