@@ -50,6 +50,8 @@ If you encounter dependency conflicts, reference the tested dependency versions 
 - `TAVILY_API_KEY` - For web search (optional)
 - `WANDB_API_KEY` - For Weave tracing (optional)
 
+**Note**: To enable web search during evaluation, set `"search_web": true` in your dataset entries. See example in [`data/eval_dataset.json`](../data/eval_dataset.json).
+
 ## Quick Start
 
 **Interactive Tutorial**: For a step-by-step walkthrough of the evaluation process, see the [AI-Q Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) which provides hands-on examples and detailed explanations.
