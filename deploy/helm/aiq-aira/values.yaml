@@ -25,7 +25,7 @@ tavilyApiSecret:
 image:
   baserepo: nvcr.io
   repository: nvcr.io/nvstaging/blueprint/aira-backend
-  tag: v1.2.0-public-rc1
+  tag: v1.2.0-public-rc3
   pullPolicy: Always
 
 # The service type and port for the main AIQ AIRA backend service
@@ -33,18 +33,18 @@ service:
   port: 3838
 
 backendEnvVars:
-  INSTRUCT_MODEL_NAME: "meta/llama-3.1-8b-instruct"
+  INSTRUCT_MODEL_NAME: "meta/llama-3.3-70b-instruct"
   INSTRUCT_MODEL_TEMP: "0.0"
   NEMOTRON_MAX_TOKENS: "5000"
   INSTRUCT_MAX_TOKENS: "5000"
-  INSTRUCT_BASE_URL: "instruct-llm:8000"
+  INSTRUCT_BASE_URL: "http://instruct-llm:8000"
   INSTRUCT_API_KEY: "not-needed"
-  NEMOTRON_MODEL_NAME: "nvidia/llama-3_3-nemotron-super-49b-v1_5"
+  NEMOTRON_MODEL_NAME: "nvidia/llama-3.3-nemotron-super-49b-v1"
   NEMOTRON_MODEL_TEMP: "0.5"
-  NEMOTRON_BASE_URL: "nim-llm:8000"
+  NEMOTRON_BASE_URL: "http://nim-llm.rag.svc.cluster.local:8000"
   AIRA_APPLY_GUARDRAIL: "false"
-  RAG_SERVER_URL: ""
-  RAG_INGEST_URL: ""
+  RAG_SERVER_URL: "http://rag-server.rag.svc.cluster.local:8081"
+  RAG_INGEST_URL: "http://ingestor-server.rag.svc.cluster.local:8082"
   
 nim-llm:
   enabled: true
@@ -56,9 +56,9 @@ nim-llm:
       tag: "1.12.0"
   resources:
     limits:
-      nvidia.com/gpu: 1
+      nvidia.com/gpu: 2
     requests:
-      nvidia.com/gpu: 1
+      nvidia.com/gpu: 2
   model:
     ngcAPIKey: ""
     name: "meta/llama-3.3-70b-instruct"
@@ -77,7 +77,7 @@ frontend:
     nodePort: 30080
   image:
     repository: nvcr.io/nvstaging/blueprint/aira-frontend
-    tag: v1.2.0-public-rc2
+    tag: v1.2.0-public-rc3
     pullPolicy: Always
   replicaCount: 1
 
