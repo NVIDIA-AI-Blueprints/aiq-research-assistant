@@ -326,12 +326,12 @@ workflow:
 
 ### Nemotron Model Naming
 
-**Important**: The Nemotron model name differs between NVIDIA Build and local deployments:
+**Important**: Both NVIDIA Build and local deployments use the same model name format:
 
 - **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
-- **Local Deployment**: `nvidia/llama-3-3-nemotron-super-49b-v1-5` 
+- **Local Deployment**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
 
-The configuration files in this project are set up for **local deployments** and use the underscore format. If you're using NVIDIA Build, update the model names to use dots instead of underscores.
+The configuration files in this project are set up for **local deployments** and use the dot format. Both hosted and local deployments should use `nvidia/llama-3.3-nemotron-super-49b-v1.5`.
 
 
 ## Available Evaluators

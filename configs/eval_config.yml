@@ -68,7 +68,7 @@ llms:
   # Update if you are deploying differently or using hosted NVIDIA NIM microservices.
   nemotron:
     _type: nim
-    model_name : nvidia/llama-3-3-nemotron-super-49b-v1-5  # Local deployment format (underscores). For NVIDIA Build use: nvidia/llama-3.3-nemotron-super-49b-v1.5 (dots)
+    model_name : nvidia/llama-3.3-nemotron-super-49b-v1.5  # Both local and hosted deployment with dots format (nvidia/llama-3.3-nemotron-super-49b-v1.5)
     temperature: 0.5
     base_url: ${NEMOTRON_LLM_BASE_URL:-http://nim-llm-ms:8000/v1}
     disable_streaming: false # Disable streaming with nim models

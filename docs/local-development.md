@@ -14,9 +14,9 @@ uv pip install -e ".[dev]"
 
 Update the configuration file located at `configs/config.yaml`, providing values for a RAG deployment and your reasoning and instruct LLMs. The configuration file includes comments on what values to update.
 
-**Note**: The Nemotron model name differs between NVIDIA Build and local deployments:
+**Note**: Both NVIDIA Build and local deployments use the same model name format:
 - **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)  
-- **Local Deployment**: `nvidia/llama-3-3-nemotron-super-49b-v1-5`
+- **Local Deployment**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
 
 The configuration files are set up for local deployments using the underscore format.
 
