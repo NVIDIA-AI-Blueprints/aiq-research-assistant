@@ -90,6 +90,6 @@ To seed these into your RAG database:
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 uv run pip install -r data/requirements.txt
-uv run python data/sync_files2.py
+uv run python data/zip_to_collection.py
 ```
 

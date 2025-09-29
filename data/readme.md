@@ -26,11 +26,19 @@ docker run \
 
 ## Bulk Upload via Python 
 
-Set the following environment variables based on your RAG deployment:
+Set the `RAG_INGEST_URL` environment variable based on your RAG deployment.
 
+Docker Compose:
 ```bash
 RAG_INGEST_URL="http://ingestor-server:8082" # URL for RAG ingestion server
 ```
+Helm:
+```bash
+kubectl port-forward -n rag service/ingestor-server 8082:8082
+export RAG_INGEST_URL="http://localhost:8082
+```
+
+
 
 Create a Python environment with the correct dependencies:
 
@@ -50,9 +58,9 @@ cp files/* .
 Run the ingest: 
 
 ```bash
-uv run python sync_files2.py
+uv run python zip_to_collection.py
 ```
 
 ## Bulk Uploading Custom Data
 
-You can re-use the utility file here with your own custom dataset. Create a zip file containing the files you wish to upload. The name of the zip file will become the name of the collection. Run the sync_files.py file manually, or build and run a docker image.
+You can re-use the utility file here with your own custom dataset. Create a zip file containing the files you wish to upload. The name of the zip file will become the name of the collection. Run the zip_to_collection.py file manually, or build and run a docker image.

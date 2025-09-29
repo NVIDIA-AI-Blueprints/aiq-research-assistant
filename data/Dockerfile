@@ -46,11 +46,11 @@ RUN uv venv --python-preference managed
 RUN uv pip install --no-cache-dir -r requirements.txt
 
 # Copy the sync script and files
-COPY ./sync_files2.py .
+COPY ./zip_to_collection.py .
 COPY ./files/* .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
 # Run script using uv
-CMD ["uv", "run", "python", "sync_files2.py"]
+CMD ["uv", "run", "python", "zip_to_collection.py"]
