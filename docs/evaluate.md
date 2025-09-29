@@ -50,6 +50,8 @@ If you encounter dependency conflicts, reference the tested dependency versions 
 - `TAVILY_API_KEY` - For web search (optional)
 - `WANDB_API_KEY` - For Weave tracing (optional)
 
+**Note**: To enable web search during evaluation, set `"search_web": true` in your dataset entries. See example in [`data/eval_dataset.json`](../data/eval_dataset.json).
+
 ## Quick Start
 
 **Interactive Tutorial**: For a step-by-step walkthrough of the evaluation process, see the [AI-Q Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) which provides hands-on examples and detailed explanations.
@@ -324,12 +326,12 @@ workflow:
 
 ### Nemotron Model Naming
 
-**Important**: The Nemotron model name differs between NVIDIA Build and local deployments:
+**Important**: Both NVIDIA Build and local deployments use the same model name format:
 
 - **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
-- **Local Deployment**: `nvidia/llama-3_3-nemotron-super-49b-v1_5` (with underscores)
+- **Local Deployment**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
 
-The configuration files in this project are set up for **local deployments** and use the underscore format. If you're using NVIDIA Build, update the model names to use dots instead of underscores.
+The configuration files in this project are set up for **local deployments** and use the dot format. Both hosted and local deployments should use `nvidia/llama-3.3-nemotron-super-49b-v1.5`.
 
 
 ## Available Evaluators
@@ -432,6 +434,7 @@ Create a new Python file for your evaluator (e.g., `my_custom_evaluator.py`) ins
 import asyncio
 import logging
 from typing import Dict, Any
+from typing_extensions import override
 from langchain_core.language_models.base import BaseLanguageModel
 from nat.eval.evaluator.base_evaluator import BaseEvaluator
 from nat.eval.evaluator.evaluator_model import EvalInputItem, EvalOutputItem
