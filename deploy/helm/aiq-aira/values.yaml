@@ -36,7 +36,7 @@ backendEnvVars:
   INSTRUCT_MODEL_NAME: "meta/llama-3.3-70b-instruct"
   INSTRUCT_MODEL_TEMP: "0.0"
   NEMOTRON_MAX_TOKENS: "5000"
-  INSTRUCT_MAX_TOKENS: "5000"
+  INSTRUCT_MAX_TOKENS: "20000"
   INSTRUCT_BASE_URL: "http://instruct-llm:8000"
   INSTRUCT_API_KEY: "not-needed"
   NEMOTRON_MODEL_NAME: "nvidia/llama-3.3-nemotron-super-49b-v1.5"
