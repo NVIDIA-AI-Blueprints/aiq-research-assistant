@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM nvcr.io/nvidia/base/ubuntu:22.04_20240212
+FROM nvcr.io/nvidia/base/ubuntu:jammy-20250619
 
 # Install uv package manager
 # The installer requires curl (and certificates) to download the release archive
