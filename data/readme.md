@@ -35,7 +35,7 @@ export RAG_INGEST_URL="http://localhost:8082"
 For the Helm deployment, run the following on the node running `kubectl`:
 ```bash
 kubectl port-forward -n rag service/ingestor-server 8082:8082
-export RAG_INGEST_URL="http://localhost:8082
+export RAG_INGEST_URL="http://localhost:8082"
 ```
 
 On the same node where `RAG_INGEST_URL` was set above, create a Python environment with the correct dependencies:
