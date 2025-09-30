@@ -52,7 +52,7 @@ docker run \
 
 ```bash
 docker run \
-  -e INFERENCE_ORIGIN=http://localhost:8051 \
+  -e INFERENCE_ORIGIN=http://localhost:3838 \
   nvcr.io/nvidia/blueprint/aira-frontend:v1.2.0
 ```
 
