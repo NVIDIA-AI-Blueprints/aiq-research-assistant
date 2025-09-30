@@ -97,7 +97,7 @@ By default, the deployment of the instruct LLM automatically selects the most su
 ```
 env:
  - name: NIM_MODEL_PROFILE
- - value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
+   value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
 ```
 More information about model profile selection can be found [here](https://dl.gitlab-master-pages.nvidia.com/ai-services/microservices/nim-llm/large-language-models/latest/profiles.html) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
 
