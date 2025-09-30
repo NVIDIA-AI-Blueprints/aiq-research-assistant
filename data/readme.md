@@ -26,21 +26,19 @@ docker run \
 
 ## Bulk Upload via Python 
 
-Set the `RAG_INGEST_URL` environment variable based on your RAG deployment.
+Set the `RAG_INGEST_URL` environment variable based on your RAG deployment. For example, if running bulk upload on the same node as the RAG ingestion server in Docker Compose deployment:
 
-Docker Compose:
 ```bash
-RAG_INGEST_URL="http://ingestor-server:8082" # URL for RAG ingestion server
+export RAG_INGEST_URL="http://localhost:8082"
 ```
-Helm:
+
+For the Helm deployment, run the following on the node running `kubectl`:
 ```bash
 kubectl port-forward -n rag service/ingestor-server 8082:8082
 export RAG_INGEST_URL="http://localhost:8082
 ```
 
-
-
-Create a Python environment with the correct dependencies:
+On the same node where `RAG_INGEST_URL` was set above, create a Python environment with the correct dependencies:
 
 ```bash
 uv python install 3.12
