@@ -66,7 +66,7 @@ Ensure you have provided a valid Taviliy API key, and have set the `TAVILY_API_K
 
 ### Known Issue: Model Download Error
 
-**Issue**: When deploying `llama-3.3-70b-instruct`, you may encounter download errors with "Too many open files" messages. This is a known issue documented in the [NVIDIA NIM 1.12.0 Release Notes](https://docs.nvidia.com/nim/large-language-models/1.12.0/release-notes.html).
+**Issue**: When deploying `llama-3.3-70b-instruct`, you may encounter download errors with "Too many open files" messages. This is a known issue documented in the [NVIDIA NIM 1.13.0 Release Notes](https://docs.nvidia.com/nim/large-language-models/1.13.0/release-notes.html).
 
 **Workarounds**:
 1. **Increase file descriptor limits**: Add `--ulimit nofile=65536:65536` to your Docker run command
