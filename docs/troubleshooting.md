@@ -101,7 +101,7 @@ docker exec nim-llm-ms list-model-profiles
 
 ### Hardware Requirements Reference
 
-- **Llama 3.3 70B Instruct**: See detailed hardware requirements and optimization profiles in the [NVIDIA NIM Supported Models documentation](https://docs.nvidia.com/nim/large-language-models/1.12.0/supported-models.html#llama-33-70b-instruct)
+- **Llama 3.3 70B Instruct**: See detailed hardware requirements and optimization profiles in the [NVIDIA NIM Supported Models documentation](https://docs.nvidia.com/nim/large-language-models/1.13.0/supported-models.html#llama-33-70b-instruct)
 - **Llama 3.3 Nemotron Super 49B**: For supported hardware configurations, see the [Nemotron documentation](https://docs.nvidia.com/nim/large-language-models/latest/supported-models.html#llama-3-3-nemotron-super-49b-v1-5)
 
 **Note**: Profiles help ensure optimal performance and resource utilization. The system will automatically select the most appropriate profile based on your hardware configuration.
