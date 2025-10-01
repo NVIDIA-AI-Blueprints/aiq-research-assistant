@@ -93,13 +93,22 @@ helm install aiq-aira aiq-aira/ \
 
 #### Instruct LLM profile selection
 
-By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). The following is an example for selecting a throughput profile for 2 H100 GPUs:
+By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). 
+
+You can list available profiles by running the NIM container directly:
+```bash
+USERID=$(id -u) docker run --rm --gpus all \
+  nvcr.io/nim/meta/llama-3.3-70b-instruct:1.13.1 \
+  list-model-profiles
+```
+
+It is preferrable to select `tensorrt_llm-*` profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
 ```
 env:
  - name: NIM_MODEL_PROFILE
  - value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
 ```
-More information about model profile selection can be found [here](https://dl.gitlab-master-pages.nvidia.com/ai-services/microservices/nim-llm/large-language-models/latest/profiles.html) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
+More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
 
 #### Check status of pods
 ```bash
