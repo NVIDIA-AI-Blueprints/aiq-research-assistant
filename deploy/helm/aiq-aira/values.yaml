@@ -53,12 +53,16 @@ nim-llm:
   image:
       repository: nvcr.io/nim/meta/llama-3.3-70b-instruct
       pullPolicy: IfNotPresent
-      tag: "1.12.0"
+      tag: "1.13.1"
   resources:
     limits:
       nvidia.com/gpu: 2
     requests:
       nvidia.com/gpu: 2
+  # Configure NIM Model Profile for optimal performance
+  env:
+    - name: NIM_MODEL_PROFILE
+      value: ""  # Empty for automatic selection, or specify tensorrt_llm profile
   model:
     ngcAPIKey: ""
     name: "meta/llama-3.3-70b-instruct"
