@@ -81,9 +81,6 @@ dev = [
     "pytest-dotenv>=0.5.2",
 ]
 
-[tool.uv.sources]
-aiq = { path = "../ai-query-engine", editable = true }
-
 [tool.uv]
 managed = true
 
