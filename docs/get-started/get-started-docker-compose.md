@@ -188,7 +188,7 @@ More information about model profile selection can be found [here](https://docs.
 docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
 ```
 
-For A100/B100 system, run the following commands 
+For A100/B200 system, run the following commands 
 
 ```bash
 export AIRA_LLM_MS_GPU_ID=3,4,5,6
