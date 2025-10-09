@@ -34,7 +34,7 @@ services:
 
   aira-backend:
     container_name: aira-backend
-    image: nvcr.io/nvstaging/blueprint/aira-backend:v1.2.0-public-rc5
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.2.0
     runtime: nvidia
     build:
       context: ../../
@@ -60,7 +60,7 @@ services:
     
   aira-frontend:
     container_name: aira-frontend
-    image: nvcr.io/nvstaging/blueprint/aira-frontend:v1.2.0-public-rc4
+    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.2.0
     ports:
       - "3000:3000"
     expose:
