@@ -163,13 +163,32 @@ rag-server                       Up 4 minutes
 
 Next deploy the instruct model. *This step can take up to 45 minutes*.
 
+#### Model profile selection
+
+By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable. 
+
+You can list available profiles by running the NIM container directly:
+```bash
+USERID=$(id -u) docker run --rm --gpus all \
+  nvcr.io/nim/meta/llama-3.3-70b-instruct:1.13.1 \
+  list-model-profiles
+```
+
+It is preferrable to select `tensorrt_llm-*` profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
+
+```bash
+export NIM_MODEL_PROFILE="tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
+```
+
+More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
+
 #### Deploy the Model
 
 ```bash
 docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
 ```
 
-For A100 system, run the following commands 
+For A100/B200 system, run the following commands 
 
 ```bash
 export AIRA_LLM_MS_GPU_ID=3,4,5,6

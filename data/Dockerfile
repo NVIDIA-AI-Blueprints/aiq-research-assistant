@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM nvcr.io/nvidia/base/ubuntu:22.04_20240212
+FROM nvcr.io/nvidia/base/ubuntu:jammy-20250619
 
 # Install uv package manager
 # The installer requires curl (and certificates) to download the release archive
@@ -46,11 +46,11 @@ RUN uv venv --python-preference managed
 RUN uv pip install --no-cache-dir -r requirements.txt
 
 # Copy the sync script and files
-COPY ./sync_files2.py .
+COPY ./zip_to_collection.py .
 COPY ./files/* .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
 # Run script using uv
-CMD ["uv", "run", "python", "sync_files2.py"]
+CMD ["uv", "run", "python", "zip_to_collection.py"]

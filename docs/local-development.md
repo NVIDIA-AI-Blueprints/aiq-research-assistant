@@ -52,7 +52,7 @@ docker run \
 
 ```bash
 docker run \
-  -e INFERENCE_ORIGIN=http://localhost:8051 \
+  -e INFERENCE_ORIGIN=http://localhost:3838 \
   nvcr.io/nvidia/blueprint/aira-frontend:v1.2.0
 ```
 
@@ -90,6 +90,6 @@ To seed these into your RAG database:
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 uv run pip install -r data/requirements.txt
-uv run python data/sync_files2.py
+uv run python data/zip_to_collection.py
 ```
 

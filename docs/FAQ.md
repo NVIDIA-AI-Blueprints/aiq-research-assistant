@@ -5,7 +5,7 @@ This document contains frequently asked questions that are not covered in the de
 
 ## How Many Files can I Upload? Can I Bulk Upload Files?
 
-The demo web application allows you to upload 10 files at a time. This process can be repeated to add additional files to a collection. Alternatively, you can bulk upload files. To do so, see the example utility `data/sync_files2.py`. To run this utility create a zip file containing your desired files, and then run the utility either directly in Python or by building and running the docker container, eg.
+The demo web application allows you to upload 10 files at a time. This process can be repeated to add additional files to a collection. Alternatively, you can bulk upload files. To do so, see the example utility `data/zip_to_collection.py`. To run this utility create a zip file containing your desired files, and then run the utility either directly in Python or by building and running the docker container, eg.
 
     ```
     # navigate to the helper directory
