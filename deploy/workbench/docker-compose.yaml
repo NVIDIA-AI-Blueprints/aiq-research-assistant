@@ -1,7 +1,7 @@
 services:
   aira-instruct-llm:
     container_name: aira-instruct-llm
-    image: nvcr.io/nim/meta/llama-3.3-70b-instruct:latest
+    image: nvcr.io/nim/meta/llama-3.3-70b-instruct:1.13.1
     volumes:
     - ${MODEL_DIRECTORY:-/tmp}:/opt/nim/.cache
     user: "${USERID}"
@@ -32,7 +32,7 @@ services:
   aira-backend-no-gpu: &aira-backend-no-gpu
     hostname: aira-backend
     container_name: aira-backend
-    image: nvcr.io/nvidia/blueprint/aira-backend:v1.0.0
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.2.0
     build:
       context: ../../
       dockerfile: aira/Dockerfile
@@ -76,7 +76,7 @@ services:
     profiles: ["aira-no-gpu", "aira-gpu"]
 
   aira-load-files:
-    image: nvcr.io/nvidia/blueprint/aira-load-files:v1.0.0
+    image: nvcr.io/nvidia/blueprint/aira-load-files:v1.2.0
     environment:
       - RAG_INGEST_URL=http://${RAG_INGEST_URL:-ingestor-server}:8082/v1
       - PYTHONUNBUFFERED=1
