@@ -33,7 +33,7 @@ service:
   port: 3838
 
 backendEnvVars:
-  INSTRUCT_MODEL_NAME: "meta/llama-3.3-70b-instruct"
+  INSTRUCT_MODEL_NAME: "meta-llama/llama-3.3-70b-instruct"
   INSTRUCT_MODEL_TEMP: "0.0"
   NEMOTRON_MAX_TOKENS: "5000"
   INSTRUCT_MAX_TOKENS: "20000"
@@ -65,7 +65,7 @@ nim-llm:
       value: ""  # Empty for automatic selection, or specify tensorrt_llm profile
   model:
     ngcAPIKey: ""
-    name: "meta/llama-3.3-70b-instruct"
+    name: "meta-llama/llama-3.3-70b-instruct"
 
 # -----------------------------------------------------------
 # The following values are for the AIQ AIRA frontend service.

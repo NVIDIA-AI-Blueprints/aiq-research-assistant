@@ -131,7 +131,7 @@ docker run \
   -e PYTHONUNBUFFERED=1 \
   -v /tmp:/tmp-data \
   --network nvidia-rag \
-  nvcr.io/nvidia/blueprint/aira-load-files:v1.1.0
+  nvcr.io/nvidia/blueprint/aira-load-files:v1.2.0
 ```
 
 This command loads both Biomedical and Financial datasets into RAG. **Note**: This process can take up to 60 minutes to complete.
