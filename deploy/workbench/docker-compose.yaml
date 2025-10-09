@@ -32,7 +32,7 @@ services:
   aira-backend-no-gpu: &aira-backend-no-gpu
     hostname: aira-backend
     container_name: aira-backend
-    image: nvcr.io/nvstaging/blueprint/aira-backend:v1.2.0-public-rc5
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.2.0
     build:
       context: ../../
       dockerfile: aira/Dockerfile
@@ -63,7 +63,7 @@ services:
     
   aira-frontend:
     container_name: aira-frontend
-    image: nvcr.io/nvstaging/blueprint/aira-frontend:v1.2.0-public-rc5
+    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.2.0
     ports:
       - "3000:3000"
     expose:
@@ -76,7 +76,7 @@ services:
     profiles: ["aira-no-gpu", "aira-gpu"]
 
   aira-load-files:
-    image: nvcr.io/nvstaging/blueprint/aira-load-files:v1.2.0-public-rc5
+    image: nvcr.io/nvidia/blueprint/aira-load-files:v1.2.0
     environment:
       - RAG_INGEST_URL=http://${RAG_INGEST_URL:-ingestor-server}:8082/v1
       - PYTHONUNBUFFERED=1
