@@ -78,8 +78,8 @@ Ubuntu 22.04
 
 ### Deploy Options 
 
-[Docker Compose](docs/get-started/get-started-docker-compose.md)    
-[NVIDIA AI Workbench](deploy/workbench/README.md#get-started)
+[Docker Compose](docs/get-started/get-started-docker-compose.md)  
+[NVIDIA AI Workbench](deploy/workbench/README.md#get-started)  
 [Helm](docs/get-started/get-started-helm.md)
 
 ### Drivers
@@ -98,11 +98,11 @@ The following are the hardware requiremnts for running all services locally usin
 
 Use | Service(s)| Recommended GPU* 
 --- | --- | --- 
-Nemo Retriever Microservices for multi-modal document ingest | `graphic-elements`, `table-structure`, `paddle-ocr`, `nv-ingest`, `embedqa` | 1 x H100 80GB*  <br /> 1 x A100 80GB <br /> 2 x B200
+Nemo Retriever Microservices for multi-modal document ingest | `graphic-elements`, `table-structure`, `paddle-ocr`, `nv-ingest`, `embedqa` | 1 x H100 80GB*  <br /> 1 x A100 80GB <br /> 1 x B200
 Reasoning Model for Report Generation and RAG Q&A Retrieval | `llama-3_3-nemotron-super-49b-v1_5` with a FP8 profile  | 1 x H100 80 GB* <br /> 2 x A100 80GB <br /> 2 x B200
 Instruct Model for Report Generation | `llama-3.3-70b-instruct` | 2 x H100 80GB* <br /> 4 x A100 80GB <br /> 2 x B200
 --- | -- | -- 
-**Total** | Entire AI-Q Research Blueprint | 4 x H100 80GB* <br /> 7 x A100 80GB <br /> 4 x B200
+**Total** | Entire AI-Q Research Blueprint | 4 x H100 80GB* <br /> 7 x A100 80GB <br /> 5 x B200
 
   *This recommendation is based off of the configuration used to test the blueprint. For alternative configurations, view the [RAG blueprint documentation](https://github.com/NVIDIA-AI-Blueprints/rag?tab=readme-ov-file#minimum-system-requirements).
 
