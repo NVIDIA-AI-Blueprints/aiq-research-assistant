@@ -105,10 +105,10 @@ If you're using hosted services for LLM backends and RAG server, you can set the
 
 ```bash
 # Hosted Instruct LLM Backend (set to meta/llama-3.3-70b-instruct)
-export INSTRUCT_LLM_BASE_URL="http://aira-instruct-llm:8000/v1"
+export INSTRUCT_LLM_BASE_URL="http://localhost:8050/v1"
 
 # Hosted Nemotron Backend (for reasoning)
-export NEMOTRON_LLM_BASE_URL="http://nim-llm-ms:8000/v1"
+export NEMOTRON_LLM_BASE_URL="http://localhost:8999/v1"
 
 # RAG server for generate_summary / artifact_qa
 export RAG_SERVER_URL="http://rag-server:8081/v1"
