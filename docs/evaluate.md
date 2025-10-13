@@ -111,7 +111,7 @@ export INSTRUCT_LLM_BASE_URL="http://localhost:8050/v1"
 export NEMOTRON_LLM_BASE_URL="http://localhost:8999/v1"
 
 # RAG server for generate_summary / artifact_qa
-export RAG_SERVER_URL="http://rag-server:8081/v1"
+export RAG_SERVER_URL="http://localhost:8081/v1"
 
 # Optional: If you want to use hosted endpoints for the evaluation LLM and RAGAS LLM, uncomment the following lines and point to the correct hosted endpoints
 # Else, the default for evaluation LLM and RAGAS LLM are to use models hosted on NVIDIA's build.nvidia.com
