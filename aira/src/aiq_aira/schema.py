@@ -66,9 +66,9 @@ def sanitize_prompt(prompt: str, max_length: int = 10000) -> str:
     return prompt.strip()
 
 class GeneratedQuery(BaseModel):
-    query: str = Field(..., max_length=2000, description="The actual text of the search query")
-    report_section: str = Field(..., max_length=1000, description="Section of the report this query addresses")
-    rationale: str = Field(..., max_length=1000, description="Why this query is relevant")
+    query: str = Field(..., description="The actual text of the search query")
+    report_section: str = Field(..., description="Section of the report this query addresses")
+    rationale: str = Field(..., description="Why this query is relevant")
     
     @validator('query')
     def validate_query(cls, v):
@@ -79,10 +79,10 @@ class GeneratedQuery(BaseModel):
 # For Stage 1: GenerateQueries
 ##
 class GenerateQueryStateInput(BaseModel):
-    topic: str = Field(..., max_length=1000, description="Topic to investigate and generate queries for")
-    report_organization: str = Field(..., max_length=5000, description="Desired structure or constraints for the final report")
-    num_queries: int = Field(3, ge=1, le=20, description="Number of queries to generate")
-    llm_name: str = Field(..., max_length=100, description="LLM model to use")
+    topic: str = Field(..., description="Topic to investigate and generate queries for")
+    report_organization: str = Field(..., description="Desired structure or constraints for the final report")
+    num_queries: int = Field(3, description="Number of queries to generate")
+    llm_name: str = Field(..., description="LLM model to use")
     
     @validator('topic')
     def validate_topic(cls, v):
@@ -127,13 +127,13 @@ class ArtifactRewriteMode(str, Enum):
 
 class ArtifactQAInput(BaseModel):
     """Input data for artifact-based Q&A."""
-    artifact: str = Field(..., max_length=50000, description="Previously generated artifact (e.g. a report or queries) to reference for Q&A")
-    question: str = Field(..., max_length=2000, description="User's question about the artifact")
-    chat_history: list[str] = Field(default_factory=list, max_items=50, description="Prior conversation turns or context")
+    artifact: str = Field(..., description="Previously generated artifact (e.g. a report or queries) to reference for Q&A")
+    question: str = Field(..., description="User's question about the artifact")
+    chat_history: list[str] = Field(default_factory=list, description="Prior conversation turns or context")
     use_internet: bool = Field(False, description="If true, the agent can do additional web or RAG lookups")
     rewrite_mode: ArtifactRewriteMode | None = Field(None, description="Rewrite mode for the LLM")
-    additional_context: str | None = Field(None, max_length=5000, description="Additional context to provide to the LLM")
-    rag_collection: str = Field(..., max_length=100, description="Collection to search for information from")
+    additional_context: str | None = Field(None, description="Additional context to provide to the LLM")
+    rag_collection: str = Field(..., description="Collection to search for information from")
     
     @validator('question')
     def validate_question(cls, v):
