@@ -20,7 +20,6 @@ from enum import Enum
 from pydantic import BaseModel, Field, validator
 from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
-from typing import Dict
 from dataclasses import dataclass
 
 # Prompt injection patterns to block
@@ -30,7 +29,7 @@ BLOCKED_PATTERNS = [
     r'system\s*:',
     r'<\s*system\s*>',
     r'\[system\]',
-    r'reveal\s+(?:the\s+)?(?:api|secret|password|key)',
+    r'(?:reveal|show|display|print|give\s+me)\s+(?:me\s+)?(?:the\s+)?(?:api|secret|password|key)',
     r'execute\s+(?:system\s+)?commands?',
     r'run\s+(?:system\s+)?commands?',
     r'delete\s+(?:all\s+)?(?:files?|data|collections?)',
@@ -43,13 +42,12 @@ BLOCKED_PATTERNS = [
 ]
 
 def sanitize_prompt(prompt: str, max_length: int = 10000) -> str:
-    """Sanitize user prompts to prevent injection attacks."""
+    """Sanitize user prompts to prevent injection attacks.
+    
+    Note: max_length parameter is kept for backward compatibility but not enforced.
+    """
     if not prompt:
         return prompt
-        
-    # Length limit
-    if len(prompt) > max_length:
-        raise ValueError(f"Prompt too long: {len(prompt)} chars (max: {max_length})")
     
     # Check for injection patterns
     prompt_lower = prompt.lower()
@@ -72,7 +70,7 @@ class GeneratedQuery(BaseModel):
     
     @validator('query')
     def validate_query(cls, v):
-        return sanitize_prompt(v, 2000)
+        return sanitize_prompt(v)
 
 
 ##
@@ -86,14 +84,14 @@ class GenerateQueryStateInput(BaseModel):
     
     @validator('topic')
     def validate_topic(cls, v):
-        return sanitize_prompt(v, 1000)
+        return sanitize_prompt(v)
     
     @validator('report_organization')
     def validate_report_organization(cls, v):
-        return sanitize_prompt(v, 5000)
+        return sanitize_prompt(v)
 
 class GenerateQueryStateOutput(BaseModel):
-    queries: list[Dict] | None = None
+    queries: list[GeneratedQuery] | None = None
     intermediate_step: str | None = None
 
 
@@ -139,23 +137,18 @@ class ArtifactQAInput(BaseModel):
     def validate_question(cls, v):
         if not v or not v.strip():
             raise ValueError("Question cannot be empty")
-        return sanitize_prompt(v, 2000)
+        return sanitize_prompt(v)
     
     @validator('additional_context')
     def validate_additional_context(cls, v):
         if v is not None:
-            return sanitize_prompt(v, 5000)
+            return sanitize_prompt(v)
         return v
     
     @validator('chat_history')
     def validate_chat_history(cls, v):
         if v:
-            sanitized = []
-            for item in v:
-                if len(item) > 2000:  # Limit individual chat history items
-                    raise ValueError("Chat history item too long")
-                sanitized.append(sanitize_prompt(item, 2000))
-            return sanitized
+            return [sanitize_prompt(item) for item in v]
         return v
 
 class ArtifactQAOutput(BaseModel):
@@ -168,7 +161,7 @@ class ArtifactQAOutput(BaseModel):
 ###
 @dataclass(kw_only=True)
 class AIRAState:
-    queries: list[Dict] | None = None    
+    queries: list[GeneratedQuery] | None = None    
     web_research_results: list[str] | None = None
     citations: str | None = None
     running_summary: str | None = field(default=None) 

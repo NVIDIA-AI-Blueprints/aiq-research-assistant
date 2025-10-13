@@ -107,9 +107,11 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
 
     json_str = splitted[1].strip()
     try:
-        queries = parse_json_markdown(json_str)
+        queries_raw = parse_json_markdown(json_str)
+        # Convert raw dictionaries to GeneratedQuery objects so validators run
+        queries = [GeneratedQuery(**q_dict) for q_dict in queries_raw]
     except Exception as e:
-        logger.error(f"Error parsing queries as JSON: {e}")
+        logger.error(f"Error parsing or validating queries: {e}")
         queries = []
 
     return {"queries": queries}
