@@ -18,7 +18,7 @@ import logging
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
@@ -27,10 +27,93 @@ from fastapi import Form
 from fastapi import HTTPException
 from fastapi import Query
 from fastapi import UploadFile
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
+# File upload security constants
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.docx', '.md', '.doc', '.rtf'}
+ALLOWED_MIME_TYPES = {
+    'application/pdf',
+    'text/plain',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword',
+    'application/rtf',
+    'text/markdown'
+}
+
+
+def sanitize_filename(filename: str) -> str:
+    """Sanitize filename to prevent path traversal attacks."""
+    # Remove path components
+    safe_name = Path(filename).name
+    
+    # Check for path traversal attempts
+    if '..' in safe_name or safe_name.startswith('/'):
+        raise HTTPException(status_code=400, detail="Invalid filename: path traversal detected")
+    
+    # Remove dangerous characters, keep alphanumeric, spaces, dots, hyphens, underscores
+    import re
+    safe_name = re.sub(r'[^\w\s.-]', '', safe_name)
+    
+    # Prevent hidden files
+    if safe_name.startswith('.'):
+        safe_name = safe_name[1:]
+    
+    # Ensure we still have a valid filename
+    if not safe_name or safe_name.isspace():
+        raise HTTPException(status_code=400, detail="Invalid filename after sanitization")
+    
+    return safe_name
+
+
+async def validate_file_upload(file: UploadFile) -> bytes:
+    """Validate uploaded file for security."""
+    # Read file content
+    content = await file.read()
+    
+    # Check file size
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large: {len(content)} bytes (max: {MAX_FILE_SIZE})"
+        )
+    
+    # Sanitize filename
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    
+    filename = sanitize_filename(file.filename)
+    
+    # Verify extension
+    ext = Path(filename).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type: {ext}. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    
+    # Basic MIME type check
+    if file.content_type and file.content_type not in ALLOWED_MIME_TYPES:
+        logger.warning(f"Suspicious MIME type: {file.content_type} for file {filename}")
+    
+    # Reset file position for further processing
+    await file.seek(0)
+    
+    return content
+
+
+def sanitize_for_logging(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove sensitive fields from data before logging."""
+    sensitive_keys = {'api_key', 'token', 'password', 'secret', 'authorization'}
+    sanitized = data.copy()
+    
+    for key in list(sanitized.keys()):
+        if any(sensitive_key in key.lower() for sensitive_key in sensitive_keys):
+            sanitized[key] = "***REDACTED***"
+    
+    return sanitized
 
 
 class DocumentRequest(BaseModel):
@@ -67,11 +150,16 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
             if "blocking" not in metadata:
                 metadata["blocking"] = True
 
-            logger.info(f"Document upload request ({http_method}) - Metadata: {metadata}")
+            # Log sanitized metadata (no sensitive data)
+            logger.info(f"Document upload request ({http_method}) - Metadata: {sanitize_for_logging(metadata)}")
 
-            # Create multipart form data for upstream request
+            # Validate each uploaded file and create multipart form data
             files = []
             for doc in documents:
+                # Validate file upload (includes size, type, filename checks)
+                await validate_file_upload(doc)
+                
+                # Read content after validation
                 content = await doc.read()
                 files.append(('documents', (doc.filename, content, doc.content_type)))
 
