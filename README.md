@@ -141,6 +141,7 @@ ADDITIONAL INFORMATION: For NVIDIA Retrieval QA Llama 3.2 1B Reranking v2 model,
 
 ## Security Considerations
 
+- **Prompt Injection Protection**: The AI-Q Research Assistant includes built-in security measures to prevent prompt injection attacks, including instruction override attempts, system prompt injection, credential extraction, command execution, SQL injection, XSS attacks, and code execution attempts. See the [Security Testing Guide](docs/security-testing.md) for details on testing these protections.
 - The AI-Q Research Assistant Blueprint doesn't generate any code that may require sandboxing.
 - The AI-Q Research Assistant Blueprint is shared as a reference and is provided "as is". The security in the production environment is the responsibility of the end users deploying it. When deploying in a production environment, please have security experts review any potential risks and threats; define the trust boundaries, implement logging and monitoring capabilities, secure the communication channels, integrate AuthN & AuthZ with appropriate access controls, keep the deployment up to date, ensure the containers/source code are secure and free of known vulnerabilities.
 - A frontend that handles AuthN & AuthZ should be in place as missing AuthN & AuthZ could provide ungated access to customer models if directly exposed to e.g. the internet, resulting in either cost to the customer, resource exhaustion, or denial of service.
