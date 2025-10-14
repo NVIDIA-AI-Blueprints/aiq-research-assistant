@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-AI-Q Deep Researcher Evaluator - Evaluation framework for AI-Q Deep Researcher workflows
+AI-Q Research Assistant Evaluator - Evaluation framework for AI-Q Research Assistant workflows
 
-This package provides evaluation capabilities for the AI-Q Deep Researcher
+This package provides evaluation capabilities for the AI-Q Research Assistant
 following the patterns established in the SWE bench evaluation framework.
 """
-# Evaluators for AIRA workflow
+# Evaluators for AI-Q Research Assistant workflow
 from .coverage_evaluator import CoverageEvaluator, CoverageEvaluatorConfig
 from .synthesis_evaluator import SynthesisEvaluator, SynthesisEvaluatorConfig
 from .hallucination_evaluator import HallucinationEvaluator, HallucinationEvaluatorConfig
