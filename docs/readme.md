@@ -8,6 +8,7 @@ The following sections are covered:
     - [Get started with AI-Q NVIDIA Research Assistant Blueprint Using Helm chart](/docs/get-started/helm-deployment.md)
 - [Local Development Guide](/docs/local-development.md)
 - [Phoenix Tracing Configuration for Docker Deployment](/docs/phoenix-tracing.md)
-- [Evaluation](/docs/evaluation.md)
+- [Evaluation](/docs/evaluate.md)
+- [Security Testing Guide](/docs/security-testing.md)
 - [Frequently Asked Questions](/docs/FAQ.md)
 - [Troubleshooting](/docs/troubleshooting.md)
