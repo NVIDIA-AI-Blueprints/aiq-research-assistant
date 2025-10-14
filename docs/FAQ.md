@@ -40,7 +40,7 @@ The RAG service in this blueprint is accessed by a REST API call. Compatible ser
 
 ## How many GPUs do I Need? Can I Deploy with Fewer GPUs?
 
-The blueprint hardware requirements for the default Docker compose deployment with local NVIDIA NIM microservices are outlined in the [README](../README.md#hardware-requirements). Fewer GPUs can be used by deploying the NVIDIA RAG blueprint following [these guidelines](https://github.com/NVIDIA-AI-Blueprints/rag?tab=readme-ov-file#hardware-requirements-for-self-hosting-all-nvidia-nim-microservices).
+The blueprint hardware requirements for the default Docker compose deployment with local NVIDIA NIM microservices are outlined in the [README](../README.md#hardware-requirements). Fewer GPUs can be used by deploying the NVIDIA RAG blueprint following [these guidelines](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/support-matrix.md#hardware-requirements-docker).
 
 ## What is the Performance?
 

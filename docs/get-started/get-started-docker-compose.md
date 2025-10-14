@@ -73,7 +73,7 @@ export MODEL_DIRECTORY=~/.cache/model-cache
 
 ### Deploy RAG
 
-Before deploying the AI-Q Research Assistant, deploy RAG by following [these instructions](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-on-prem-models).
+Before deploying the AI-Q Research Assistant, deploy RAG by following [these instructions](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-docker-self-hosted.md).
 
 ```bash
 git clone https://github.com/NVIDIA-AI-Blueprints/rag.git
@@ -303,7 +303,7 @@ docker ps
 
 > If you already have RAG deployed, skip to the next step.
 
-To deploy using hosted NVIDIA NIM microservices, follow the instructions for [deploying the RAG blueprint using hosted models](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-nvidia-hosted-models). 
+To deploy using hosted NVIDIA NIM microservices, follow the instructions for [deploying the RAG blueprint using hosted models](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-docker-nvidia-hosted.md). 
 
 ### Update AI-Q Research Assistant Configuration 
 
