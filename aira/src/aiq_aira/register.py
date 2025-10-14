@@ -51,7 +51,7 @@ class DefaultCollectionsConfig(FunctionBaseConfig, name="default_collections"):
 @register_function(config_type=DefaultCollectionsConfig)
 async def default_collections(config: DefaultCollectionsConfig, builder: Builder):
     """
-    Returns information about the example collections used by the AIRA demo frontend
+    Returns information about the example collections used by the AI-Q Deep Researcher demo frontend
     """
     async def _default_collections(request: None = None) -> list[DefaultCollection]:
         return config.collections

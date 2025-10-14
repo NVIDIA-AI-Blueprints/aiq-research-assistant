@@ -26,7 +26,7 @@ from pydantic import Tag
 
 
 class AIRAGeneratorBaseConfig(TypedBaseModel, BaseModelRegistryTag):
-    description: str = "AI Research Assistant Generator"
+    description: str = "AI-Q Deep Researcher Generator"
 
 
 class AIRAGeneratorFullConfig(AIRAGeneratorBaseConfig, name="full"):

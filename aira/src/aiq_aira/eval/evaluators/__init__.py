@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-AIRA Evaluator - Evaluation framework for AI Research Assistant workflows
+AI-Q Deep Researcher Evaluator - Evaluation framework for AI-Q Deep Researcher workflows
 
-This package provides evaluation capabilities for the AI Research Assistant (AIRA)
+This package provides evaluation capabilities for the AI-Q Deep Researcher
 following the patterns established in the SWE bench evaluation framework.
 """
 # Evaluators for AIRA workflow

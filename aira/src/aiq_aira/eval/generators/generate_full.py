@@ -48,8 +48,8 @@ logger = logging.getLogger(__name__)
 @register_generator("full")
 class AIRAFullGenerator(AIRAGeneratorBase):
     """
-    Full implementation of the AI Research Assistant generator that uses the complete AIRA workflow.
-    This integrates with the actual AI research pipeline including query generation, research, and report generation.
+    Full implementation of the AI-Q Deep Researcher generator that uses the complete AI-Q Deep Researcher workflow.
+    This integrates with the actual AI-Q Deep Researcher pipeline including query generation, research, and report generation.
     """
 
     def __init__(self, config: AIRAEvaluatorWorkflowConfig, builder: Builder):

@@ -13,15 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-This file defines the workflow for evaluating the AI Research Assistant (AIRA).
+This file defines the workflow for evaluating the AI-Q Deep Researcher.
 
 Three types of generators are provided:
 1. **gold**: Uses pre-defined expected outputs for comparison
-2. **full**: Full AI research pipeline using the AIRA workflow
+2. **full**: Full AI-Q Deep Researcher pipeline using the AI-Q Deep Researcher workflow
 3. **skeleton**: Template for custom evaluation implementations
 
 ### Implementation Guide:
-The full generator integrates with the AI Research Assistant workflow to:
+The full generator integrates with the AI-Q Deep Researcher workflow to:
 1. Generate research queries based on the topic and report organization
 2. Execute the research pipeline including RAG search and web research
 3. Generate a comprehensive report with citations
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 class AIRAGeneratorBase:
     """
-    Abstract base class for AI Research Assistant generators.
+    Abstract base class for AI-Q Deep Researcher generators.
     These generators create research outputs based on different strategies.
     """
 
@@ -70,7 +70,7 @@ class AIRAGeneratorBase:
 
 class AIRAGeneratorRegistry:
     """
-    Registry for AI Research Assistant generators.
+    Registry for AI-Q Deep Researcher generators.
     Manages different research generation strategies.
     """
     _generators = {}
@@ -105,7 +105,7 @@ def register_generator(name: str):
 
 @register_function(config_type=AIRAEvaluatorWorkflowConfig)
 async def aira_evaluator_workflow(config: AIRAEvaluatorWorkflowConfig, builder: Builder):
-    '''Workflow for evaluating AI Research Assistant performance'''
+    '''Workflow for evaluating AI-Q Deep Researcher performance'''
     from nat.builder.function_info import FunctionInfo
 
     from aiq_aira.eval.generators import register
