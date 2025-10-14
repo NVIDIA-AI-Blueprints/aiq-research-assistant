@@ -24,8 +24,8 @@ tavilyApiSecret:
 # The image repository and tag for the AIQ AIRA backend service.
 image:
   baserepo: nvcr.io
-  repository: nvcr.io/nvstaging/blueprint/aira-backend
-  tag: v1.2.0-public-rc3
+  repository: nvcr.io/nvidia/blueprint/aira-backend
+  tag: v1.2.0
   pullPolicy: Always
 
 # The service type and port for the main AIQ AIRA backend service
@@ -80,8 +80,8 @@ frontend:
     targetPort: 3000
     nodePort: 30080
   image:
-    repository: nvcr.io/nvstaging/blueprint/aira-frontend
-    tag: v1.2.0-public-rc3
+    repository: nvcr.io/nvidia/blueprint/aira-frontend
+    tag: v1.2.0
     pullPolicy: Always
   replicaCount: 1
 
