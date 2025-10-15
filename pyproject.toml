@@ -35,6 +35,7 @@ dependencies = [
   "httpx",
   "idna==3.10",
   "jiter==0.8.2",
+  "joblib>=1.5.0",
   "jsonpatch==1.33",
   "jsonpointer==3.0.0",
   "langchain-core",
