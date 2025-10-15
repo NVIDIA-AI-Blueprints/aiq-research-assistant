@@ -306,8 +306,8 @@ class AIRAFullGenerator(AIRAGeneratorBase):
             ground_truth=eval_input.ground_truth,
             context_relevance_questions=eval_input.context_relevance_questions,
             coverage_facts_claims=eval_input.coverage_facts_claims,
-            # Output fields
-            queries=query_result["queries"],
+            # Convert GeneratedQuery Pydantic models to dicts for eval schema compatibility and JSON serialization
+            queries=[q.model_dump() if hasattr(q, 'model_dump') else q for q in query_result["queries"]],
             rag_contexts=rag_contexts,
             relevancy_judgements=relevancy_judgements,
             web_answers=web_answers,

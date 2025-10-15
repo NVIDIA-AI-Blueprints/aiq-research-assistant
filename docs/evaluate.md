@@ -633,7 +633,7 @@ uv run nat eval --config_file configs/eval_config.yml
 ## Analysis and Diagnostics
 
 ### Interactive Analysis Notebook
-After running your evaluation, use the [AI-Q Evaluation Tutorial Notebook](../notebooks/aira_evaluation_tutorial.ipynb) to:
+After running your evaluation, use the [AI-Q Evaluation Tutorial Notebook](../notebooks/aiq_evaluation_tutorial.ipynb) to:
 - **Load and analyze** your evaluation results interactively
 - **Visualize metrics** across different evaluators and experiments  
 - **Compare performance** between different configurations
