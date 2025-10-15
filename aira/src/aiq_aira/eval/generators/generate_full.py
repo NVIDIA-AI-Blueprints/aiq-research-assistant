@@ -48,8 +48,8 @@ logger = logging.getLogger(__name__)
 @register_generator("full")
 class AIRAFullGenerator(AIRAGeneratorBase):
     """
-    Full implementation of the AI Research Assistant generator that uses the complete AIRA workflow.
-    This integrates with the actual AI research pipeline including query generation, research, and report generation.
+    Full implementation of the AI-Q Research Assistant generator that uses the complete AI-Q Research Assistant workflow.
+    This integrates with the actual AI-Q Research Assistant pipeline including query generation, research, and report generation.
     """
 
     def __init__(self, config: AIRAEvaluatorWorkflowConfig, builder: Builder):
@@ -61,13 +61,13 @@ class AIRAFullGenerator(AIRAGeneratorBase):
         self.setup_generator()
 
     def setup_generator(self):
-        '''Setup the full generator with AIRA workflow functions.'''
-        logger.info("Setting up full AIRA generation mechanism.")
+        '''Setup the full generator with AI-Q Research Assistant workflow functions.'''
+        logger.info("Setting up full AI-Q Research Assistant generation mechanism.")
 
-        # Get the AIRA workflow functions from the builder
+        # Get the AI-Q Research Assistant workflow functions from the builder
         self.generate_queries_fn = self.builder.get_function(name="generate_query")
         self.generate_summary_fn = self.builder.get_function(name="generate_summary")
-        logger.info("Successfully loaded AIRA workflow functions")
+        logger.info("Successfully loaded AI-Q Research Assistant workflow functions")
 
     async def pre_process(self, eval_input: AIResearcherEvalInput) -> AIResearcherEvalInput:
         """Pre-process evaluation input, generating missing questions and facts if needed"""

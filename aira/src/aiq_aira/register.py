@@ -51,14 +51,14 @@ class DefaultCollectionsConfig(FunctionBaseConfig, name="default_collections"):
 @register_function(config_type=DefaultCollectionsConfig)
 async def default_collections(config: DefaultCollectionsConfig, builder: Builder):
     """
-    Returns information about the example collections used by the AIRA demo frontend
+    Returns information about the example collections used by the AI-Q Research Assistant demo frontend
     """
     async def _default_collections(request: None = None) -> list[DefaultCollection]:
         return config.collections
 
     yield FunctionInfo.from_fn(
         _default_collections,
-        description="Information about the example collections used by the AIRA demo frontend"
+        description="Information about the example collections used by the AI-Q Research Assistant demo frontend"
     )
 
 ################################################
@@ -70,14 +70,14 @@ class HealthCheckConfig(FunctionBaseConfig, name="health_check"):
 @register_function(config_type=HealthCheckConfig)
 async def health_check(config: HealthCheckConfig, builder: Builder):
     """
-    Health check for the AIQ AIRA backend service
+    Health check for the AI-Q Research Assistant backend service
     """
     async def _health_check(request: None = None) -> dict:
         return {"status": "OK"}
 
     yield FunctionInfo.from_fn(
         _health_check,
-        description="Health check for the AIQ AIRA service"
+        description="Health check for the AI-Q Research Assistant service"
     )
 
 ################################################
@@ -95,14 +95,14 @@ class AIResearcherInput(BaseModel):
 # End to end research workflow
 ################################################
 # note the component parts generate_queries, generate_summary, and artifact_qa
-# are used in the AIRA demo frontend
-# the ai_researcher workflow is not used in the AIRA demo frontend
+# are used in the AI-Q Research Assistant demo frontend
+# the ai_researcher workflow is not used in the AI-Q Research Assistant demo frontend
 # the components are registered for AIQ serve by importing them in this file
 
 class AIResearcherWorkflowConfig(FunctionBaseConfig, name="ai_researcher"):
     """
     Run the entire research pipeline to generate a query plan and a report without human in the loop intervention
-    This workflow is not used in the AIRA demo frontend
+    This workflow is not used in the AI-Q Research Assistant demo frontend
     """
     rag_url: str = ""
 
