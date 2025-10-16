@@ -92,7 +92,7 @@ Deploy the RAG NVIDIA NIM microservices, including the LLM. *This step can take 
 docker compose -f rag/deploy/compose/nims.yaml up -d
 ```
 
-For A100 system, run the following commands 
+For A100/B200 system, run the following commands
 
 ```bash
 export LLM_MS_GPU_ID=1,2
