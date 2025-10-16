@@ -5,9 +5,9 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ## Prerequisites 
 
 
-1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, or 3xB200 GPUs are required.
+1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, 3xB200 or 2xRTX PRO 6000 GPUs are required.
 
-2. In addition to the LLM used by RAG, Llama 3.3 Nemotron Super 49B (llama-3_3-nemotron-super-49b-v1_5), the AI-Q Research Assistant also requires access to the Llama 3.3 Instruct 70B (llama-3.3-70b-instruct) model. Deploying this model requires an additional 2xB200, 2xH100 GPUs or 4xA100 GPUs.
+2. In addition to the LLM used by RAG, Llama 3.3 Nemotron Super 49B (llama-3_3-nemotron-super-49b-v1_5), the AI-Q Research Assistant also requires access to the Llama 3.3 Instruct 70B (llama-3.3-70b-instruct) model. Deploying this model requires an additional 2xB200, 2xH100 GPUs, 4xA100 GPUs or 2xRTX PRO 6000 GPUs.
 
 3. Docker Compose
 
@@ -19,7 +19,7 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ### Hardware Requirements
 
 *For a self-contained local deployment*
-- 5 B200 GPUs **or** 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each
+- 5 B200 GPUs **or** 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each **or** 4 RTX PRO 6000 GPUs with 96GB of memory each
 
 *For a deployment using hosted NVIDIA NIM microservices*
 No GPUs are required
