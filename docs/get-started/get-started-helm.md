@@ -93,7 +93,7 @@ helm install aiq-aira aiq-aira/ \
 
 #### Instruct LLM profile selection
 
-By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). 
+By default, the deployment of the instruct LLM attempts to automatically select the most suitable profile from the list of compatible profiles based on the detected hardware. Because of a known issue, vllm-based profiles are selected, so we recommend that you manually select a tensorrt_llm profile before you start the nim-llm service. 
 
 You can list available profiles by running the NIM container directly:
 ```bash
@@ -102,11 +102,11 @@ USERID=$(id -u) docker run --rm --gpus all \
   list-model-profiles
 ```
 
-It is preferrable to select `tensorrt_llm-*` profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
+Using the list of model profiles from the previous step, set the NIM_MODEL_PROFILE in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). It is ideal to select one of the tensorrt_llm profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
 ```
 env:
  - name: NIM_MODEL_PROFILE
-   value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
+   value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4"
 ```
 More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
 
