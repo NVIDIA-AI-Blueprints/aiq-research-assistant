@@ -20,8 +20,8 @@ The AI-Q Research Assistant blueprint requires the deployment of the NVIDIA RAG 
 
 | Option | RAG Deployment | AIRA Deployment | Total Hardware Requirement |
 |--------|----------------|-----------------|---------------------------|
-| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>6xH100 80GB total |
-| Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8xH100 80GB for RAG<br/>2xH100 80GB for AIRA<br/>---<br/>10xH100 80GB total |
+| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4 x H100 80GB for RAG<br/>2 x H100 80GB for AIRA<br/> |
+| Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8 x H100 80GB for RAG<br/>2 x H100 80GB for AIRA<br/>---<br/>9 x A100 80GB for RAG<br/>4 x A100 80GB for AIRA<br/>---<br/>9 x B200 for RAG<br/>2 x B200 for AIRA<br/>---<br/>8 x RTX PRO 6000 for RAG<br/>2 x RTX PRO 6000 for AIRA |
 
 > **Note:** Mixed MIG support requires GPU operator 25.3.2 or higher and NVIDIA Driver 570.172.08 or higher.
 
@@ -93,7 +93,7 @@ helm install aiq-aira aiq-aira/ \
 
 #### Instruct LLM profile selection
 
-By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). 
+By default, the deployment of the instruct LLM attempts to automatically select the most suitable profile from the list of compatible profiles based on the detected hardware. Because of a known issue, vllm-based profiles are selected, so we recommend that you manually select a tensorrt_llm profile before you start the nim-llm service. 
 
 You can list available profiles by running the NIM container directly:
 ```bash
@@ -102,12 +102,42 @@ USERID=$(id -u) docker run --rm --gpus all \
   list-model-profiles
 ```
 
-It is preferrable to select `tensorrt_llm-*` profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
+Using the list of model profiles from the previous step, set the NIM_MODEL_PROFILE in the `nim-llm` section of the [values.yaml](../../deploy/helm/aiq-aira/values.yaml). It is ideal to select one of the tensorrt_llm profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
 ```
 env:
  - name: NIM_MODEL_PROFILE
-   value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
+   value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4"
 ```
+
+##### Hardware-Specific Profiles
+
+The following tensorrt_llm profiles are optimized for different common GPU configurations:
+
+###### 2xH100 NVL
+```
+tensorrt_llm-h100_nvl-fp8-tp2-pp1-throughput-2321:10de-5e20634213cb4c32e86f048dbc274eb8bff74720af81fe400d8924e766f3e723-4
+```
+
+###### 2xH100 SXM
+```
+tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4
+```
+
+###### 4xA100
+```
+tensorrt_llm-a100-bf16-tp4-pp1-throughput-20b2:10de-8dfffd86cd28a6ea7086f8d3d33f0d60c66df738652cea44c722766b77508b5c-4
+```
+
+###### 2xRTX PRO 6000
+```
+tensorrt_llm-rtx6000_blackwell_sv-nvfp4-tp2-pp1-latency-2bb5:10de-b5d32ce12a99b422e2c5a9a772bfd29493467cd5f22248ed936e2d43c5747771-2
+```
+
+###### 2xB200
+```
+tensorrt_llm-b200-bf16-tp2-pp1-latency-2901:10de-d89dfd90f9f326864bc6051f45b5aca8e758fdb009b1da43d93b1d5a2236026e-2
+```
+
 More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
 
 #### Check status of pods

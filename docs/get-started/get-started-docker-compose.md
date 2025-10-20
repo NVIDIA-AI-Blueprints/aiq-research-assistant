@@ -5,9 +5,9 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ## Prerequisites 
 
 
-1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, or 3xB200 GPUs are required.
+1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, 3xB200 or 2xRTX PRO 6000 GPUs are required.
 
-2. In addition to the LLM used by RAG, Llama 3.3 Nemotron Super 49B (llama-3_3-nemotron-super-49b-v1_5), the AI-Q Research Assistant also requires access to the Llama 3.3 Instruct 70B (llama-3.3-70b-instruct) model. Deploying this model requires an additional 2xB200, 2xH100 GPUs or 4xA100 GPUs.
+2. In addition to the LLM used by RAG, Llama 3.3 Nemotron Super 49B (llama-3_3-nemotron-super-49b-v1_5), the AI-Q Research Assistant also requires access to the Llama 3.3 Instruct 70B (llama-3.3-70b-instruct) model. Deploying this model requires an additional 2xB200, 2xH100 GPUs, 4xA100 GPUs or 2xRTX PRO 6000 GPUs.
 
 3. Docker Compose
 
@@ -19,7 +19,7 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ### Hardware Requirements
 
 *For a self-contained local deployment*
-- 5 B200 GPUs **or** 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each
+- 5 B200 GPUs **or** 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each **or** 4 RTX PRO 6000 GPUs with 96GB of memory each
 
 *For a deployment using hosted NVIDIA NIM microservices*
 No GPUs are required
@@ -165,7 +165,7 @@ Next deploy the instruct model. *This step can take up to 45 minutes*.
 
 #### Model profile selection
 
-By default, the deployment of the instruct LLM automatically selects the most suitable profile from the list of compatible profiles based on the detected hardware. If you encounter issues with the selected profile or prefer to use a different compatible profile, you can explicitly select the profile by setting `NIM_MODEL_PROFILE` environment variable. 
+By default, the deployment of the instruct LLM attempts to automatically select the most suitable profile from the list of compatible profiles based on the detected hardware. Because of a known issue, vllm-based profiles are selected, so we recommend that you manually select a tensorrt_llm profile before you start the nim-llm service. 
 
 You can list available profiles by running the NIM container directly:
 ```bash
@@ -174,10 +174,39 @@ USERID=$(id -u) docker run --rm --gpus all \
   list-model-profiles
 ```
 
-It is preferrable to select `tensorrt_llm-*` profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
+Using the list of model profiles from the previous step, set the NIM_MODEL_PROFILE. It is ideal to select one of the tensorrt_llm profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
 
 ```bash
-export NIM_MODEL_PROFILE="tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-82333b6cf4e6ddb46f05152040efbb27a645725012d327230367b0c941c58954-4"
+export NIM_MODEL_PROFILE="tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4"
+```
+
+#### Hardware-Specific Profiles
+
+The following tensorrt_llm profiles are optimized for different common GPU configurations:
+
+##### 2xH100 NVL
+```
+tensorrt_llm-h100_nvl-fp8-tp2-pp1-throughput-2321:10de-5e20634213cb4c32e86f048dbc274eb8bff74720af81fe400d8924e766f3e723-4
+```
+
+##### 2xH100 SXM
+```
+tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4
+```
+
+##### 4xA100
+```
+tensorrt_llm-a100-bf16-tp4-pp1-throughput-20b2:10de-8dfffd86cd28a6ea7086f8d3d33f0d60c66df738652cea44c722766b77508b5c-4
+```
+
+##### 2xRTX PRO 6000
+```
+tensorrt_llm-rtx6000_blackwell_sv-nvfp4-tp2-pp1-latency-2bb5:10de-b5d32ce12a99b422e2c5a9a772bfd29493467cd5f22248ed936e2d43c5747771-2
+```
+
+##### 2xB200
+```
+tensorrt_llm-b200-bf16-tp2-pp1-latency-2901:10de-d89dfd90f9f326864bc6051f45b5aca8e758fdb009b1da43d93b1d5a2236026e-2
 ```
 
 More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
