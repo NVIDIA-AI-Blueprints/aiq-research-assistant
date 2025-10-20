@@ -43,33 +43,31 @@ BLOCKED_PATTERNS = [
 
 def sanitize_prompt(prompt: str) -> str:
     """
-    Sanitize user prompts to prevent injection attacks.
-    
-    This function performs two levels of protection:
-    1. Blocks prompts containing known injection patterns
-    2. HTML-escapes all special characters to prevent XSS and markup injection
-    
+    Validate and sanitize user prompts to mitigate prompt injection attacks.
+
     Args:
-        prompt: User input string to sanitize
+        prompt: User input string to validate and sanitize
         
     Returns:
         Sanitized prompt with HTML special characters escaped
         
     Raises:
-        ValueError: If prompt contains potentially harmful injection patterns
+        ValueError: If prompt contains blocked text patterns
     """
     if not prompt:
         return prompt
 
-    # Check for injection patterns before escaping
+    # Check for known injection patterns before escaping
     prompt_lower = prompt.lower()
     for pattern in BLOCKED_PATTERNS:
         if re.search(pattern, prompt_lower, re.IGNORECASE):
             raise ValueError("Prompt contains potentially harmful content")
 
+    # Remove common delimiter patterns that could be used for prompt manipulation
     prompt = prompt.replace("---", "")
     prompt = prompt.replace("[SYSTEM]", "[USER_TEXT]")
-    # HTML-escape all special characters to prevent XSS and markup injection
+    
+    # HTML-escape special characters to mitigate XSS and markup injection
     # This escapes: < > & " ' and other HTML special characters
     prompt = html.escape(prompt, quote=True)
 

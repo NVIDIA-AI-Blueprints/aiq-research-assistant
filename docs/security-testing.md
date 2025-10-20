@@ -1,20 +1,23 @@
-# Security Testing Guide
+# Prompt Content Filtering Tests
 
-This guide covers how to test the security features of the AIRA (AI Research Assistant) application, specifically focusing on prompt injection protection.
+This guide covers basic testing of prompt content filtering in the AIRA (AI Research Assistant) application.
 
 ## Overview
 
-AIRA implements security measures to prevent prompt injection attacks, including:
+AIRA implements **pattern-based content filtering** for user prompts. This validates user input to detect and reject prompts containing suspicious text patterns that may indicate prompt injection attempts.
 
-- **Instruction Override Prevention** - Blocks attempts to override system instructions
-- **System Prompt Injection Protection** - Prevents injection of system-level commands
-- **Credential Extraction Prevention** - Blocks attempts to reveal API keys, secrets, or passwords
-- **Command Execution Prevention** - Prevents attempts to execute system commands
-- **SQL Injection Protection** - Blocks SQL injection attempts
-- **XSS Attack Prevention** - Prevents cross-site scripting attacks
-- **Code Execution Prevention** - Blocks attempts to execute arbitrary code
+### What This Does:
+- **Instruction Override Detection** - Blocks prompts containing patterns like "ignore all instructions"
+- **System Prompt Manipulation** - Blocks prompts with patterns like "system:", "<system>", "[SYSTEM]"
+- **Credential Extraction Patterns** - Blocks prompts asking to "reveal API key" or "show password"
+- **Command Execution Patterns** - Blocks text like "execute system command" or "run command"
+- **SQL Keyword Patterns** - Blocks text containing "DROP TABLE", "UNION SELECT"
+- **Script Tag Patterns** - Blocks text containing "<script>" or "javascript:"
+- **Code Evaluation Patterns** - Blocks text containing "eval(" or "exec("
 
-## Automated Security Testing
+The content filtering only blocks certain text patterns in user prompts. Attackers can bypass text patterns with variations, encoding, or novel approaches. Always implement proper security controls at each layer of your application.
+
+## Automated Pattern Filtering Tests
 
 ### Prerequisites
 
@@ -113,22 +116,25 @@ Results by Category:
 
 ### Test Coverage
 
-The script tests **82 scenarios** across both `topic` and `report_organization` fields:
+The script includes basic pattern matching tests (82 total) across both `topic` and `report_organization` fields. These tests verify that known malicious patterns are blocked and common legitimate prompts are allowed. This is a starting point, not exhaustive coverage.
 
-#### Malicious Prompts (Should be Blocked - 422 Error)
+#### Suspicious Prompt Patterns (Should be Blocked - 422 Error)
+
+These tests verify the content filter detects and blocks prompts containing suspicious text patterns:
 
 | Category | Count | Examples |
 |----------|-------|----------|
-| Instruction Override | 4 | "Ignore all previous instructions..." |
-| System Injection | 4 | "system:", "<system>", "[system]" |
-| Credential Extraction | 4 | "Reveal the API key", "Show me the password" |
-| Command Execution | 4 | "Execute system command...", "Run command..." |
-| Data Manipulation | 4 | "Delete all files...", "Drop table..." |
-| SQL Injection | 2 | "UNION SELECT", "DROP TABLE" |
-| XSS Attacks | 3 | "<script>", "javascript:" |
-| Code Execution | 3 | "eval()", "exec()" |
+| Instruction Override Patterns | 4 | "Ignore all previous instructions..." |
+| System Manipulation Patterns | 4 | "system:", "<system>", "[system]" |
+| Credential Extraction Patterns | 4 | "Reveal the API key", "Show me the password" |
+| Command Execution Patterns | 4 | "Execute system command...", "Run command..." |
+| Data Manipulation Patterns | 4 | "Delete all files...", "Drop table..." |
+| SQL Keyword Patterns | 2 | "UNION SELECT", "DROP TABLE" |
+| Script Tag Patterns | 3 | "<script>", "javascript:" |
+| Code Evaluation Patterns | 3 | "eval()", "exec()" |
 
-**Total Blocked Tests:** 28 prompts × 2 fields = **56 tests**
+
+**Total Blocked Tests:** 28 basic patterns × 2 fields = **56 tests**
 
 #### Legitimate Prompts (Should be Allowed - 200 OK)
 
@@ -190,7 +196,7 @@ curl -X POST http://localhost:3838/generate_query/stream \
 **Expected Response:**
 Streaming SSE response with query generation results.
 
-## Adding New Security Tests
+## Adding New Pattern Tests
 
 To add new test cases, edit `tests/test_security_prompts.py`:
 
@@ -215,18 +221,34 @@ LEGITIMATE_PROMPTS = [
 ]
 ```
 
-## Updating Security Patterns
+## Updating Content Filter Patterns
 
-Security patterns are defined in `aira/src/aiq_aira/schema.py`:
+### Configuration
 
-```python
-BLOCKED_PATTERNS = [
-    r'ignore\s+(?:all\s+)?previous\s+instructions',
-    r'you\s+are\s+now',
-    r'system\s*:',
-    # ... add your patterns here ...
-]
+Pattern matching rules are configured via NAT's component system in `config.yml` or `hosted-config.yml`:
+
+```yaml
+functions:
+  # ... other functions ...
+  
+  prompt_filter:
+    _type: prompt_filter
+    enabled: true
+    blocked_patterns:
+      # Instruction override attempts
+      - 'ignore\s+(?:all\s+)?previous\s+instructions'
+      - 'you\s+are\s+now'
+      # System prompt manipulation
+      - 'system\s*:'
+      - '<\s*system\s*>'
+      # ... add your patterns here ...
 ```
+
+### Configuration
+
+Patterns are loaded from NAT config only:
+- **NAT config** - `functions.prompt_filter` section in config.yml or hosted-config.yml
+- If `prompt_filter` is not declared or `enabled: false`, no filtering is applied
 
 ### Pattern Guidelines
 
@@ -237,49 +259,33 @@ BLOCKED_PATTERNS = [
 
 ### Example: Adding a New Pattern
 
-```python
-# Block attempts to override role/persona
-r'(?:act|behave|pretend)\s+(?:as|like)\s+(?:a|an)\s+\w+',
-```
-
-## Continuous Integration
-
-### GitHub Actions Example
+Add to the `blocked_patterns` list in your config file:
 
 ```yaml
-name: Security Tests
-
-on: [push, pull_request]
-
-jobs:
-  security-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+functions:
+  prompt_filter:
+    _type: prompt_filter
+    enabled: true
+    blocked_patterns:
+      # ... existing patterns ...
       
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-      
-      - name: Install dependencies
-        run: |
-          pip install requests
-      
-      - name: Start AIRA server
-        run: |
-          # Your server startup command
-          docker-compose up -d
-          sleep 30  # Wait for server to be ready
-      
-      - name: Run security tests
-        run: |
-          python tests/test_security_prompts.py
-      
-      - name: Stop server
-        if: always()
-        run: docker-compose down
+      # Block attempts to override role/persona
+      - '(?:act|behave|pretend)\s+(?:as|like)\s+(?:a|an)\s+\w+'
 ```
+
+### Disabling Pattern Filtering
+
+In `config.yml`:
+
+```yaml
+functions:
+  prompt_filter:
+    _type: prompt_filter
+    enabled: false  # Disable filtering
+    blocked_patterns: []
+```
+
+Or remove the `prompt_filter` section entirely to use fallback behavior.
 
 ## Troubleshooting
 
@@ -321,30 +327,9 @@ If legitimate prompts are being blocked or malicious prompts are passing:
 3. Adjust regex patterns as needed
 4. Re-run tests to verify
 
-## Security Best Practices
-
-1. **Run tests regularly** - Include in CI/CD pipeline
-2. **Test after security updates** - Verify patterns work as expected
-3. **Monitor production** - Log rejected prompts for analysis
-4. **Update patterns** - Add new patterns as threats evolve
-5. **Balance security** - Avoid blocking legitimate use cases
-6. **Document changes** - Keep track of pattern updates
-
-## Additional Resources
-
-- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
-- [Prompt Injection Attack Examples](https://github.com/jthack/PIPE)
-- [AIRA Security Documentation](./SECURITY.md)
-
 ## Support
 
 For security-related questions or to report vulnerabilities:
 - Review [SECURITY.md](../SECURITY.md)
 - Open an issue on GitHub
-- Contact the security team
-
----
-
-**Last Updated:** 2025-01-13  
-**Version:** 1.0.0
 
