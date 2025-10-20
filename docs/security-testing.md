@@ -1,10 +1,10 @@
 # Prompt Content Filtering Tests
 
-This guide covers basic testing of prompt content filtering in the AIRA (AI Research Assistant) application.
+This guide covers basic testing of prompt content filtering in the AI-Q Research Assistant application.
 
 ## Overview
 
-AIRA implements **pattern-based content filtering** for user prompts. This validates user input to detect and reject prompts containing suspicious text patterns that may indicate prompt injection attempts.
+AI-Q Research Assistant implements **pattern-based content filtering** for user prompts. This validates user input to detect and reject prompts containing suspicious text patterns that may indicate prompt injection attempts.
 
 ### What This Does:
 - **Instruction Override Detection** - Blocks prompts containing patterns like "ignore all instructions"
@@ -27,7 +27,7 @@ The content filtering only blocks certain text patterns in user prompts. Attacke
    pip install requests
    ```
 
-3. AIRA server running (locally or remotely)
+3. AI-Q server running (locally or remotely)
 
 ### Test Script Location
 
@@ -297,7 +297,7 @@ blocked_patterns: []
 
 **Error:** `✗ CONNECTION ERROR - Is server running?`
 
-**Solution:** Ensure your AIRA server is running and accessible at the configured `BASE_URL`.
+**Solution:** Ensure your AI-Q server is running and accessible at the configured `BASE_URL`.
 
 ```bash
 # Check if server is responding

@@ -107,10 +107,10 @@ Instruct Model for Report Generation | `llama-3.3-70b-instruct` | 2 x H100 80GB*
 
 #### Helm
 
-| Option | RAG Deployment | AIRA Deployment | Total Hardware Requirement |
+| Option | RAG Deployment | AI-Q Research Assistant Deployment | Total Hardware Requirement |
 |--------|----------------|-----------------|---------------------------|
-| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4 x H100 80GB for RAG<br/>2 x H100 80GB for AIRA<br/> |
-| Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8 x H100 80GB for RAG<br/>2 x H100 80GB for AIRA<br/>---<br/>9 x A100 80GB for RAG<br/>4 x A100 80GB for AIRA<br/>---<br/>9 x B200 for RAG<br/>2 x B200 for AIRA<br/>---<br/>8 x RTX PRO 6000 for RAG<br/>2 x RTX PRO 6000 for AIRA |
+| Single Node - MIG Sharing | [Use MIG sharing](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/mig-deployment.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 4 x H100 80GB for RAG<br/>2 x H100 80GB for AI-Q<br/> |
+| Multi Node | [Default Deployment](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-helm.md) | [Default Deployment](#deploy-the-ai-q-research-assistant) | 8 x H100 80GB for RAG<br/>2 x H100 80GB for AI-Q<br/>---<br/>9 x A100 80GB for RAG<br/>4 x A100 80GB for AI-Q<br/>---<br/>9 x B200 for RAG<br/>2 x B200 for AI-Q<br/>---<br/>8 x RTX PRO 6000 for RAG<br/>2 x RTX PRO 6000 for AI-Q |
 
 
 #### Running with hosted NVIDIA NIM Microservices
