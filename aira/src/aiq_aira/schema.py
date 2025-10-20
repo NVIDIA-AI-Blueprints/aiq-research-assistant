@@ -15,15 +15,17 @@
 
 import html
 import re
+import yaml
 from dataclasses import field, dataclass
 from enum import Enum
+from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 
-# Prompt injection patterns to block
-BLOCKED_PATTERNS = [
+# Default prompt injection patterns (used as fallback)
+_DEFAULT_BLOCKED_PATTERNS = [
     r'ignore\s+(?:all\s+)?previous\s+instructions',
     r'you\s+are\s+now',
     r'system\s*:',
@@ -40,6 +42,18 @@ BLOCKED_PATTERNS = [
     r'eval\s*\(',
     r'exec\s*\(',
 ]
+
+def _load_blocked_patterns() -> list[str]:
+    """Load blocked patterns from security config file with fallback to defaults."""
+    config_path = Path(__file__).parent.parent.parent.parent / "configs" / "security_config.yml"
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            return config.get('blocked_patterns', _DEFAULT_BLOCKED_PATTERNS)
+    except (FileNotFoundError, yaml.YAMLError):
+        return _DEFAULT_BLOCKED_PATTERNS
+
+BLOCKED_PATTERNS = _load_blocked_patterns()
 
 def sanitize_prompt(prompt: str) -> str:
     """

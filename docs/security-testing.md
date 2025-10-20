@@ -225,30 +225,37 @@ LEGITIMATE_PROMPTS = [
 
 ### Configuration
 
-Pattern matching rules are configured via NAT's component system in `config.yml` or `hosted-config.yml`:
+Pattern matching rules are configured in `configs/security_config.yml`:
 
 ```yaml
-functions:
-  # ... other functions ...
-  
-  prompt_filter:
-    _type: prompt_filter
-    enabled: true
-    blocked_patterns:
-      # Instruction override attempts
-      - 'ignore\s+(?:all\s+)?previous\s+instructions'
-      - 'you\s+are\s+now'
-      # System prompt manipulation
-      - 'system\s*:'
-      - '<\s*system\s*>'
-      # ... add your patterns here ...
+# Security configuration for prompt sanitization
+# These regex patterns are used to detect potentially harmful prompt injection attempts
+
+blocked_patterns:
+  - 'ignore\s+(?:all\s+)?previous\s+instructions'
+  - 'you\s+are\s+now'
+  - 'system\s*:'
+  - '<\s*system\s*>'
+  - '\[system\]'
+  - '(?:reveal|show|display|print|give\s+me)\s+(?:me\s+)?(?:the\s+)?(?:api|secret|password|key)'
+  - 'execute\s+(?:system\s+)?commands?'
+  - 'run\s+(?:system\s+)?commands?'
+  - 'delete\s+(?:all\s+)?(?:files?|data|collections?)'
+  - 'drop\s+table'
+  - 'union\s+select'
+  - '<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>'
+  - 'javascript:'
+  - 'eval\s*\('
+  - 'exec\s*\('
 ```
 
-### Configuration
+### Configuration Files
 
-Patterns are loaded from NAT config only:
-- **NAT config** - `functions.prompt_filter` section in config.yml or hosted-config.yml
-- If `prompt_filter` is not declared or `enabled: false`, no filtering is applied
+Patterns are loaded from the following location:
+- **Development/Local**: `configs/security_config.yml` (repository root)
+- **Docker**: Copied to `/app/configs/security_config.yml` during build
+- **Helm/Kubernetes**: Mounted via ConfigMap to `/app/configs/security_config.yml`
+- **Fallback**: If config file is not found or has errors, default patterns in `aira/src/aiq_aira/schema.py` are used
 
 ### Pattern Guidelines
 
@@ -259,33 +266,30 @@ Patterns are loaded from NAT config only:
 
 ### Example: Adding a New Pattern
 
-Add to the `blocked_patterns` list in your config file:
+Edit `configs/security_config.yml` and add to the `blocked_patterns` list:
 
 ```yaml
-functions:
-  prompt_filter:
-    _type: prompt_filter
-    enabled: true
-    blocked_patterns:
-      # ... existing patterns ...
-      
-      # Block attempts to override role/persona
-      - '(?:act|behave|pretend)\s+(?:as|like)\s+(?:a|an)\s+\w+'
+blocked_patterns:
+  # ... existing patterns ...
+  
+  # Block attempts to override role/persona
+  - '(?:act|behave|pretend)\s+(?:as|like)\s+(?:a|an)\s+\w+'
 ```
+
+After editing the file:
+- **Development/Local**: Restart the application to load the new patterns
+- **Docker**: Rebuild the image or mount the config file as a volume
+- **Helm/Kubernetes**: Update the ConfigMap and restart pods
 
 ### Disabling Pattern Filtering
 
-In `config.yml`:
+To disable all pattern filtering, clear the `blocked_patterns` list in `configs/security_config.yml`:
 
 ```yaml
-functions:
-  prompt_filter:
-    _type: prompt_filter
-    enabled: false  # Disable filtering
-    blocked_patterns: []
+blocked_patterns: []
 ```
 
-Or remove the `prompt_filter` section entirely to use fallback behavior.
+**Note**: With an empty pattern list, no prompts will be blocked by the content filter. This is not recommended for production deployments.
 
 ## Troubleshooting
 
@@ -322,10 +326,20 @@ curl http://localhost:3838/health  # or your BASE_URL
 
 If legitimate prompts are being blocked or malicious prompts are passing:
 
-1. Review `BLOCKED_PATTERNS` in `aira/src/aiq_aira/schema.py`
-2. Test patterns individually
-3. Adjust regex patterns as needed
-4. Re-run tests to verify
+1. Review `blocked_patterns` in `configs/security_config.yml`
+2. Test patterns individually using the test script
+3. Adjust regex patterns as needed in `security_config.yml`
+4. Restart the application to load the updated patterns
+5. Re-run tests to verify changes
+
+**Debugging Pattern Loading:**
+```bash
+# Check if config file exists and is readable
+cat configs/security_config.yml
+
+# Verify YAML syntax
+python3 -c "import yaml; yaml.safe_load(open('configs/security_config.yml'))"
+```
 
 ## Support
 
