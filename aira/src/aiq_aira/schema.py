@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import html
 import re
 from dataclasses import field, dataclass
 from enum import Enum
@@ -41,21 +42,36 @@ BLOCKED_PATTERNS = [
 ]
 
 def sanitize_prompt(prompt: str) -> str:
-    """Sanitize user prompts to prevent injection attacks."""
+    """
+    Sanitize user prompts to prevent injection attacks.
+    
+    This function performs two levels of protection:
+    1. Blocks prompts containing known injection patterns
+    2. HTML-escapes all special characters to prevent XSS and markup injection
+    
+    Args:
+        prompt: User input string to sanitize
+        
+    Returns:
+        Sanitized prompt with HTML special characters escaped
+        
+    Raises:
+        ValueError: If prompt contains potentially harmful injection patterns
+    """
     if not prompt:
         return prompt
 
-    # Check for injection patterns
+    # Check for injection patterns before escaping
     prompt_lower = prompt.lower()
     for pattern in BLOCKED_PATTERNS:
         if re.search(pattern, prompt_lower, re.IGNORECASE):
             raise ValueError("Prompt contains potentially harmful content")
 
-    # Remove or escape special markers that could be used for injection
     prompt = prompt.replace("---", "")
     prompt = prompt.replace("[SYSTEM]", "[USER_TEXT]")
-    prompt = prompt.replace("</query>", "&lt;/query&gt;")
-    prompt = prompt.replace("<system>", "&lt;system&gt;")
+    # HTML-escape all special characters to prevent XSS and markup injection
+    # This escapes: < > & " ' and other HTML special characters
+    prompt = html.escape(prompt, quote=True)
 
     return prompt.strip()
 

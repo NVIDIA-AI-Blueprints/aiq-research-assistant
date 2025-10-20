@@ -104,18 +104,6 @@ async def validate_file_upload(file: UploadFile) -> bytes:
     return content
 
 
-def sanitize_for_logging(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Remove sensitive fields from data before logging."""
-    sensitive_keys = {'api_key', 'token', 'password', 'secret', 'authorization'}
-    sanitized = data.copy()
-    
-    for key in list(sanitized.keys()):
-        if any(sensitive_key in key.lower() for sensitive_key in sensitive_keys):
-            sanitized[key] = "***REDACTED***"
-    
-    return sanitized
-
-
 class DocumentRequest(BaseModel):
     """Request model for document operations"""
     collection_name: str
@@ -150,8 +138,8 @@ async def add_document_routes(app: FastAPI, rag_ingest_url: str):
             if "blocking" not in metadata:
                 metadata["blocking"] = True
 
-            # Log sanitized metadata (no sensitive data)
-            logger.info(f"Document upload request ({http_method}) - Metadata: {sanitize_for_logging(metadata)}")
+            # Log metadata (collection_name, blocking, split_options)
+            logger.info(f"Document upload request ({http_method}) - Metadata: {metadata}")
 
             # Validate each uploaded file and create multipart form data
             files = []
