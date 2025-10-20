@@ -127,7 +127,7 @@ This blueprint can be run entirely with hosted NVIDIA NIM Microservices, see [ht
 ## Next Steps
 
 - Use the [Get Started Notebook](notebooks/get_started_nvidia_api.ipynb) to deploy the blueprint with Docker and interact with the sample web application  
-- Deploy with [Docker Compose](docs/get-started/get-started-docker-compose.md)  
+- Deploy with [Docker Compose](docs/get-started/get-started-docker-compose.md) or [Helm](docs/get-started/get-started-helm)
 - Customize the research assistant starting with the [Local Development Guide](docs/local-development.md)  
 
 ## License
