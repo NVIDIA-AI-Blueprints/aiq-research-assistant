@@ -108,6 +108,36 @@ env:
  - name: NIM_MODEL_PROFILE
    value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4"
 ```
+
+##### Hardware-Specific Profiles
+
+The following tensorrt_llm profiles are optimized for different common GPU configurations:
+
+###### 2xH100 NVL
+```
+tensorrt_llm-h100_nvl-fp8-tp2-pp1-throughput-2321:10de-5e20634213cb4c32e86f048dbc274eb8bff74720af81fe400d8924e766f3e723-4
+```
+
+###### 2xH100 SXM
+```
+tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4
+```
+
+###### 4xA100
+```
+tensorrt_llm-a100-bf16-tp4-pp1-throughput-20b2:10de-8dfffd86cd28a6ea7086f8d3d33f0d60c66df738652cea44c722766b77508b5c-4
+```
+
+###### 2xRTX PRO 6000
+```
+tensorrt_llm-rtx6000_blackwell_sv-nvfp4-tp2-pp1-latency-2bb5:10de-b5d32ce12a99b422e2c5a9a772bfd29493467cd5f22248ed936e2d43c5747771-2
+```
+
+###### 2xB200
+```
+tensorrt_llm-b200-bf16-tp2-pp1-latency-2901:10de-d89dfd90f9f326864bc6051f45b5aca8e758fdb009b1da43d93b1d5a2236026e-2
+```
+
 More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
 
 #### Check status of pods
