@@ -109,6 +109,15 @@ env:
    value: "tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4"
 ```
 
+If using A100s, the `nim-llm` section will also have to be updated to allocate four GPUs instead of two:
+```
+resources:
+  limits:
+    nvidia.com/gpu: 4
+  requests:
+    nvidia.com/gpu: 4
+```
+
 ##### Hardware-Specific Profiles
 
 The following tensorrt_llm profiles are optimized for different common GPU configurations:
