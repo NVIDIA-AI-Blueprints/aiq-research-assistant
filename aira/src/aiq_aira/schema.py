@@ -13,16 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import html
 import re
+import yaml
 from dataclasses import field, dataclass
 from enum import Enum
+from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 
-# Prompt injection patterns to block
-BLOCKED_PATTERNS = [
+# Default prompt injection patterns (used as fallback)
+_DEFAULT_BLOCKED_PATTERNS = [
     r'ignore\s+(?:all\s+)?previous\s+instructions',
     r'you\s+are\s+now',
     r'system\s*:',
@@ -40,22 +43,47 @@ BLOCKED_PATTERNS = [
     r'exec\s*\(',
 ]
 
+def _load_blocked_patterns() -> list[str]:
+    """Load blocked patterns from security config file with fallback to defaults."""
+    config_path = Path(__file__).parent.parent.parent.parent / "configs" / "security_config.yml"
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            return config.get('blocked_patterns', _DEFAULT_BLOCKED_PATTERNS)
+    except (FileNotFoundError, yaml.YAMLError):
+        return _DEFAULT_BLOCKED_PATTERNS
+
+BLOCKED_PATTERNS = _load_blocked_patterns()
+
 def sanitize_prompt(prompt: str) -> str:
-    """Sanitize user prompts to prevent injection attacks."""
+    """
+    Validate and sanitize user prompts to mitigate prompt injection attacks.
+
+    Args:
+        prompt: User input string to validate and sanitize
+        
+    Returns:
+        Sanitized prompt with HTML special characters escaped
+        
+    Raises:
+        ValueError: If prompt contains blocked text patterns
+    """
     if not prompt:
         return prompt
 
-    # Check for injection patterns
+    # Check for known injection patterns before escaping
     prompt_lower = prompt.lower()
     for pattern in BLOCKED_PATTERNS:
         if re.search(pattern, prompt_lower, re.IGNORECASE):
             raise ValueError("Prompt contains potentially harmful content")
 
-    # Remove or escape special markers that could be used for injection
+    # Remove common delimiter patterns that could be used for prompt manipulation
     prompt = prompt.replace("---", "")
     prompt = prompt.replace("[SYSTEM]", "[USER_TEXT]")
-    prompt = prompt.replace("</query>", "&lt;/query&gt;")
-    prompt = prompt.replace("<system>", "&lt;system&gt;")
+    
+    # HTML-escape special characters to mitigate XSS and markup injection
+    # This escapes: < > & " ' and other HTML special characters
+    prompt = html.escape(prompt, quote=True)
 
     return prompt.strip()
 
