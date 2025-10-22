@@ -2,6 +2,7 @@
 
 Release v1.2.0
 - Added support for Helm deployments
+- Add support and documentation for evaluation
 - Simplified the configuration and integration with RAG, removing nginx
 - Adopted RAG 2.3.0
 - Tested for compatability with RTX Pro 6000
