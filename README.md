@@ -4,6 +4,9 @@
 
 The AI-Q NVIDIA Research Assistant blueprint allows you to create a deep research assistant that can run on-premise, allowing anyone to create detailed research reports using on-premise data and web search. 
 
+> [!NOTE]
+> To obtain results consistent with the **aiq-research-assistant** [DeepResearch Bench](https://huggingface.co/spaces/Ayanami0730/DeepResearch-Leaderboard) leaderboard results, replace `llama-3.3-nemotron-super-49b-v1` with `llama-3.3-nemotron-super-49b-v1.5`. The updated model weights are available from [Hugging Face](https://huggingface.co/nvidia/Llama-3_3-Nemotron-Super-49B-v1_5) and as an endpoint on [NVIDIA's API Catalog](https://build.nvidia.com/nvidia/llama-3_3-nemotron-super-49b-v1_5). The updated prompt is part of the [develop branch](https://github.com/NVIDIA-AI-Blueprints/aiq-research-assistant/blob/develop/aira/src/aiq_aira/prompts.py#L16).
+
 ## Table of Contents
 
 - [AI-Q NVIDIA Research Assistant Blueprint](#ai-q-nvidia-research-assistant-blueprint)
