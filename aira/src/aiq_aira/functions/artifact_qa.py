@@ -1,11 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 from typing import AsyncGenerator
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.builder.function_info import FunctionInfo
-from aiq.builder.framework_enum import LLMFrameworkEnum
-from aiq.data_models.component_ref import FunctionRef, LLMRef
+from nat.data_models.function import FunctionBaseConfig
+from nat.builder.builder import Builder
+from nat.cli.register_workflow import register_function
+from nat.builder.function_info import FunctionInfo
+from nat.builder.framework_enum import LLMFrameworkEnum
+from nat.data_models.component_ref import FunctionRef, LLMRef
 import os
 
 from aiq_aira.schema import (
@@ -99,8 +114,6 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
             [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query]
         )
 
-        logger.info(f"Artifact QA Query message: {query_message}")
-
         return await artifact_chat_handler(llm, query_message)
 
     async def _artifact_qa_streaming(query_message: ArtifactQAInput) -> AsyncGenerator[ArtifactQAOutput, None]:
@@ -158,8 +171,6 @@ async def artifact_qa_fn(config: ArtifactQAConfig, aiq_builder: Builder):
         query_message.question += "\n\n --- ADDITIONAL CONTEXT --- \n" + deduplicate_and_format_sources(
             [rag_citation], [rag_answer], [relevancy], [web_answer], [gen_query]
         )
-
-        logger.info(f"Artifact QA Query message: {query_message}")
 
         yield await artifact_chat_handler(llm, query_message)
 

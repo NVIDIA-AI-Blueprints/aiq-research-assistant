@@ -9,10 +9,16 @@ Next create a virtual environment using Python 3.12:
 ```bash
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
-uv pip install -e "./aira[dev]"
+uv pip install -e ".[dev]"
 ```
 
-Update the configuration file located at `aira/configs/config.yaml`, providing values for a RAG deployment and your reasoning and instruct LLMs. The configuration file includes comments on what values to update.
+Update the configuration file located at `configs/config.yaml`, providing values for a RAG deployment and your reasoning and instruct LLMs. The configuration file includes comments on what values to update.
+
+**Note**: Both NVIDIA Build and local deployments use the same model name format:
+- **NVIDIA Build**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)  
+- **Local Deployment**: `nvidia/llama-3.3-nemotron-super-49b-v1.5` (with dots)
+
+The configuration files are set up for local deployments using the underscore format.
 
 Run the backend service:
 
@@ -20,7 +26,7 @@ Run the backend service:
 # optionally export the Tavily search key
 export TAVILY_API_KEY=your-tavily-api-key
 # run the service
-uv run aiq serve --config_file aira/configs/config.yml --host 0.0.0.0 --port 3838
+uv run nat serve --config_file configs/config.yml --host 0.0.0.0 --port 3838
 ```
 
 You can now access the backend at `http://localhost:3838/docs`. 
@@ -46,8 +52,8 @@ docker run \
 
 ```bash
 docker run \
-  -e INFERENCE_ORIGIN=http://localhost:8051 \
-  nvcr.io/nvidia/blueprint/aira-frontend:v1.1.0
+  -e INFERENCE_ORIGIN=http://localhost:3838 \
+  nvcr.io/nvidia/blueprint/aira-frontend:v1.2.0
 ```
 
 ## Unit Tests
@@ -84,6 +90,6 @@ To seed these into your RAG database:
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
 uv run pip install -r data/requirements.txt
-uv run python data/sync_files2.py
+uv run python data/zip_to_collection.py
 ```
 

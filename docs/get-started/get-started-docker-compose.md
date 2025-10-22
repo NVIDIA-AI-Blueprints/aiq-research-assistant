@@ -5,9 +5,9 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ## Prerequisites 
 
 
-1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, or 2xB200 GPUs are required.
+1. This blueprint depends on the [NVIDIA RAG blueprint](https://github.com/NVIDIA-AI-Blueprints/rag). The deployment guide includes instructions for deploying RAG using docker compose, but please consult the latest RAG documentation as well. The RAG blueprint requires NVIDIA NIM microservices that are either running on-premise or hosted by NVIDIA, including the Nemo Retriever microservices and LLM, by default Llama 3.3 Nemotron Super 49B. For a self-contained local deployment, 2xH100, 3xA100, 3xB200 or 2xRTX PRO 6000 GPUs are required.
 
-2. In addition to the LLM used by RAG, Llama 3.3 Nemotron Super 49B, the AI-Q Research Assistant also requires access to the Llama 3.3 Instruct 70B model. Deploying this model requires an additional 2xB200, 2xH100 GPUs or 4xA100 GPUs.
+2. In addition to the LLM used by RAG, Llama 3.3 Nemotron Super 49B (llama-3_3-nemotron-super-49b-v1_5), the AI-Q Research Assistant also requires access to the Llama 3.3 Instruct 70B (llama-3.3-70b-instruct) model. Deploying this model requires an additional 2xB200, 2xH100 GPUs, 4xA100 GPUs or 2xRTX PRO 6000 GPUs.
 
 3. Docker Compose
 
@@ -19,7 +19,7 @@ This guide describes how to deploy the AI-Q Research Assistant using Docker.
 ### Hardware Requirements
 
 *For a self-contained local deployment*
-- 4 B200 GPUs **or** 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each
+- 5 B200 GPUs **or** 4 H100 GPUs with 80GB of memory each **or** 7 A100 GPUs with 80GB of memory each **or** 4 RTX PRO 6000 GPUs with 96GB of memory each
 
 *For a deployment using hosted NVIDIA NIM microservices*
 No GPUs are required
@@ -73,7 +73,7 @@ export MODEL_DIRECTORY=~/.cache/model-cache
 
 ### Deploy RAG
 
-Before deploying the AI-Q Research Assistant, deploy RAG by following [these instructions](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-on-prem-models).
+Before deploying the AI-Q Research Assistant, deploy RAG by following [these instructions](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-docker-self-hosted.md).
 
 ```bash
 git clone https://github.com/NVIDIA-AI-Blueprints/rag.git
@@ -92,7 +92,7 @@ Deploy the RAG NVIDIA NIM microservices, including the LLM. *This step can take 
 docker compose -f rag/deploy/compose/nims.yaml up -d
 ```
 
-For A100 system, run the following commands 
+For A100/B200 system, run the following commands
 
 ```bash
 export LLM_MS_GPU_ID=1,2
@@ -155,7 +155,7 @@ docker compose -f rag/deploy/compose/docker-compose-rag-server.yaml up -d
 To confirm that the deployment was successful, run `docker ps --format "table {{.Names}}\t{{.Status}}"`. In addition to the previously running containers, you should see: 
 
 ```
-rag-playground                   Up 4 minutes
+rag-frontend                     Up 4 minutes
 rag-server                       Up 4 minutes
 ```
 
@@ -163,15 +163,68 @@ rag-server                       Up 4 minutes
 
 Next deploy the instruct model. *This step can take up to 45 minutes*.
 
+#### Model profile selection
+
+By default, the deployment of the instruct LLM attempts to automatically select the most suitable profile from the list of compatible profiles based on the detected hardware. Because of a known issue, vllm-based profiles are selected, so we recommend that you manually select a tensorrt_llm profile before you start the nim-llm service. 
+
+You can list available profiles by running the NIM container directly:
 ```bash
-docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
+USERID=$(id -u) docker run --rm --gpus all \
+  nvcr.io/nim/meta/llama-3.3-70b-instruct:1.13.1 \
+  list-model-profiles
 ```
 
-For A100 system, run the following commands 
+Using the list of model profiles from the previous step, set the NIM_MODEL_PROFILE. It is ideal to select one of the tensorrt_llm profiles for best performance. Here is an example of selecting one of these profiles for two H100 GPUs:
 
 ```bash
-export AIRA_LLM_MS_GPU_ID=3,4,5,6
+export NIM_MODEL_PROFILE="tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4"
+```
 
+#### Hardware-Specific Profiles
+
+The following tensorrt_llm profiles are optimized for different common GPU configurations:
+
+##### 2xH100 NVL
+```
+tensorrt_llm-h100_nvl-fp8-tp2-pp1-throughput-2321:10de-5e20634213cb4c32e86f048dbc274eb8bff74720af81fe400d8924e766f3e723-4
+```
+
+##### 2xH100 SXM
+```
+tensorrt_llm-h100-fp8-tp2-pp1-throughput-2330:10de-bedaf1e0ba87272295f4fcb590e781436120751026098f448fd8bc4d711ba5d7-4
+```
+
+##### 4xA100
+```
+tensorrt_llm-a100-bf16-tp4-pp1-throughput-20b2:10de-8dfffd86cd28a6ea7086f8d3d33f0d60c66df738652cea44c722766b77508b5c-4
+```
+
+##### 2xRTX PRO 6000
+```
+tensorrt_llm-rtx6000_blackwell_sv-nvfp4-tp2-pp1-latency-2bb5:10de-b5d32ce12a99b422e2c5a9a772bfd29493467cd5f22248ed936e2d43c5747771-2
+```
+
+##### 2xB200
+```
+tensorrt_llm-b200-bf16-tp2-pp1-latency-2901:10de-d89dfd90f9f326864bc6051f45b5aca8e758fdb009b1da43d93b1d5a2236026e-2
+```
+
+More information about model profile selection can be found [here](https://docs.nvidia.com/nim/large-language-models/latest/profiles.html#profile-selection) in the NVIDIA NIM for Large Language Models (LLMs) documentation.
+
+#### Deploy the Model
+
+For A100 system, run the following command:
+```bash
+export AIRA_LLM_MS_GPU_ID=3,4,5,6
+```
+
+For B200 system, run the following command:
+```bash
+export AIRA_LLM_MS_GPU_ID=3,4
+```
+
+Run the following to deploy the model:
+```bash
 docker compose -f deploy/compose/docker-compose.yaml --profile aira-instruct-llm up -d
 ```
 
@@ -195,20 +248,19 @@ To confirm that the deployment was successful, run `docker ps --format "table {{
 
 ```
 aira-frontend                    Up 2 minutes
-aira-nginx                       Up 2 minutes
 aira-backend                     Up 2 minutes
 ```
 
 You can then view the web UI at:
 
 ```
-localhost:3001
+localhost:3000
 ```
 
 The backend will be running and visible at:
 
 ```
-localhost:8051/docs
+localhost:3838/docs
 ```
 
 ### Add Default Collections
@@ -221,7 +273,7 @@ docker run \
   -e PYTHONUNBUFFERED=1 \
   -v /tmp:/tmp-data \
   --network nvidia-rag \
-  nvcr.io/nvidia/blueprint/aira-load-files:v1.1.0
+  nvcr.io/nvidia/blueprint/aira-load-files:v1.2.0
 ```
 
 This command will populate the default collections with sample documents. Note that this process can take up to 60 minutes to complete, during which time manual uploads from the frontend may not work properly.
@@ -283,11 +335,11 @@ docker ps
 
 > If you already have RAG deployed, skip to the next step.
 
-To deploy using hosted NVIDIA NIM microservices, follow the instructions for [deploying the RAG blueprint using hosted models](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/quickstart.md#start-using-nvidia-hosted-models). 
+To deploy using hosted NVIDIA NIM microservices, follow the instructions for [deploying the RAG blueprint using hosted models](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/deploy-docker-nvidia-hosted.md). 
 
 ### Update AI-Q Research Assistant Configuration 
 
-Edit the *AIRA configuration file* located at `aira/configs/config.yml`. 
+Edit the *AI-Q configuration file* located at `configs/config.yml`. 
 
 Update the following values, leaving the rest of the file with the default values.
 
@@ -306,7 +358,7 @@ Update the following values, leaving the rest of the file with the default value
 Edit the *Docker Compose file* located at `deploy/compose/docker-compose.yaml`.
 
   - [ ] Update the value `services.aira-backend.environment.TAVILY_API_KEY` with your TAVILY API Key
-  - [ ] If you have deployed RAG on a different server than AIRA, update the value `services.aira-nginx.environment.RAG_INGEST_URL` with the *public http IP address of the RAG ingestor service* such as `http://UPDATE-TO-YOUR-RAG-IP-SERVER:8082`. If you have deployed RAG using docker compose on the same server as AIRA, leave the default value.
+  - [ ] If you have deployed RAG on a different server than AIRA, update the value `services.aira-backend.environment.RAG_INGEST_URL` with the *public http IP address of the RAG ingestor service* such as `http://UPDATE-TO-YOUR-RAG-IP-SERVER:8082`. If you have deployed RAG using docker compose on the same server as AIRA, leave the default value.
   
   > **WARNING:** The rag ingest IP address must be resolvable outside the docker network, so addresses such as `localhost` or `rag-server` will not work. Currently only http addresses are supported. HTTPS rag deployments, or authenticated RAG deployments, will require updates to the NGINX proxy.
 
@@ -318,6 +370,10 @@ Edit the *Docker Compose file* located at `deploy/compose/docker-compose.yaml`.
 # docker network create nvidia-rag
 docker compose -f deploy/compose/docker-compose.yaml --profile aira up -d
 ```
+
+## Troubleshooting
+
+If you encounter any issues during deployment or operation, please refer to the comprehensive [Troubleshooting Guide](../troubleshooting.md) for detailed solutions and debugging steps.
 
 ## Optional: Tracing Using Phoenix
 

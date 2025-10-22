@@ -20,16 +20,17 @@ import asyncio
 
 from typing import Any, AsyncGenerator
 from pydantic import BaseModel
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.component_ref import FunctionRef
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.function_info import FunctionInfo
-from aiq.data_models.api_server import AIQChatResponseChunk
+from nat.builder.builder import Builder
+from nat.cli.register_workflow import register_function
+from nat.data_models.component_ref import LLMRef
+from nat.data_models.component_ref import FunctionRef
+from nat.data_models.function import FunctionBaseConfig
+from nat.builder.function_info import FunctionInfo
+from nat.data_models.api_server import AIQChatResponseChunk
 from aiq_aira.functions import generate_summary, generate_queries, artifact_qa
-from aiq.builder.framework_enum import LLMFrameworkEnum
-from aiq.plugins.langchain import register
+from nat.builder.framework_enum import LLMFrameworkEnum
+from nat.plugins.langchain import register
+from aiq_aira.fastapi_extensions.register import APIExtensionsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -50,14 +51,14 @@ class DefaultCollectionsConfig(FunctionBaseConfig, name="default_collections"):
 @register_function(config_type=DefaultCollectionsConfig)
 async def default_collections(config: DefaultCollectionsConfig, builder: Builder):
     """
-    Returns information about the example collections used by the AIRA demo frontend
+    Returns information about the example collections used by the AI-Q Research Assistant demo frontend
     """
     async def _default_collections(request: None = None) -> list[DefaultCollection]:
         return config.collections
 
     yield FunctionInfo.from_fn(
         _default_collections,
-        description="Information about the example collections used by the AIRA demo frontend"
+        description="Information about the example collections used by the AI-Q Research Assistant demo frontend"
     )
 
 ################################################
@@ -69,14 +70,14 @@ class HealthCheckConfig(FunctionBaseConfig, name="health_check"):
 @register_function(config_type=HealthCheckConfig)
 async def health_check(config: HealthCheckConfig, builder: Builder):
     """
-    Health check for the AIQ AIRA backend service
+    Health check for the AI-Q Research Assistant backend service
     """
     async def _health_check(request: None = None) -> dict:
         return {"status": "OK"}
 
     yield FunctionInfo.from_fn(
         _health_check,
-        description="Health check for the AIQ AIRA service"
+        description="Health check for the AI-Q Research Assistant service"
     )
 
 ################################################
@@ -93,15 +94,15 @@ class AIResearcherInput(BaseModel):
 ################################################
 # End to end research workflow
 ################################################
-# note the component parts generate_queries, generate_summary, and artifact_qa 
-# are used in the AIRA demo frontend
-# the ai_researcher workflow is not used in the AIRA demo frontend
+# note the component parts generate_queries, generate_summary, and artifact_qa
+# are used in the AI-Q Research Assistant demo frontend
+# the ai_researcher workflow is not used in the AI-Q Research Assistant demo frontend
 # the components are registered for AIQ serve by importing them in this file
 
 class AIResearcherWorkflowConfig(FunctionBaseConfig, name="ai_researcher"):
     """
     Run the entire research pipeline to generate a query plan and a report without human in the loop intervention
-    This workflow is not used in the AIRA demo frontend
+    This workflow is not used in the AI-Q Research Assistant demo frontend
     """
     rag_url: str = ""
 
@@ -115,8 +116,8 @@ async def ai_researcher(config: AIResearcherWorkflowConfig, builder: Builder):
     So the user only has to call one endpoint to get from raw topic -> final report.
     """
 
-    generate_queries = builder.get_function(name="generate_query")  
-    generate_summary = builder.get_function(name="generate_summary") 
+    generate_queries = builder.get_function(name="generate_query")
+    generate_summary = builder.get_function(name="generate_summary")
 
     async def _response_stream_fn(input_message: str) -> AsyncGenerator[AIQChatResponseChunk, None]:
         """

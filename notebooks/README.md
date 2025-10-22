@@ -19,7 +19,7 @@ Next create a virtual environment using Python 3.12:
 ```bash
 uv python install 3.12
 uv venv --python 3.12 --python-preference managed
-uv pip install -e "./aira"
+uv pip install -e .
 uv pip install ipykernel jupyter
 ```
 

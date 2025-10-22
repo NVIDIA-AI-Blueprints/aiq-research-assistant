@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Security configuration for prompt sanitization
+# These regex patterns are used to detect potentially harmful prompt injection attempts
+
+blocked_patterns:
+  - 'ignore\s+(?:all\s+)?previous\s+instructions'
+  - 'you\s+are\s+now'
+  - 'system\s*:'
+  - '<\s*system\s*>'
+  - '\[system\]'
+  - '(?:reveal|show|display|print|give\s+me)\s+(?:me\s+)?(?:the\s+)?(?:api|secret|password|key)'
+  - 'execute\s+(?:system\s+)?commands?'
+  - 'run\s+(?:system\s+)?commands?'
+  - 'delete\s+(?:all\s+)?(?:files?|data|collections?)'
+  - 'drop\s+table'
+  - 'union\s+select'
+  - '<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>'
+  - 'javascript:'
+  - 'eval\s*\('
+  - 'exec\s*\('
+

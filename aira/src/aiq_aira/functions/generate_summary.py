@@ -1,25 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import typing
 from typing import AsyncGenerator
 import json
 
-from aiq.data_models.api_server import AIQChatResponseChunk
-from aiq.data_models.component_ref import LLMRef
-from aiq.data_models.function import FunctionBaseConfig
-from aiq.builder.builder import Builder
-from aiq.cli.register_workflow import register_function
-from aiq.builder.function_info import FunctionInfo
-from aiq.builder.framework_enum import LLMFrameworkEnum
-import json
+from nat.data_models.api_server import AIQChatResponseChunk
+from nat.data_models.component_ref import LLMRef
+from nat.data_models.function import FunctionBaseConfig
+from nat.builder.builder import Builder
+from nat.cli.register_workflow import register_function
+from nat.builder.function_info import FunctionInfo
+from nat.builder.framework_enum import LLMFrameworkEnum
+from langgraph.graph import END
+from langgraph.graph import START
+from langgraph.graph import StateGraph
 
-from aiq_aira.nodes import web_research, summarize_sources, reflect_on_summary, finalize_summary
-from aiq_aira.schema import (
-    ConfigSchema,
-    GenerateSummaryStateInput,
-    GenerateSummaryStateOutput,
-    AIRAState
-)
+from aiq_aira.nodes import finalize_summary
+from aiq_aira.nodes import reflect_on_summary
+from aiq_aira.nodes import summarize_sources
+from aiq_aira.nodes import web_research
+from aiq_aira.schema import AIRAState
+from aiq_aira.schema import ConfigSchema
+from aiq_aira.schema import GenerateSummaryStateInput
+from aiq_aira.schema import GenerateSummaryStateOutput
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import START, END, StateGraph
 
 def serialize_pydantic(obj):
     if isinstance(obj, list):
@@ -87,18 +104,18 @@ async def generate_summary_fn(config: AIRAGenerateSummaryConfig, aiq_builder: Bu
         # Acquire the LLM from the builder
         llm = await aiq_builder.get_llm(llm_name=message.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
 
-        response: AIRAState = await graph.ainvoke(
-            input={"queries": message.queries, "web_research_results": [], "running_summary": ""},
-            config={
-                "llm": llm,
-                "report_organization": message.report_organization,
-                "rag_url": config.rag_url,
-                "collection": message.rag_collection,
-                "search_web": message.search_web,
-                "num_reflections": message.reflection_count, 
-                "topic": message.topic,
-            }
-        )
+        response: AIRAState = await graph.ainvoke(input={
+            "queries": message.queries, "web_research_results": [], "running_summary": ""
+        },
+                                                  config={
+                                                      "llm": llm,
+                                                      "report_organization": message.report_organization,
+                                                      "rag_url": config.rag_url,
+                                                      "collection": message.rag_collection,
+                                                      "search_web": message.search_web,
+                                                      "num_reflections": message.reflection_count,
+                                                      "topic": message.topic,
+                                                  })
         return GenerateSummaryStateOutput(final_report=response["final_report"], citations=response["citations"])
 
     # ------------------------------------------------------------------

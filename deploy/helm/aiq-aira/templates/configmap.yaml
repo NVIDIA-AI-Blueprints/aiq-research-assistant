@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aiq-aira.fullname" . }}-config
+data:
+  config.yml: |-
+    {{ (.Files.Get "files/app-config.yml") | nindent 4 }}
+  security_config.yml: |-
+    {{ (.Files.Get "files/security_config.yml") | nindent 4 }}

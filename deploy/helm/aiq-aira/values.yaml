@@ -1,0 +1,105 @@
+# ------------------------------------------------------------
+# The following values are for the AIQ AIRA backend service.
+# ------------------------------------------------------------
+
+replicaCount: 1
+
+imagePullSecret:
+  name: "ngc-secret"
+  registry: "nvcr.io"
+  username: "$oauthtoken"
+  password: ""
+  create: true
+
+ngcApiSecret:
+  name: "ngc-api"
+  password: ""
+  create: true
+
+tavilyApiSecret:
+  name: "tavily-secret"
+  create: true
+  password: ""
+
+# The image repository and tag for the AIQ AIRA backend service.
+image:
+  baserepo: nvcr.io
+  repository: nvcr.io/nvidia/blueprint/aira-backend
+  tag: v1.2.0
+  pullPolicy: Always
+
+# The service type and port for the main AIQ AIRA backend service
+service:
+  port: 3838
+
+backendEnvVars:
+  INSTRUCT_MODEL_NAME: "meta-llama/llama-3.3-70b-instruct"
+  INSTRUCT_MODEL_TEMP: "0.0"
+  NEMOTRON_MAX_TOKENS: "5000"
+  INSTRUCT_MAX_TOKENS: "20000"
+  INSTRUCT_BASE_URL: "http://instruct-llm:8000"
+  INSTRUCT_API_KEY: "not-needed"
+  NEMOTRON_MODEL_NAME: "nvidia/llama-3.3-nemotron-super-49b-v1.5"
+  NEMOTRON_MODEL_TEMP: "0.5"
+  NEMOTRON_BASE_URL: "http://nim-llm.rag.svc.cluster.local:8000"
+  AIRA_APPLY_GUARDRAIL: "false"
+  RAG_SERVER_URL: "http://rag-server.rag.svc.cluster.local:8081"
+  RAG_INGEST_URL: "http://ingestor-server.rag.svc.cluster.local:8082"
+  
+nim-llm:
+  enabled: true
+  service:
+    name: "instruct-llm"
+  image:
+      repository: nvcr.io/nim/meta/llama-3.3-70b-instruct
+      pullPolicy: IfNotPresent
+      tag: "1.13.1"
+  resources:
+    limits:
+      nvidia.com/gpu: 2
+    requests:
+      nvidia.com/gpu: 2
+  # Configure NIM Model Profile for optimal performance
+  env:
+    - name: NIM_MODEL_PROFILE
+      value: ""  # Empty for automatic selection, or specify tensorrt_llm profile
+  model:
+    ngcAPIKey: ""
+    name: "meta-llama/llama-3.3-70b-instruct"
+
+# -----------------------------------------------------------
+# The following values are for the AIQ AIRA frontend service.
+# ------------------------------------------------------------
+
+# The frontend application is a React web app. We recommend a NodePort so the frontend will be accessible at <your-node-ip>:3001
+frontend:
+  enabled: true
+  service:
+    type: NodePort
+    port: 3000
+    targetPort: 3000
+    nodePort: 30080
+  image:
+    repository: nvcr.io/nvidia/blueprint/aira-frontend
+    tag: v1.2.0
+    pullPolicy: Always
+  replicaCount: 1
+
+# ------------------------------------------------------------
+# The following values are optional utility services
+# ------------------------------------------------------------
+
+# Enables the Phoenix tracing service
+phoenix:
+  enabled: true
+  image:
+    repository: arizephoenix/phoenix
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi

@@ -1,7 +1,7 @@
 services:
   aira-instruct-llm:
     container_name: aira-instruct-llm
-    image: nvcr.io/nim/meta/llama-3.3-70b-instruct:1.10.1
+    image: nvcr.io/nim/meta/llama-3.3-70b-instruct:1.13.1
     runtime: nvidia
     volumes:
     - ${MODEL_DIRECTORY:-./}:/opt/nim/.cache
@@ -12,6 +12,8 @@ services:
     - "8050"
     environment:
       NGC_API_KEY: ${NGC_API_KEY}
+      # Automatic profile detection
+      NIM_MODEL_PROFILE: ${NIM_MODEL_PROFILE-""}
     shm_size: 20gb
     deploy:
       resources:
@@ -32,11 +34,11 @@ services:
 
   aira-backend:
     container_name: aira-backend
-    image: nvcr.io/nvidia/blueprint/aira-backend:v1.1.0
+    image: nvcr.io/nvidia/blueprint/aira-backend:v1.2.0
     runtime: nvidia
     build:
       context: ../../
-      dockerfile: aira/Dockerfile
+      dockerfile: deploy/Dockerfile
     entrypoint: "/entrypoint.sh"
     ports:
       - "3838:3838"
@@ -45,46 +47,29 @@ services:
     environment:
       TAVILY_API_KEY: ${TAVILY_API_KEY:-this-is-a-test-key}
       AIRA_APPLY_GUARDRAIL: "false"
-      OPENAI_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-your-nvidia-api-key}
       AIRA_HOSTED_NIMS: ${AIRA_HOSTED_NIMS:-false}
+      # Required for rag middleware via fastapi extensions
+      RAG_INGEST_URL: ${RAG_INGEST_URL:-http://ingestor-server:8082/v1}
+      RAG_SERVER_URL: ${RAG_SERVER_URL:-http://rag-server:8081/v1}
     volumes:
-      - ../../aira/configs:/app/configs
-    networks:
-      - nvidia-rag
-    profiles: ["aira"]
-
-  aira-nginx:
-    image: nginx:latest
-    container_name: aira-nginx
-    ports:
-      - "8051:8051"
-    expose:
-      - "8051"
-    environment:
-      # If you are deploying RAG separately,
-      # update to match the URL for the Ingestor Server in your RAG deployment
-      - RAG_INGEST_URL=${RAG_INGEST_URL:-http://ingestor-server:8082}
-      - AIRA_BASE_URL=${AIRA_BASE_URL:-http://aira-backend:3838}
-    volumes:
-      - ./nginx.conf.template:/etc/nginx/templates/nginx.conf.template
-    depends_on:
-      - aira-backend
+      - ../../configs:/app/configs
     networks:
       - nvidia-rag
     profiles: ["aira"]
     
   aira-frontend:
     container_name: aira-frontend
-    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.1.0
+    image: nvcr.io/nvidia/blueprint/aira-frontend:v1.2.0
     ports:
-      - "3001:3001"
+      - "3000:3000"
     expose:
-      - "3001"
+      - "3000"
     networks:
       - nvidia-rag
     environment:
       NVWB_TRIM_PREFIX: true
-      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-nginx:8051}
+      INFERENCE_ORIGIN: ${INFERENCE_ORIGIN:-http://aira-backend:3838}
     profiles: ["aira"]
 
 # Use the nvidia-rag network created by the 

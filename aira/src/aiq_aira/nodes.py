@@ -13,14 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
-import aiohttp
-import json
-import os
 import logging
-import xml.etree.ElementTree as ET
-from typing import List
-import re
+import asyncio
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.utils.json import parse_json_markdown
@@ -107,9 +101,11 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
 
     json_str = splitted[1].strip()
     try:
-        queries = parse_json_markdown(json_str)
+        queries_raw = parse_json_markdown(json_str)
+        # Convert raw dictionaries to GeneratedQuery objects so validators run
+        queries = [GeneratedQuery(**q_dict) for q_dict in queries_raw]
     except Exception as e:
-        logger.error(f"Error parsing queries as JSON: {e}")
+        logger.error(f"Error parsing or validating queries: {e}")
         queries = []
 
     return {"queries": queries}

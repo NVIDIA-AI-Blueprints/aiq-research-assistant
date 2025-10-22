@@ -5,7 +5,7 @@ This document contains frequently asked questions that are not covered in the de
 
 ## How Many Files can I Upload? Can I Bulk Upload Files?
 
-The demo web application allows you to upload 10 files at a time. This process can be repeated to add additional files to a collection. Alternatively, you can bulk upload files. To do so, see the example utility `data/sync_files2.py`. To run this utility create a zip file containing your desired files, and then run the utility either directly in Python or by building and running the docker container, eg.
+The demo web application allows you to upload 10 files at a time. This process can be repeated to add additional files to a collection. Alternatively, you can bulk upload files. To do so, see the example utility `data/zip_to_collection.py`. To run this utility create a zip file containing your desired files, and then run the utility either directly in Python or by building and running the docker container, eg.
 
     ```
     # navigate to the helper directory
@@ -23,7 +23,7 @@ The demo web application allows you to upload 10 files at a time. This process c
     -e PYTHONUNBUFFERED=1 \
     -v /tmp:/tmp-data \
     --network nvidia-rag \
-    file-upload:custom 
+    file-upload:custom
     ```
 
 ## How Long Will it Take to Upload Documents?
@@ -40,11 +40,11 @@ The RAG service in this blueprint is accessed by a REST API call. Compatible ser
 
 ## How many GPUs do I Need? Can I Deploy with Fewer GPUs?
 
-The blueprint hardware requirements for the default Docker compose deployment with local NVIDIA NIM microservices are outlined in the [README](/README.md#hardware-requirements). Fewer GPUs can be used by deploying the NVIDIA RAG blueprint following [these guidelines](https://github.com/NVIDIA-AI-Blueprints/rag?tab=readme-ov-file#hardware-requirements-for-self-hosting-all-nvidia-nim-microservices).
+The blueprint hardware requirements for the default Docker compose deployment with local NVIDIA NIM microservices are outlined in the [README](../README.md#hardware-requirements). Fewer GPUs can be used by deploying the NVIDIA RAG blueprint following [these guidelines](https://github.com/NVIDIA-AI-Blueprints/rag/blob/main/docs/support-matrix.md#hardware-requirements-docker).
 
 ## What is the Performance?
 
-Report generation typically takes 5-10 minutes depending on the length of the report plan. Individual Q&A can take 45-90 seconds in order to support web and RAG research for each question. For specific metrics like latency or token throughput, [enable observability](/docs/phoenix-tracing.md).
+Report generation typically takes 5-10 minutes depending on the length of the report plan. Individual Q&A can take 45-90 seconds in order to support web and RAG research for each question. For specific metrics like latency or token throughput, [enable observability](./phoenix-tracing.md).
 
 ## How do I Make the Report Longer?
 
@@ -52,15 +52,15 @@ The main driver of report length is the number of queries in the report plan. Ad
 
 ## Has the Tool Been Evaluated?
 
-The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundness, and context relevance. For more information about evaluations, see the [evaluation page](/docs/evaluation.md).
+The AI-Q Research Assistant is evaluated using metrics such as accuracy, groundness, and context relevance. For more information about evaluations, see the [evaluation page](./evaluate.md).
 
 ## How are the REST Endpoints Served?
 
-The REST endpoints are created using the [NVIDIA NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit). Each endpoint is defined as a function and frontend endpoint in the `aira/configs/config.yml` configuration file. The docker compose entrypoint for the backend invokes the `aiq serve` command which makes these endpoints available as REST APIs. The functions are registered with the NeMo Agent toolkit in the `register.py` file, and the source code for the main endpoints is located in the `functions` directory. 
+The REST endpoints are created using the [NVIDIA NeMo Agent Toolkit](https://github.com/NVIDIA/NeMo-Agent-Toolkit). Each endpoint is defined as a function and frontend endpoint in the `configs/config.yml` configuration file. The docker compose entrypoint for the backend invokes the `aiq serve` command which makes these endpoints available as REST APIs. The functions are registered with the NeMo Agent toolkit in the `register.py` file, and the source code for the main endpoints is located in the `functions` directory. 
 
 ## How do I Debug a Hallucination?
 
-To verify a fact, figure, or claim in the report, start by finding the claim within the report sources. If the claim is contained inside a query and answer pair, check if the source citation is a URL or a PDF. If the source citation is a URL, visit the URL and search for the fact, figure, or claim. If the source citation is a PDF, the answer came from RAG. If you have deployed RAG with the RAG frontend, you can copy the query into the RAG frontend web application to view detailed answers and citations from the original PDF documents. The RAG frontend application is normally hosted at `http://your-rag-server-ip:8090`. 
+To verify a fact, figure, or claim in the report, start by finding the claim within the report sources. If the claim is contained inside a query and answer pair, check if the source citation is a URL or a PDF. If the source citation is a URL, visit the URL and search for the fact, figure, or claim. If the source citation is a PDF, the answer came from RAG. If you have deployed RAG with the RAG frontend, you can copy the query into the RAG frontend web application to view detailed answers and citations from the original PDF documents. The RAG frontend application is normally hosted at `http://your-rag-server-ip:8090`.
 
 ## How does the UI Stream Intermediate Steps?
 
@@ -72,7 +72,7 @@ Update the file `aira/src/aiq_aira/constants.py` to include a list of approved d
 
 ## How do I Increase Timeouts?
 
-The report generation is designed to be robust to intermittent timeouts in LLM calls, RAG search, or web search. In these cases, the frontend web application will notify users about the timeout but proceed with report creation. The backend service log will also note the timeout. To increase the timeout, update the value `ASYNC_TIMEOUT` in the file `aira/src/aiq_aira/constants.py`. 
+The report generation is designed to be robust to intermittent timeouts in LLM calls, RAG search, or web search. In these cases, the frontend web application will notify users about the timeout but proceed with report creation. The backend service log will also note the timeout. To increase the timeout, update the value `ASYNC_TIMEOUT` in the file `aira/src/aiq_aira/constants.py`.
 
 ## How do I Update the Number of Reflections?
 
@@ -80,7 +80,7 @@ During report generation, a reflection agent using a reasoning LLM looks for gap
 
 ## Can I use Different Models?
 
-The blueprint has been tested with the following model configuration: 
+The blueprint has been tested with the following model configuration:
 
 ```
 llms:
@@ -91,7 +91,7 @@ llms:
 
   nemotron:
     _type: openai
-    model_name : nvidia/llama-3.3-nemotron-super-49b-v1
+    model_name : nvidia/llama-3.3-nemotron-super-49b-v1.5
     temperature: 0.5
     max_tokens: 5000
     stream: true
