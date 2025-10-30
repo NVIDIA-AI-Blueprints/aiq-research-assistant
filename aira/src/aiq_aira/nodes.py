@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import asyncio
+import logging
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.utils.json import parse_json_markdown
@@ -48,10 +48,10 @@ async def generate_query(state: AIRAState, config: RunnableConfig, writer: Strea
     writer({"generating_questions": "\n Generating queries \n"}) # send something to initialize the UI so the timeout shows
 
     # Generate a query
-    llm = config["configurable"].get("llm")
-    number_of_queries = config["configurable"].get("number_of_queries")
-    report_organization = config["configurable"].get("report_organization")
-    topic = config["configurable"].get("topic")
+    llm = config.get("configurable", {}).get("llm")
+    number_of_queries = config.get("configurable", {}).get("number_of_queries")
+    report_organization = config.get("configurable", {}).get("report_organization")
+    topic = config.get("configurable", {}).get("topic")
 
     system_prompt = ""
     system_prompt = update_system_prompt(system_prompt, llm)
