@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import asyncio
+import json
 import aiohttp
 import re
 import xml.etree.ElementTree as ET
@@ -29,9 +30,11 @@ from aiq_aira.prompts import relevancy_checker
 from aiq_aira.tools import search_rag, search_tavily
 from aiq_aira.utils import dummy, _escape_markdown
 import html
+import os
+from textwrap import dedent
 
 logger = logging.getLogger(__name__)
-
+use_vast = os.getenv('USE_VAST_RAG', 'false').lower() == 'true'
 
 async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: StreamWriter):
     """
@@ -47,12 +50,14 @@ async def check_relevancy(llm: ChatOpenAI, query: str, answer: str, writer: Stre
             response = await llm.ainvoke(
                 relevancy_checker.format(document=answer, query=query)
             )
-            score = parse_json_markdown(response.content)
-            writer({"relevancy_checker": f""" =
+            score = parse_json_markdown(response.content) # type: ignore 
+            writer({"relevancy_checker": f"""
+
     ---
     Relevancy score: {score.get("score")}  
     Query: {query}
     Answer: {processed_answer_for_display}
+
     """})
 
             return score
@@ -75,6 +80,122 @@ Error checking relevancy. Query: {query} \n \n Answer: {processed_answer_for_dis
     return {"score": "yes"}
 
 
+async def perform_conversation_api_search(prompt: str, collection: str, writer: StreamWriter):
+    """
+    Performs conversation API search using the vast backend.
+    """
+    writer({"rag_answer": "\n Performing conversation API search \n"})
+    logger.info("CONVERSATION API SEARCH")
+
+    base_url = os.getenv("VAST_RAG_BASE_URL", "http://langchain-backend:8080")
+    logger.info(f"Using VAST RAG base URL: {base_url}")
+    # Create a new session for API calls
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+        try:
+            # Step 1: Try to get authentication from AIQ context first
+            from nat.builder.context import Context
+            aiq_context = Context.get()
+            headers = dict(aiq_context.metadata.headers) if aiq_context.metadata.headers else {}
+            auth_header = headers.get("authorization") or headers.get("Authorization")
+
+            headers = {"accept": "application/json", "Content-Type": "application/json"}
+
+            # Check for existing auth header from context
+            if auth_header:
+                if not auth_header.startswith("Bearer "):
+                    auth_header = f"Bearer {auth_header}"
+                headers["Authorization"] = auth_header
+                logger.info(f"Using authentication header from AIQ context: {auth_header}...")
+            else:
+                logger.error("No authentication header found in AIQ context, falling back to token-based authentication.")
+                raise ValueError("No authentication header found in AIQ context")
+
+            logger.info(f"Using headers: {headers}")
+            # Create a new conversation
+            create_conv_url = f"{base_url}/api/v1/conversations"
+            logger.info(f"Creating conversation with URL: {create_conv_url}")
+            async with session.post(
+                create_conv_url,
+                headers=headers,
+                json={"title": f"Query: {prompt[:30]}...", "collection_name": collection},
+            ) as response:
+                response.raise_for_status()
+                conversation_data = await response.json()
+                conversation_id = conversation_data["id"]
+
+            # Step 2: Send the prompt to the conversation
+            prompt_url = f"{base_url}/api/v1/conversations/{conversation_id}/prompt"
+            prompt_data = {
+                "prompt": prompt,
+                "extra_metadata_fields": ["confluence-page-url"],
+            }
+
+            async with asyncio.timeout(ASYNC_TIMEOUT):
+                logger.info(f"Sending prompt to conversation with URL: {prompt_url}")
+                async with session.post(
+                    prompt_url, headers=headers, json=prompt_data
+                ) as response:
+                    response.raise_for_status()
+                    result = await response.json()
+                    logger.info(f"Received response from conversation API: {result}")
+                    # Extract the content from the response
+                    content = result.get("content", "")
+
+                    # Format citations similar to search_rag
+                    sources = result.get("sources", [])
+                    citations_urls = set()
+                    for source in sources:
+                        logger.info(f"Processing source: {source}")
+                        md = source.get("extra_metadata", '{}')
+                        if md:
+                            md = json.loads(md)
+                            cit = md.get(
+                                "confluence-page-url", ""
+                            )
+                        cit = source.get("doc_path", "")
+                        citations_urls.add(cit)
+                        urls = "\n".join(f"- {url}" for url in citations_urls)  
+                        citations = dedent(
+                            f"""
+
+    ---
+    QUERY:
+    {prompt}
+
+    ANSWER:
+    {content}
+
+    CITATION:
+    {urls}
+
+                            """
+                        )
+                        return (content, citations)
+
+        except asyncio.TimeoutError:
+            logger.exception("Error during conversation API search")
+            writer(
+                {
+                    "rag_answer": dedent(f"""
+                        -------------
+                        Timeout getting conversation API answer for question {prompt}
+                        """).strip()
+                }
+            )
+            return ("Timeout fetching conversation API:", "")
+        except Exception as e:
+            logger.exception("Error during conversation API search")
+            writer(
+                {
+                    "rag_answer": dedent(f"""
+                        -------------
+                        Error getting conversation API answer for question {prompt}: {str(e)}
+                        """).strip()
+                }
+            )
+            return (f"Error with conversation API: {e}", "")
+
+
 async def fetch_query_results(
     rag_url: str,
     prompt: str,
@@ -85,10 +206,12 @@ async def fetch_query_results(
     Calls the search_rag tool in parallel for each prompt in parallel.
     Returns a list of tuples (answer, citations).
     """
+    if use_vast:
+        return await perform_conversation_api_search(prompt, collection, writer)
+
     async with aiohttp.ClientSession() as session:
         result =  await search_rag(session, rag_url, prompt, writer, collection)
         return result
-
 
 
 def deduplicate_and_format_sources(
@@ -123,7 +246,6 @@ def deduplicate_and_format_sources(
     return ET.tostring(root, encoding="unicode")
 
 
-
 async def process_single_query(
         query: str,
         config: RunnableConfig,
@@ -143,10 +265,10 @@ async def process_single_query(
       (rag_answer, rag_citation, relevancy, web_answer, web_citation)
     """
 
-    rag_url = config["configurable"].get("rag_url")
+    rag_url = config["configurable"].get("rag_url")  # type: ignore
     # Process RAG search
-    rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)
-    
+    rag_answer, rag_citation = await fetch_query_results(rag_url, query, writer, collection)  # type: ignore
+
     writer({"rag_answer": rag_citation}) # citation includes the answer
 
     # Check relevancy for this query's answer.
