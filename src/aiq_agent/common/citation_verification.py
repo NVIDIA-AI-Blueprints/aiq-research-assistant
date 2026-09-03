@@ -250,7 +250,8 @@ def _normalize_url(url: str) -> str:
     path = unquote(parsed.path).rstrip("/") or "/"
     # Remove tracking params
     qs = parse_qs(parsed.query, keep_blank_values=True)
-    filtered_qs = {k: v for k, v in qs.items() if k.lower() not in _TRACKING_PARAMS}
+    # Exclusion below is case-insensitive, so the rebuilt key must be too.
+    filtered_qs = {k.lower(): v for k, v in qs.items() if k.lower() not in _TRACKING_PARAMS}
     query_str = "&".join(f"{k}={v[0]}" for k, v in sorted(filtered_qs.items()) if v)
     return urlunparse((scheme, netloc, path, "", query_str, ""))
 
