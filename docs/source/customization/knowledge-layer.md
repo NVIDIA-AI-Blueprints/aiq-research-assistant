@@ -324,6 +324,10 @@ functions:
       max_queued_uploads: ${NRL_MAX_QUEUED_UPLOADS:-128}
       verify_ssl: ${NRL_VERIFY_SSL:-true}
       collection_ttl_hours: ${NRL_COLLECTION_TTL_HOURS:-24}
+      enable_nrl_rerank: ${ENABLE_NRL_RERANK:-true}
+      nrl_rerank_top_k: ${NRL_RERANK_TOP_K:-5}
+      nrl_rerank_url: ${NRL_RERANK_URL:-https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-rerank-vl-1b-v2/reranking}
+      nrl_rerank_model: ${NRL_RERANK_MODEL:-nvidia/llama-nemotron-rerank-vl-1b-v2}
 ```
 
 Use [`configs/config_web_nemo_retriever.yml`](../../../configs/config_web_nemo_retriever.yml)
@@ -341,7 +345,11 @@ The adapter admits complete batches before NRL job creation and bounds total
 active plus queued files. Oversized batches return HTTP 413; temporary
 saturation returns HTTP 503 without a `Retry-After` header.
 Per-attempt IDs remain diagnostic metadata. Query filters are rejected until
-the public NRL query contract supports them. AI-Q does not expose NRL pipeline
+the public NRL query contract supports them. Retrieval queries enable rerank
+by default: the adapter fetches the current `top_k` dense hits, calls
+`NRL_RERANK_URL` with `NRL_RERANK_MODEL`, and returns `nrl_rerank_top_k` hits (default 5).
+A ranking failure fails retrieval rather than silently returning dense results.
+Set `ENABLE_NRL_RERANK=false` for dense retrieval only. AI-Q does not expose NRL extraction or indexing pipeline
 tuning and does not consume physical VectorDB names or LanceDB locations.
 Automatic transport retries are limited to reads and explicitly idempotent
 writes. A 404/410 from version-probing job creation or immediate upload means
@@ -714,6 +722,10 @@ Configuration values are resolved in the following order (highest to lowest prio
 | `NRL_API_TOKEN`, `NRL_SCOPE` | nemo_retriever | Deployment bearer token and required workspace scope |
 | `NRL_CONNECT_TIMEOUT_S`, `NRL_REQUEST_TIMEOUT_S` | nemo_retriever | Connection and request timeout seconds |
 | `NRL_MAX_RETRIES`, `NRL_MAX_CONCURRENCY`, `NRL_MAX_QUEUED_UPLOADS` | nemo_retriever | Transient retry, active multipart, and queued-upload bounds |
+| `ENABLE_NRL_RERANK` | nemo_retriever | Query rerank toggle (default true) |
+| `NRL_RERANK_TOP_K` | nemo_retriever | Hits kept after rerank (default 5); candidates come from the current query `top_k` |
+| `NRL_RERANK_URL`, `NRL_RERANK_MODEL` | nemo_retriever | Ranking endpoint and model; default is NVIDIA's hosted Llama Nemotron VL reranker |
+| `NRL_RERANK_API_KEY` | nemo_retriever | Ranking endpoint bearer token; falls back to `NVIDIA_API_KEY` |
 | `NRL_VERIFY_SSL`, `NRL_CA_BUNDLE` | nemo_retriever | TLS verification and optional enterprise CA bundle |
 | `NRL_LOCAL_DATA_DIR`, `NRL_LOCAL_PROFILE` | nemo_retriever_local | Embedded data directory and NRL `auto` or `fast-text` profile |
 | `NRL_PAGE_ELEMENTS_INVOKE_URL`, `NRL_OCR_INVOKE_URL`, `NRL_TABLE_STRUCTURE_INVOKE_URL` | nemo_retriever_local | Optional extraction endpoint overrides |

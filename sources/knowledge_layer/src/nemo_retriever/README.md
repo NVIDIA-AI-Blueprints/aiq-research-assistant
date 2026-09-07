@@ -246,6 +246,16 @@ export NRL_API_TOKEN='replace-with-a-secret'  # omit only for an auth-disabled d
 | `backend_config.verify_ssl` | `NRL_VERIFY_SSL` | `true` | Verify gateway certificates |
 | `backend_config.ca_bundle` | `NRL_CA_BUNDLE` | unset | Optional enterprise CA bundle |
 | `backend_config.collection_ttl_hours` | `NRL_COLLECTION_TTL_HOURS` | `24` | Expiration applied to new NRL collections |
+| `backend_config.enable_nrl_rerank` | `ENABLE_NRL_RERANK` | `true` | Apply the ranking endpoint to the current query `top_k` hits |
+| `backend_config.nrl_rerank_top_k` | `NRL_RERANK_TOP_K` | `5` | Hits kept after reranking |
+| `backend_config.nrl_rerank_url` | `NRL_RERANK_URL` | NVIDIA hosted VL reranker | Ranking endpoint called by the adapter |
+| `backend_config.nrl_rerank_model` | `NRL_RERANK_MODEL` | `nvidia/llama-nemotron-rerank-vl-1b-v2` | Model sent to the ranking endpoint |
+| `backend_config.nrl_rerank_api_key` | `NRL_RERANK_API_KEY` | `NVIDIA_API_KEY` | Ranking endpoint bearer token |
+
+Query rerank is enabled by default. The adapter asks `POST /v1/query` for the
+current `top_k` dense hits, calls `NRL_RERANK_URL` with `NRL_RERANK_MODEL`, and returns
+`nrl_rerank_top_k` hits. A ranking failure fails retrieval instead of silently
+returning dense results. Set `ENABLE_NRL_RERANK=false` for dense retrieval only.
 
 One token and scope are used per AIQ deployment. Per-user NRL credential
 forwarding is not supported. Tokens are never logged and physical NRL storage
