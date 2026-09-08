@@ -150,6 +150,12 @@ class TestNormalizeUrl:
         url2 = "https://example.com/article?id=42"
         assert _normalize_url(url1) == _normalize_url(url2)
 
+    def test_query_param_key_casing_normalized(self):
+        """Query parameter name casing must not affect the comparison key."""
+        assert _normalize_url("https://example.com/article?ID=42") == _normalize_url(
+            "https://example.com/article?id=42"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Citation key parsing tests
@@ -389,6 +395,11 @@ class TestSourceRegistry:
         registry.add(SourceEntry(url="https://example.com/doc?id=123&mode=view"))
         # The path-only URL is a prefix of the full normalized URL → prefix match succeeds
         assert registry.resolve_url("https://example.com/doc") == "https://example.com/doc?id=123&mode=view"
+
+    def test_resolve_url_query_key_casing(self, registry):
+        """A re-cased query param name must still resolve."""
+        registry.add(SourceEntry(url="https://example.com/article?ID=42"))
+        assert registry.resolve_url("https://example.com/article?id=42") == "https://example.com/article?ID=42"
 
 
 # ---------------------------------------------------------------------------
