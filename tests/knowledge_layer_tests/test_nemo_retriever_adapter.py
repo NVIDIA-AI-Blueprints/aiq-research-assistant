@@ -291,6 +291,7 @@ def _adapter_config(handler: Any, *, token: str = "super-secret", retries: int =
         "max_retries": retries,
         "max_concurrency": 2,
         "max_queued_uploads": 128,
+        "enable_nrl_rerank": False,
         "_transport": transport,
         "warm_start": False,
     }
@@ -338,6 +339,10 @@ def test_service_environment_and_explicit_backend_config_are_equivalent(monkeypa
         "NRL_MAX_QUEUED_UPLOADS": "4",
         "NRL_VERIFY_SSL": "false",
         "NRL_COLLECTION_TTL_HOURS": "48",
+        "ENABLE_NRL_RERANK": "true",
+        "NRL_RERANK_TOP_K": "5",
+        "NRL_RERANK_URL": "https://rerank.example.test/v1/ranking",
+        "NRL_RERANK_MODEL": "custom-rerank-model",
     }
     for name, value in values.items():
         monkeypatch.setenv(name, value)
@@ -355,6 +360,10 @@ def test_service_environment_and_explicit_backend_config_are_equivalent(monkeypa
             "max_queued_uploads": values["NRL_MAX_QUEUED_UPLOADS"],
             "verify_ssl": values["NRL_VERIFY_SSL"],
             "collection_ttl_hours": values["NRL_COLLECTION_TTL_HOURS"],
+            "enable_nrl_rerank": values["ENABLE_NRL_RERANK"],
+            "nrl_rerank_top_k": values["NRL_RERANK_TOP_K"],
+            "nrl_rerank_url": values["NRL_RERANK_URL"],
+            "nrl_rerank_model": values["NRL_RERANK_MODEL"],
         }
     )
     public_config = KnowledgeRetrievalConfig(backend="nemo_retriever")
@@ -832,6 +841,67 @@ def test_query_mapping_citations_content_types_and_image_safety():
     formatted = _format_results(result, "findings")
     assert "Vector Distance: -0.1 (lower is closer)" in formatted
     assert "Relevance Score:" not in formatted
+
+
+def test_rerank_reorders_hits_and_fails_closed(monkeypatch):
+    requests: list[httpx.Request] = []
+    response_body = {
+        "rankings": [
+            {"index": 0, "logit": -2.0},
+            {"index": 1, "logit": 2.0},
+            {"index": 2, "logit": 0.5},
+        ]
+    }
+
+    def reranker(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=response_body)
+
+    async_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        adapter_module.httpx,
+        "AsyncClient",
+        lambda **kwargs: async_client(transport=httpx.MockTransport(reranker), **kwargs),
+    )
+    fake = FakeNRL()
+    fake.query_hits = [
+        {
+            "chunk_id": f"chunk-{index}",
+            "document_id": "doc-1",
+            "text": f"text {index}",
+            "distance": float(index),
+            "filename": "report.pdf",
+        }
+        for index in range(3)
+    ]
+    config = _adapter_config(fake)
+    config.update(
+        {
+            "enable_nrl_rerank": True,
+            "nrl_rerank_top_k": 2,
+            "nrl_rerank_url": "https://rerank.example.test/v1/ranking",
+            "nrl_rerank_model": "custom-rerank-model",
+            "nrl_rerank_api_key": SecretStr("rerank-secret"),
+        }
+    )
+    result = asyncio.run(NemoRetrieverRetriever(config).retrieve("findings", "test", top_k=3))
+
+    assert result.success
+    assert [chunk.chunk_id for chunk in result.chunks] == ["chunk-1", "chunk-2"]
+    assert result.chunks[0].score == pytest.approx(0.880797078)
+    query = json.loads(next(request.content for request in fake.requests if request.url.path == "/v1/query"))
+    assert query == {"query": "findings", "collection_name": "test", "top_k": 3}
+    ranking = requests[0]
+    assert str(ranking.url) == "https://rerank.example.test/v1/ranking"
+    assert ranking.headers["Authorization"] == "Bearer rerank-secret"
+    body = json.loads(ranking.content)
+    assert body["model"] == "custom-rerank-model"
+    assert body["passages"] == [{"text": "text 0"}, {"text": "text 1"}, {"text": "text 2"}]
+
+    response_body["rankings"] = [{"index": 0, "logit": 0.1}]
+    failed = asyncio.run(NemoRetrieverRetriever(config).retrieve("findings", "test", top_k=3))
+    assert not failed.success
+    assert "scored 1 of 3" in (failed.error_message or "")
 
 
 @pytest.mark.parametrize("distance", [float("nan"), float("inf"), float("-inf")])
